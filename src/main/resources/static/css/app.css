@@ -155,6 +155,11 @@ h2 {
   font-size: 1.25rem;
 }
 
+h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
 p {
   margin: 0.45rem 0 0;
   color: var(--muted);
@@ -193,6 +198,24 @@ th {
 .empty {
   text-align: center;
   color: var(--muted);
+}
+
+.amount-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.balances-block {
+  margin-top: 1.25rem;
+}
+
+.balances-table {
+  min-width: 760px;
+}
+
+.cell-subtitle {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
 }
 
 .form-card {

@@ -14,6 +14,9 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
     @EntityGraph(attributePaths = {"account", "category"})
     List<Entry> findTop100BySettlementDateBetweenOrderBySettlementDateDescIdDesc(LocalDate startDate, LocalDate endDate);
 
+    @EntityGraph(attributePaths = {"account"})
+    List<Entry> findBySettlementDateLessThanEqualOrderBySettlementDateAscIdAsc(LocalDate endDate);
+
     boolean existsByCategoryId(Long categoryId);
 
     boolean existsByAccountId(Long accountId);

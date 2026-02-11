@@ -28,6 +28,11 @@ public class EntryRepositoryAdapter implements EntryRepository {
     }
 
     @Override
+    public List<Entry> listAllBySettlementDateLessThanEqual(LocalDate endDate) {
+        return jpaEntryRepository.findBySettlementDateLessThanEqualOrderBySettlementDateAscIdAsc(endDate);
+    }
+
+    @Override
     public Optional<Entry> findById(Long id) {
         return jpaEntryRepository.findById(id);
     }

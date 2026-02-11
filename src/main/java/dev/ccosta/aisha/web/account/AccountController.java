@@ -2,8 +2,10 @@ package dev.ccosta.aisha.web.account;
 
 import dev.ccosta.aisha.application.account.AccountInUseException;
 import dev.ccosta.aisha.application.account.AccountNotFoundException;
+import dev.ccosta.aisha.application.account.AccountBalanceReportService;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,20 +26,22 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class AccountController {
 
     private final AccountService accountService;
+    private final AccountBalanceReportService accountBalanceReportService;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, AccountBalanceReportService accountBalanceReportService) {
         this.accountService = accountService;
+        this.accountBalanceReportService = accountBalanceReportService;
     }
 
     @GetMapping
-    public String list(Model model) {
-        fillListing(model);
+    public String list(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
+        fillListing(model, globalDateFilter);
         return "accounts/list";
     }
 
     @GetMapping("/fragments/table")
-    public String table(Model model) {
-        fillListing(model);
+    public String table(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
+        fillListing(model, globalDateFilter);
         return "accounts/list :: table";
     }
 
@@ -89,7 +93,7 @@ public class AccountController {
     public String delete(@PathVariable Long id, HttpServletRequest request, Model model) {
         accountService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, null);
             return "accounts/list :: table";
         }
         return "redirect:/accounts";
@@ -103,7 +107,7 @@ public class AccountController {
     ) {
         accountService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, null);
             return "accounts/list :: table";
         }
         return "redirect:/accounts";
@@ -112,7 +116,7 @@ public class AccountController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @org.springframework.web.bind.annotation.ExceptionHandler(AccountInUseException.class)
     public String handleInUse(HttpServletRequest request, Model model) {
-        fillListing(model);
+        fillListing(model, null);
         model.addAttribute("hasError", true);
         if (isHtmx(request)) {
             return "accounts/list :: table";
@@ -126,8 +130,25 @@ public class AccountController {
         return "errors/404";
     }
 
-    private void fillListing(Model model) {
-        model.addAttribute("accounts", accountService.listAllOrdered());
+    private void fillListing(Model model, DateFilterState globalDateFilter) {
+        List<Account> accounts = accountService.listAllOrdered();
+        model.addAttribute("accounts", accounts);
+
+        DateFilterState effectiveFilter = globalDateFilter != null
+            ? globalDateFilter
+            : (DateFilterState) model.getAttribute("globalDateFilter");
+        if (effectiveFilter == null) {
+            return;
+        }
+
+        model.addAttribute(
+            "accountBalanceReport",
+            accountBalanceReportService.buildReport(
+                accounts,
+                effectiveFilter.getStartDate(),
+                effectiveFilter.getEndDate()
+            )
+        );
     }
 
     private boolean isHtmx(HttpServletRequest request) {

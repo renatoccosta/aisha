@@ -11,6 +11,8 @@ public interface EntryRepository {
 
     List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate);
 
+    List<Entry> listAllBySettlementDateLessThanEqual(LocalDate endDate);
+
     Optional<Entry> findById(Long id);
 
     Entry save(Entry entry);
