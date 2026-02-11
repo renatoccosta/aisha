@@ -81,6 +81,53 @@ body {
   box-shadow: 0 4px 16px rgba(18, 33, 47, 0.12);
 }
 
+.period-filter-wrap {
+  margin-top: 0.8rem;
+}
+
+.period-filter {
+  display: grid;
+  gap: 0.65rem;
+  border-top: 1px solid #dbe4ea;
+  padding-top: 0.75rem;
+}
+
+.period-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.period-filter-row-custom {
+  align-items: end;
+}
+
+.period-filter-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.period-filter-summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.period-filter-inputs {
+  min-width: 160px;
+  flex: 1 1 160px;
+}
+
+.btn-active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-active:hover {
+  background: var(--primary-hover);
+}
+
 main {
   padding: 1.5rem 0 2rem;
   display: grid;

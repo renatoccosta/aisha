@@ -8,6 +8,7 @@
     <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
 </head>
 <body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{errors.notFound.title})}"></header>
 <main class="wrap">
     <section class="card form-card">
         <h1 th:text="#{errors.notFound.code}"></h1>

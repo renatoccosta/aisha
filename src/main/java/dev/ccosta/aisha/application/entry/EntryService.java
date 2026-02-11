@@ -6,6 +6,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,6 +29,17 @@ public class EntryService {
     @Transactional(readOnly = true)
     public List<Entry> listTop100MostRecentBySettlementDate() {
         return entryRepository.listTop100MostRecentBySettlementDate();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Start and end dates are required");
+        }
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("End date must be greater than or equal to start date");
+        }
+        return entryRepository.listTop100MostRecentBySettlementDateBetween(startDate, endDate);
     }
 
     @Transactional(readOnly = true)

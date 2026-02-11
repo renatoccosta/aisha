@@ -9,6 +9,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -41,14 +42,14 @@ public class EntryController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        fillListing(model);
+    public String list(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
+        fillListing(model, globalDateFilter);
         return "entries/list";
     }
 
     @GetMapping("/fragments/table")
-    public String table(Model model) {
-        fillListing(model);
+    public String table(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
+        fillListing(model, globalDateFilter);
         return "entries/list :: table";
     }
 
@@ -152,10 +153,15 @@ public class EntryController {
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, HttpServletRequest request, Model model) {
+    public String delete(
+        @PathVariable Long id,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        HttpServletRequest request,
+        Model model
+    ) {
         entryService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, globalDateFilter);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -164,12 +170,13 @@ public class EntryController {
     @PostMapping("/bulk-delete")
     public String bulkDelete(
         @RequestParam(name = "ids", required = false) List<Long> ids,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         HttpServletRequest request,
         Model model
     ) {
         entryService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, globalDateFilter);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -181,8 +188,14 @@ public class EntryController {
         return "errors/404";
     }
 
-    private void fillListing(Model model) {
-        model.addAttribute("entries", entryService.listTop100MostRecentBySettlementDate());
+    private void fillListing(Model model, DateFilterState globalDateFilter) {
+        model.addAttribute(
+            "entries",
+            entryService.listTop100MostRecentBySettlementDateBetween(
+                globalDateFilter.getStartDate(),
+                globalDateFilter.getEndDate()
+            )
+        );
     }
 
     private boolean isHtmx(HttpServletRequest request) {

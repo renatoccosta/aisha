@@ -2,6 +2,7 @@ package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,11 @@ public class EntryRepositoryAdapter implements EntryRepository {
     @Override
     public List<Entry> listTop100MostRecentBySettlementDate() {
         return jpaEntryRepository.findTop100ByOrderBySettlementDateDescIdDesc();
+    }
+
+    @Override
+    public List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate) {
+        return jpaEntryRepository.findTop100BySettlementDateBetweenOrderBySettlementDateDescIdDesc(startDate, endDate);
     }
 
     @Override

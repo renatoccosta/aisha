@@ -125,6 +125,31 @@ class EntryServiceTest {
         verify(entryRepository).save(input);
     }
 
+    @Test
+    void shouldListEntriesWithinSettlementDateRange() {
+        LocalDate startDate = LocalDate.of(2026, 2, 1);
+        LocalDate endDate = LocalDate.of(2026, 2, 28);
+        List<Entry> expected = List.of(newEntry("Descricao", new BigDecimal("1.00")));
+
+        when(entryRepository.listTop100MostRecentBySettlementDateBetween(startDate, endDate)).thenReturn(expected);
+
+        List<Entry> result = entryService.listTop100MostRecentBySettlementDateBetween(startDate, endDate);
+
+        assertThat(result).isEqualTo(expected);
+        verify(entryRepository).listTop100MostRecentBySettlementDateBetween(startDate, endDate);
+    }
+
+    @Test
+    void shouldFailWhenRangeIsInvalid() {
+        LocalDate startDate = LocalDate.of(2026, 3, 1);
+        LocalDate endDate = LocalDate.of(2026, 2, 1);
+
+        assertThatThrownBy(() -> entryService.listTop100MostRecentBySettlementDateBetween(startDate, endDate))
+            .isInstanceOf(IllegalArgumentException.class);
+
+        verify(entryRepository, never()).listTop100MostRecentBySettlementDateBetween(startDate, endDate);
+    }
+
     private Entry newEntry(String description, BigDecimal amount) {
         Entry entry = new Entry();
         entry.setAccount(newAccount("Conta padrão"));

@@ -1,5 +1,6 @@
 package dev.ccosta.aisha.domain.entry;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +8,8 @@ import java.util.Optional;
 public interface EntryRepository {
 
     List<Entry> listTop100MostRecentBySettlementDate();
+
+    List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate);
 
     Optional<Entry> findById(Long id);
 
