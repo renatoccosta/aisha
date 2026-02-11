@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">AI$HA Logo Opção 1</title>
+  <desc id="desc">Escudo circular com símbolo monetário e conexões de inteligência artificial.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B8793"/>
+      <stop offset="100%" stop-color="#2A4D69"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="52" fill="url(#bg)"/>
+  <circle cx="128" cy="128" r="70" fill="#ffffff" fill-opacity="0.12"/>
+  <circle cx="128" cy="128" r="56" fill="#ffffff"/>
+  <path d="M132 88c-14 0-24 8-24 20 0 10 7 16 21 20l6 2c6 2 9 4 9 8 0 6-6 10-14 10-8 0-14-4-17-10l-12 7c6 11 15 16 29 16 15 0 27-8 27-22 0-11-7-17-22-21l-6-2c-5-1-8-4-8-7 0-5 4-8 11-8 7 0 12 3 15 8l11-7c-5-9-14-14-26-14zm-4-10h8v90h-8z" fill="#0B8793"/>
+  <circle cx="54" cy="82" r="10" fill="#B5F0F6"/>
+  <circle cx="202" cy="82" r="10" fill="#B5F0F6"/>
+  <circle cx="54" cy="174" r="10" fill="#B5F0F6"/>
+  <circle cx="202" cy="174" r="10" fill="#B5F0F6"/>
+  <path d="M64 82h28m100 0h-28M64 174h28m100 0h-28" stroke="#B5F0F6" stroke-width="8" stroke-linecap="round"/>
+</svg>

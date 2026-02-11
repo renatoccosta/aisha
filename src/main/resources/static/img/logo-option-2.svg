@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">AI$HA Logo Opção 2</title>
+  <desc id="desc">Gráfico financeiro com pontos conectados simbolizando análise por inteligência artificial.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#144552"/>
+      <stop offset="100%" stop-color="#1B6CA8"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#3AD29F"/>
+      <stop offset="100%" stop-color="#A7F3D0"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="52" fill="url(#bg)"/>
+  <rect x="52" y="160" width="26" height="44" rx="8" fill="url(#bar)"/>
+  <rect x="88" y="132" width="26" height="72" rx="8" fill="url(#bar)"/>
+  <rect x="124" y="102" width="26" height="102" rx="8" fill="url(#bar)"/>
+  <rect x="160" y="74" width="26" height="130" rx="8" fill="url(#bar)"/>
+  <path d="M48 204h160" stroke="#D6ECFA" stroke-width="8" stroke-linecap="round"/>
+  <path d="M58 126l42-30 38 18 48-40" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="58" cy="126" r="9" fill="#ffffff"/>
+  <circle cx="100" cy="96" r="9" fill="#ffffff"/>
+  <circle cx="138" cy="114" r="9" fill="#ffffff"/>
+  <circle cx="186" cy="74" r="9" fill="#ffffff"/>
+  <text x="174" y="54" font-size="28" font-family="Source Sans 3, Segoe UI, sans-serif" font-weight="700" fill="#A7F3D0">$</text>
+</svg>

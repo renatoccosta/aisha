@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${mode == 'create'} ? 'Novo lançamento' : 'Editar lançamento'"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+</head>
+<body>
+<header class="topbar">
+    <div class="wrap brand">
+        <div class="brand-text">
+            <h1>AI$HA</h1>
+            <p>Lançamentos</p>
+        </div>
+        <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" alt="Logo AI$HA">
+    </div>
+</header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="${mode == 'create'} ? 'Novo lançamento' : 'Editar lançamento'"></h2>
+
+        <form th:object="${form}" th:action="${mode == 'create'} ? @{/entries} : @{/entries/{id}(id=${entryId})}" method="post">
+            <div class="grid-2">
+                <div class="field">
+                    <label for="account">Conta *</label>
+                    <input id="account" type="text" th:field="*{account}" maxlength="120" required>
+                    <p class="error" th:if="${#fields.hasErrors('account')}" th:errors="*{account}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="category">Categoria *</label>
+                    <input id="category" type="text" th:field="*{category}" maxlength="60" required>
+                    <p class="error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="movementDate">Data de movimentação *</label>
+                    <input id="movementDate" type="date" th:field="*{movementDate}" required>
+                    <p class="error" th:if="${#fields.hasErrors('movementDate')}" th:errors="*{movementDate}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="settlementDate">Data de liquidação *</label>
+                    <input id="settlementDate" type="date" th:field="*{settlementDate}" required>
+                    <p class="error" th:if="${#fields.hasErrors('settlementDate')}" th:errors="*{settlementDate}"></p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="description">Descrição *</label>
+                <input id="description" type="text" th:field="*{description}" maxlength="200" required>
+                <p class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            </div>
+
+            <div class="field">
+                <label for="amount">Valor *</label>
+                <input id="amount" type="number" th:field="*{amount}" step="0.01" required>
+                <p class="error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}"></p>
+            </div>
+
+            <div class="field">
+                <label for="notes">Observações</label>
+                <textarea id="notes" th:field="*{notes}" rows="4" maxlength="1000"></textarea>
+                <p class="error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+            </div>
+
+            <div class="actions-inline">
+                <button class="btn btn-primary" type="submit" th:text="${mode == 'create'} ? 'Salvar' : 'Atualizar'"></button>
+                <a class="btn btn-secondary" th:href="@{/entries}">Cancelar</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

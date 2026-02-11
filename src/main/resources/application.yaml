@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: aisha
+  datasource:
+    url: jdbc:hsqldb:mem:aisha
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  thymeleaf:
+    cache: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/aisha}
+    username: ${DB_USERNAME:aisha}
+    password: ${DB_PASSWORD:aisha}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect

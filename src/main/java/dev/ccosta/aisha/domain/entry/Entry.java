@@ -1,0 +1,100 @@
+package dev.ccosta.aisha.domain.entry;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "entries")
+public class Entry {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "account", nullable = false, length = 120)
+    private String account;
+
+    @Column(name = "movement_date", nullable = false)
+    private LocalDate movementDate;
+
+    @Column(name = "settlement_date", nullable = false)
+    private LocalDate settlementDate;
+
+    @Column(name = "description", nullable = false, length = 200)
+    private String description;
+
+    @Column(name = "category", nullable = false, length = 60)
+    private String category;
+
+    @Column(name = "notes", length = 1000)
+    private String notes;
+
+    @Column(name = "amount", nullable = false, precision = 19, scale = 2)
+    private BigDecimal amount;
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public LocalDate getMovementDate() {
+        return movementDate;
+    }
+
+    public void setMovementDate(LocalDate movementDate) {
+        this.movementDate = movementDate;
+    }
+
+    public LocalDate getSettlementDate() {
+        return settlementDate;
+    }
+
+    public void setSettlementDate(LocalDate settlementDate) {
+        this.settlementDate = settlementDate;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+}

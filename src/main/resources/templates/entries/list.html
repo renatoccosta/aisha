@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançamentos</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header class="topbar">
+    <div class="wrap brand">
+        <div class="brand-text">
+            <h1>AI$HA</h1>
+            <p>Gestão de lançamentos</p>
+        </div>
+        <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" alt="Logo AI$HA">
+    </div>
+</header>
+
+<main class="wrap">
+    <section class="card header-actions">
+        <div>
+            <h2>Lançamentos</h2>
+            <p>Mostrando os 100 registros mais recentes por data de liquidação.</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/entries/new}">Novo lançamento</a>
+    </section>
+
+    <section id="table-container" th:fragment="table" class="card">
+        <form
+            th:action="@{/entries/bulk-delete}"
+            method="post"
+            hx-post="/entries/bulk-delete"
+            hx-target="#table-container"
+            hx-swap="outerHTML"
+            hx-confirm="Confirmar exclusão dos lançamentos selecionados?">
+
+            <div class="table-actions">
+                <button class="btn btn-danger" type="submit">Excluir selecionados</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th><span class="sr-only">Selecionar</span></th>
+                        <th>Conta</th>
+                        <th>Data mov.</th>
+                        <th>Data liq.</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(entries)}">
+                        <td colspan="8" class="empty">Nenhum lançamento cadastrado.</td>
+                    </tr>
+                    <tr th:each="entry : ${entries}">
+                        <td>
+                            <input type="checkbox" name="ids" th:value="${entry.id}" aria-label="Selecionar lançamento">
+                        </td>
+                        <td th:text="${entry.account}"></td>
+                        <td th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></td>
+                        <td th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy')}"></td>
+                        <td th:text="${entry.description}"></td>
+                        <td th:text="${entry.category}"></td>
+                        <td th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></td>
+                        <td>
+                            <div class="actions-inline">
+                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id})}">Editar</a>
+                                <button
+                                    class="btn btn-danger"
+                                    type="button"
+                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})}"
+                                    hx-target="#table-container"
+                                    hx-swap="outerHTML"
+                                    hx-confirm="Confirmar exclusão deste lançamento?">
+                                    Excluir
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>
