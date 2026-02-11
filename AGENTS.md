@@ -54,6 +54,31 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Prefer explicit, typed DTOs; validate inputs at boundaries.
 - Avoid premature frameworks/abstractions; keep it simple until requirements force complexity.
 
+## Language conventions
+
+### Source code language
+- All source code MUST be written in English:
+  - class names
+  - method names
+  - variable names
+  - package names
+  - database table/column names
+  - log messages
+  - comments
+- Do not mix Portuguese terms in code unless explicitly requested.
+
+### User interface language
+- All user-facing text must be in Brazilian Portuguese (pt-BR), with correct accentuation.
+- UI labels, messages, buttons, validation messages and page titles must be in pt-BR.
+- Avoid hardcoded strings in templates when possible; prepare for future i18n support.
+
+### Formatting standards
+- Monetary values must follow Brazilian formatting in the UI:
+  - Decimal separator: comma
+  - Thousands separator: dot
+  - Currency symbol: R$ (when applicable)
+- Internally, monetary values must use BigDecimal.
+
 ## Data & money rules (very important)
 - Never silently change monetary values (currency, scale, rounding).
 - Prefer BigDecimal for money amounts.

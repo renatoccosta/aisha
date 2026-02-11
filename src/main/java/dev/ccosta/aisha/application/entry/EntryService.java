@@ -1,5 +1,7 @@
 package dev.ccosta.aisha.application.entry;
 
+import dev.ccosta.aisha.application.category.CategoryService;
+import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import java.util.Collection;
@@ -12,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntryService {
 
     private final EntryRepository entryRepository;
+    private final CategoryService categoryService;
 
-    public EntryService(EntryRepository entryRepository) {
+    public EntryService(EntryRepository entryRepository, CategoryService categoryService) {
         this.entryRepository = entryRepository;
+        this.categoryService = categoryService;
     }
 
     @Transactional(readOnly = true)
@@ -29,18 +33,19 @@ public class EntryService {
     }
 
     @Transactional
-    public Entry create(Entry entry) {
+    public Entry create(Entry entry, Long categoryId, String newCategoryTitle) {
+        entry.setCategory(resolveCategory(categoryId, newCategoryTitle));
         return entryRepository.save(entry);
     }
 
     @Transactional
-    public Entry update(Long id, Entry updatedData) {
+    public Entry update(Long id, Entry updatedData, Long categoryId, String newCategoryTitle) {
         Entry existing = findById(id);
         existing.setAccount(updatedData.getAccount());
         existing.setMovementDate(updatedData.getMovementDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
         existing.setDescription(updatedData.getDescription());
-        existing.setCategory(updatedData.getCategory());
+        existing.setCategory(resolveCategory(categoryId, newCategoryTitle));
         existing.setNotes(updatedData.getNotes());
         existing.setAmount(updatedData.getAmount());
         return entryRepository.save(existing);
@@ -60,5 +65,18 @@ public class EntryService {
 
         LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>(ids);
         entryRepository.deleteByIds(uniqueIds);
+    }
+
+    private Category resolveCategory(Long categoryId, String newCategoryTitle) {
+        String normalizedTitle = newCategoryTitle == null ? "" : newCategoryTitle.trim();
+        if (!normalizedTitle.isBlank()) {
+            return categoryService.findOrCreateByTitle(normalizedTitle);
+        }
+
+        if (categoryId == null) {
+            throw new IllegalArgumentException("Category must be informed");
+        }
+
+        return categoryService.findById(categoryId);
     }
 }

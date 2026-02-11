@@ -32,6 +32,11 @@ public class EntryRepositoryAdapter implements EntryRepository {
     }
 
     @Override
+    public boolean existsByCategoryId(Long categoryId) {
+        return jpaEntryRepository.existsByCategoryId(categoryId);
+    }
+
+    @Override
     public void deleteById(Long id) {
         jpaEntryRepository.deleteById(id);
     }

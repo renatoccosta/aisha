@@ -12,6 +12,8 @@ public interface EntryRepository {
 
     Entry save(Entry entry);
 
+    boolean existsByCategoryId(Long categoryId);
+
     void deleteById(Long id);
 
     void deleteByIds(Collection<Long> ids);

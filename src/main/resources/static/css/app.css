@@ -56,6 +56,23 @@ body {
   color: var(--muted);
 }
 
+.topnav {
+  margin-top: 0.55rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.topnav a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.topnav a:hover {
+  text-decoration: underline;
+}
+
 .brand-logo {
   width: 56px;
   height: 56px;
@@ -152,6 +169,7 @@ label {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid #b8c5d1;
@@ -162,6 +180,7 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   outline: 2px solid #9fd6e2;
   outline-offset: 1px;
@@ -172,6 +191,11 @@ textarea:focus {
   color: #942735;
   font-size: 0.9rem;
   margin-top: 0.25rem;
+}
+
+.helper {
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
 }
 
 .btn {

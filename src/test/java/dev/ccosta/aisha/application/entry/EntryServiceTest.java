@@ -6,6 +6,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.ccosta.aisha.application.category.CategoryService;
+import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import java.math.BigDecimal;
@@ -26,6 +28,9 @@ class EntryServiceTest {
     @Mock
     private EntryRepository entryRepository;
 
+    @Mock
+    private CategoryService categoryService;
+
     @InjectMocks
     private EntryService entryService;
 
@@ -33,15 +38,18 @@ class EntryServiceTest {
     void shouldUpdateExistingEntry() {
         Entry existing = newEntry("Conta antiga", "Descricao antiga", new BigDecimal("10.00"));
         Entry updatedData = newEntry("Conta nova", "Descricao nova", new BigDecimal("99.90"));
+        Category category = newCategory("Alimentação");
 
         when(entryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(categoryService.findById(7L)).thenReturn(category);
         when(entryRepository.save(existing)).thenReturn(existing);
 
-        Entry updated = entryService.update(1L, updatedData);
+        Entry updated = entryService.update(1L, updatedData, 7L, null);
 
         assertThat(updated.getAccount()).isEqualTo("Conta nova");
         assertThat(updated.getDescription()).isEqualTo("Descricao nova");
         assertThat(updated.getAmount()).isEqualByComparingTo("99.90");
+        assertThat(updated.getCategory().getTitle()).isEqualTo("Alimentação");
         verify(entryRepository).save(existing);
     }
 
@@ -50,7 +58,7 @@ class EntryServiceTest {
         Entry updatedData = newEntry("Conta", "Descricao", new BigDecimal("99.90"));
         when(entryRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> entryService.update(999L, updatedData))
+        assertThatThrownBy(() -> entryService.update(999L, updatedData, 7L, null))
             .isInstanceOf(EntryNotFoundException.class)
             .hasMessageContaining("999");
 
@@ -73,14 +81,35 @@ class EntryServiceTest {
         assertThat(idsCaptor.getValue()).containsExactly(1L, 2L, 3L);
     }
 
+    @Test
+    void shouldCreateMissingCategoryFromTitle() {
+        Entry input = newEntry("Conta", "Descricao", new BigDecimal("15.00"));
+        Category createdCategory = newCategory("Nova categoria");
+
+        when(categoryService.findOrCreateByTitle("Nova categoria")).thenReturn(createdCategory);
+        when(entryRepository.save(input)).thenReturn(input);
+
+        Entry created = entryService.create(input, null, "Nova categoria");
+
+        assertThat(created.getCategory().getTitle()).isEqualTo("Nova categoria");
+        verify(categoryService).findOrCreateByTitle("Nova categoria");
+        verify(entryRepository).save(input);
+    }
+
     private Entry newEntry(String account, String description, BigDecimal amount) {
         Entry entry = new Entry();
         entry.setAccount(account);
         entry.setDescription(description);
-        entry.setCategory("Geral");
+        entry.setCategory(newCategory("Geral"));
         entry.setMovementDate(LocalDate.of(2026, 2, 11));
         entry.setSettlementDate(LocalDate.of(2026, 2, 11));
         entry.setAmount(amount);
         return entry;
+    }
+
+    private Category newCategory(String title) {
+        Category category = new Category();
+        category.setTitle(title);
+        return category;
     }
 }

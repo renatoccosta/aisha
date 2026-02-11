@@ -1,5 +1,8 @@
 package dev.ccosta.aisha.web.entry;
 
+import dev.ccosta.aisha.application.category.CategoryOption;
+import dev.ccosta.aisha.application.category.CategoryNotFoundException;
+import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -10,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,9 +28,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class EntryController {
 
     private final EntryService entryService;
+    private final CategoryService categoryService;
 
-    public EntryController(EntryService entryService) {
+    public EntryController(EntryService entryService, CategoryService categoryService) {
         this.entryService = entryService;
+        this.categoryService = categoryService;
     }
 
     @GetMapping
@@ -43,18 +50,28 @@ public class EntryController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("form", EntryForm.newWithCurrentDates());
+        fillCategoryOptions(model);
         model.addAttribute("mode", "create");
         return "entries/form";
     }
 
     @PostMapping
     public String create(@Valid @ModelAttribute("form") EntryForm form, BindingResult bindingResult, Model model) {
+        validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
+            fillCategoryOptions(model);
             model.addAttribute("mode", "create");
             return "entries/form";
         }
 
-        entryService.create(toDomain(form));
+        try {
+            entryService.create(toDomain(form), form.getCategoryId(), form.getNewCategoryTitle());
+        } catch (CategoryNotFoundException | IllegalArgumentException ex) {
+            bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
+            fillCategoryOptions(model);
+            model.addAttribute("mode", "create");
+            return "entries/form";
+        }
         return "redirect:/entries";
     }
 
@@ -62,6 +79,7 @@ public class EntryController {
     public String editForm(@PathVariable Long id, Model model) {
         Entry entry = entryService.findById(id);
         model.addAttribute("form", fromDomain(entry));
+        fillCategoryOptions(model);
         model.addAttribute("entryId", id);
         model.addAttribute("mode", "edit");
         return "entries/form";
@@ -74,13 +92,23 @@ public class EntryController {
         BindingResult bindingResult,
         Model model
     ) {
+        validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
+            fillCategoryOptions(model);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
             return "entries/form";
         }
 
-        entryService.update(id, toDomain(form));
+        try {
+            entryService.update(id, toDomain(form), form.getCategoryId(), form.getNewCategoryTitle());
+        } catch (CategoryNotFoundException | IllegalArgumentException ex) {
+            bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
+            fillCategoryOptions(model);
+            model.addAttribute("entryId", id);
+            model.addAttribute("mode", "edit");
+            return "entries/form";
+        }
         return "redirect:/entries";
     }
 
@@ -128,7 +156,6 @@ public class EntryController {
         entry.setMovementDate(form.getMovementDate());
         entry.setSettlementDate(form.getSettlementDate());
         entry.setDescription(form.getDescription());
-        entry.setCategory(form.getCategory());
         entry.setNotes(form.getNotes());
         entry.setAmount(form.getAmount());
         return entry;
@@ -140,9 +167,26 @@ public class EntryController {
         form.setMovementDate(entry.getMovementDate());
         form.setSettlementDate(entry.getSettlementDate());
         form.setDescription(entry.getDescription());
-        form.setCategory(entry.getCategory());
+        form.setCategoryId(entry.getCategory().getId());
         form.setNotes(entry.getNotes());
         form.setAmount(entry.getAmount());
         return form;
+    }
+
+    private void fillCategoryOptions(Model model) {
+        List<CategoryOption> categoryOptions = categoryService.listHierarchyOptions();
+        model.addAttribute("categoryOptions", categoryOptions);
+    }
+
+    private void validateCategoryChoice(EntryForm form, BindingResult bindingResult) {
+        boolean hasCategoryId = form.getCategoryId() != null;
+        boolean hasNewCategoryTitle = StringUtils.hasText(form.getNewCategoryTitle());
+        if (hasCategoryId || hasNewCategoryTitle) {
+            return;
+        }
+
+        bindingResult.addError(
+            new FieldError("form", "categoryId", form.getCategoryId(), false, new String[] {"entryForm.categoryId.notNull"}, null, null)
+        );
     }
 }

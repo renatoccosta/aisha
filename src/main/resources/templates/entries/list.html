@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lançamentos</title>
+    <title th:text="#{entries.list.title}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
@@ -13,19 +13,23 @@
     <div class="wrap brand">
         <div class="brand-text">
             <h1>AI$HA</h1>
-            <p>Gestão de lançamentos</p>
+            <p th:text="#{entries.list.header.subtitle}"></p>
+            <nav class="topnav">
+                <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
+                <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
+            </nav>
         </div>
-        <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" alt="Logo AI$HA">
+        <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
     </div>
 </header>
 
 <main class="wrap">
     <section class="card header-actions">
         <div>
-            <h2>Lançamentos</h2>
-            <p>Mostrando os 100 registros mais recentes por data de liquidação.</p>
+            <h2 th:text="#{entries.list.heading}"></h2>
+            <p th:text="#{entries.list.subtitle}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/entries/new}">Novo lançamento</a>
+        <a class="btn btn-primary" th:href="@{/entries/new}" th:text="#{entries.list.action.new}"></a>
     </section>
 
     <section id="table-container" th:fragment="table" class="card">
@@ -35,51 +39,50 @@
             hx-post="/entries/bulk-delete"
             hx-target="#table-container"
             hx-swap="outerHTML"
-            hx-confirm="Confirmar exclusão dos lançamentos selecionados?">
+            th:attr="hx-confirm=#{entries.list.confirm.bulkDelete}">
 
             <div class="table-actions">
-                <button class="btn btn-danger" type="submit">Excluir selecionados</button>
+                <button class="btn btn-danger" type="submit" th:text="#{entries.list.action.bulkDelete}"></button>
             </div>
 
             <div class="table-wrap">
                 <table>
                     <thead>
                     <tr>
-                        <th><span class="sr-only">Selecionar</span></th>
-                        <th>Conta</th>
-                        <th>Data mov.</th>
-                        <th>Data liq.</th>
-                        <th>Descrição</th>
-                        <th>Categoria</th>
-                        <th>Valor</th>
-                        <th>Ações</th>
+                        <th><span class="sr-only" th:text="#{entries.list.table.select}"></span></th>
+                        <th th:text="#{entries.list.table.account}"></th>
+                        <th th:text="#{entries.list.table.movementDate}"></th>
+                        <th th:text="#{entries.list.table.settlementDate}"></th>
+                        <th th:text="#{entries.list.table.description}"></th>
+                        <th th:text="#{entries.list.table.category}"></th>
+                        <th th:text="#{entries.list.table.amount}"></th>
+                        <th th:text="#{entries.list.table.actions}"></th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:if="${#lists.isEmpty(entries)}">
-                        <td colspan="8" class="empty">Nenhum lançamento cadastrado.</td>
+                        <td colspan="8" class="empty" th:text="#{entries.list.empty}"></td>
                     </tr>
                     <tr th:each="entry : ${entries}">
                         <td>
-                            <input type="checkbox" name="ids" th:value="${entry.id}" aria-label="Selecionar lançamento">
+                            <input type="checkbox" name="ids" th:value="${entry.id}" th:attr="aria-label=#{entries.list.table.selectItem}">
                         </td>
                         <td th:text="${entry.account}"></td>
                         <td th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></td>
                         <td th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy')}"></td>
                         <td th:text="${entry.description}"></td>
-                        <td th:text="${entry.category}"></td>
+                        <td th:text="${entry.category.title}"></td>
                         <td th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></td>
                         <td>
                             <div class="actions-inline">
-                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id})}">Editar</a>
+                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id})}" th:text="#{entries.list.action.edit}"></a>
                                 <button
                                     class="btn btn-danger"
                                     type="button"
-                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})}"
+                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
                                     hx-target="#table-container"
-                                    hx-swap="outerHTML"
-                                    hx-confirm="Confirmar exclusão deste lançamento?">
-                                    Excluir
+                                    hx-swap="outerHTML">
+                                    <span th:text="#{entries.list.action.delete}"></span>
                                 </button>
                             </div>
                         </td>

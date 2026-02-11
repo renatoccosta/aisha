@@ -9,29 +9,30 @@ import java.time.LocalDate;
 
 public class EntryForm {
 
-    @NotBlank(message = "Conta é obrigatória")
-    @Size(max = 120, message = "Conta deve ter no máximo 120 caracteres")
+    @NotBlank(message = "{entryForm.account.notBlank}")
+    @Size(max = 120, message = "{entryForm.account.size}")
     private String account;
 
-    @NotNull(message = "Data de movimentação é obrigatória")
+    @NotNull(message = "{entryForm.movementDate.notNull}")
     private LocalDate movementDate;
 
-    @NotNull(message = "Data de liquidação é obrigatória")
+    @NotNull(message = "{entryForm.settlementDate.notNull}")
     private LocalDate settlementDate;
 
-    @NotBlank(message = "Descrição é obrigatória")
-    @Size(max = 200, message = "Descrição deve ter no máximo 200 caracteres")
+    @NotBlank(message = "{entryForm.description.notBlank}")
+    @Size(max = 200, message = "{entryForm.description.size}")
     private String description;
 
-    @NotBlank(message = "Categoria é obrigatória")
-    @Size(max = 60, message = "Categoria deve ter no máximo 60 caracteres")
-    private String category;
+    private Long categoryId;
 
-    @Size(max = 1000, message = "Observações deve ter no máximo 1000 caracteres")
+    @Size(max = 120, message = "{entryForm.newCategoryTitle.size}")
+    private String newCategoryTitle;
+
+    @Size(max = 1000, message = "{entryForm.notes.size}")
     private String notes;
 
-    @NotNull(message = "Valor é obrigatório")
-    @Digits(integer = 17, fraction = 2, message = "Valor deve ter até 2 casas decimais")
+    @NotNull(message = "{entryForm.amount.notNull}")
+    @Digits(integer = 17, fraction = 2, message = "{entryForm.amount.digits}")
     private BigDecimal amount;
 
     public static EntryForm newWithCurrentDates() {
@@ -74,12 +75,20 @@ public class EntryForm {
         this.description = description;
     }
 
-    public String getCategory() {
-        return category;
+    public Long getCategoryId() {
+        return categoryId;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public String getNewCategoryTitle() {
+        return newCategoryTitle;
+    }
+
+    public void setNewCategoryTitle(String newCategoryTitle) {
+        this.newCategoryTitle = newCategoryTitle;
     }
 
     public String getNotes() {

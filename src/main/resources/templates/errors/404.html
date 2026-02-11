@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recurso não encontrado</title>
+    <title th:text="#{errors.notFound.title}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
 </head>
 <body>
 <main class="wrap">
     <section class="card form-card">
-        <h1>404</h1>
-        <p>Recurso não encontrado.</p>
-        <a class="btn btn-primary" th:href="@{/entries}">Voltar para lançamentos</a>
+        <h1 th:text="#{errors.notFound.code}"></h1>
+        <p th:text="#{errors.notFound.message}"></p>
+        <a class="btn btn-primary" th:href="@{/entries}" th:text="#{errors.notFound.backToEntries}"></a>
     </section>
 </main>
 </body>
