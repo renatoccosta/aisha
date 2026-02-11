@@ -16,6 +16,7 @@
             <nav class="topnav">
                 <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
                 <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
+                <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
             </nav>
         </div>
         <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
@@ -30,8 +31,15 @@
             <div class="grid-2">
                 <div class="field">
                     <label for="account" th:text="#{entries.form.field.account.required}"></label>
-                    <input id="account" type="text" th:field="*{account}" maxlength="120" required>
-                    <p class="error" th:if="${#fields.hasErrors('account')}" th:errors="*{account}"></p>
+                    <select id="account" th:field="*{accountId}" required>
+                        <option value="" th:text="#{entries.form.field.account.placeholder}"></option>
+                        <option
+                            th:each="account : ${accountOptions}"
+                            th:value="${account.id}"
+                            th:text="${account.title}">
+                        </option>
+                    </select>
+                    <p class="error" th:if="${#fields.hasErrors('accountId')}" th:errors="*{accountId}"></p>
                 </div>
 
                 <div class="field">

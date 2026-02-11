@@ -1,6 +1,8 @@
 package dev.ccosta.aisha.application.entry;
 
+import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.category.CategoryService;
+import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
@@ -14,10 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntryService {
 
     private final EntryRepository entryRepository;
+    private final AccountService accountService;
     private final CategoryService categoryService;
 
-    public EntryService(EntryRepository entryRepository, CategoryService categoryService) {
+    public EntryService(EntryRepository entryRepository, AccountService accountService, CategoryService categoryService) {
         this.entryRepository = entryRepository;
+        this.accountService = accountService;
         this.categoryService = categoryService;
     }
 
@@ -33,15 +37,16 @@ public class EntryService {
     }
 
     @Transactional
-    public Entry create(Entry entry, Long categoryId, String newCategoryTitle) {
+    public Entry create(Entry entry, Long accountId, Long categoryId, String newCategoryTitle) {
+        entry.setAccount(resolveAccount(accountId));
         entry.setCategory(resolveCategory(categoryId, newCategoryTitle));
         return entryRepository.save(entry);
     }
 
     @Transactional
-    public Entry update(Long id, Entry updatedData, Long categoryId, String newCategoryTitle) {
+    public Entry update(Long id, Entry updatedData, Long accountId, Long categoryId, String newCategoryTitle) {
         Entry existing = findById(id);
-        existing.setAccount(updatedData.getAccount());
+        existing.setAccount(resolveAccount(accountId));
         existing.setMovementDate(updatedData.getMovementDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
         existing.setDescription(updatedData.getDescription());
@@ -78,5 +83,13 @@ public class EntryService {
         }
 
         return categoryService.findById(categoryId);
+    }
+
+    private Account resolveAccount(Long accountId) {
+        if (accountId == null) {
+            throw new IllegalArgumentException("Account must be informed");
+        }
+
+        return accountService.findById(accountId);
     }
 }

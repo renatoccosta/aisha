@@ -17,6 +17,7 @@
             <nav class="topnav">
                 <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
                 <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
+                <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
             </nav>
         </div>
         <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
@@ -67,7 +68,7 @@
                         <td>
                             <input type="checkbox" name="ids" th:value="${entry.id}" th:attr="aria-label=#{entries.list.table.selectItem}">
                         </td>
-                        <td th:text="${entry.account}"></td>
+                        <td th:text="${entry.account.title}"></td>
                         <td th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></td>
                         <td th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy')}"></td>
                         <td th:text="${entry.description}"></td>

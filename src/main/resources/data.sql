@@ -1,4 +1,5 @@
 DELETE FROM entries;
+DELETE FROM accounts;
 DELETE FROM categories;
 
 INSERT INTO categories (title, description, parent_id) VALUES
@@ -13,14 +14,19 @@ INSERT INTO categories (title, description, parent_id) VALUES
 ('Lazer', 'Gastos de lazer', NULL),
 ('Restaurantes', 'Refeições fora de casa', (SELECT id FROM categories WHERE title = 'Alimentação'));
 
-INSERT INTO entries (account, movement_date, settlement_date, description, category_id, notes, amount) VALUES
-('Conta Corrente Nubank', DATE '2026-02-01', DATE '2026-02-01', 'Salário mensal', (SELECT id FROM categories WHERE title = 'Renda'), 'Crédito de salário', 8500.00),
-('Conta Corrente Nubank', DATE '2026-02-02', DATE '2026-02-02', 'Aluguel', (SELECT id FROM categories WHERE title = 'Moradia'), 'Pagamento via TED', -2200.00),
-('Cartão Inter', DATE '2026-02-03', DATE '2026-02-03', 'Supermercado', (SELECT id FROM categories WHERE title = 'Alimentação'), 'Compra semanal', -485.73),
-('Conta Corrente Nubank', DATE '2026-02-04', DATE '2026-02-04', 'Internet residencial', (SELECT id FROM categories WHERE title = 'Serviços'), 'Fatura mensal', -129.90),
-('Conta Corrente Nubank', DATE '2026-02-05', DATE '2026-02-05', 'Energia elétrica', (SELECT id FROM categories WHERE title = 'Serviços'), 'Conta de luz', -214.66),
-('Carteira', DATE '2026-02-06', DATE '2026-02-06', 'Almoço', (SELECT id FROM categories WHERE title = 'Restaurantes'), 'Restaurante', -42.50),
-('Conta Corrente Nubank', DATE '2026-02-07', DATE '2026-02-07', 'Investimento CDB', (SELECT id FROM categories WHERE title = 'Investimentos'), 'Aplicação mensal', -1000.00),
-('Conta Corrente Nubank', DATE '2026-02-08', DATE '2026-02-08', 'Transferência recebida', (SELECT id FROM categories WHERE title = 'Transferências'), 'Reembolso de viagem', 320.00),
-('Cartão Inter', DATE '2026-02-09', DATE '2026-02-09', 'Combustível', (SELECT id FROM categories WHERE title = 'Transporte'), 'Abastecimento', -260.18),
-('Conta Corrente Nubank', DATE '2026-02-10', DATE '2026-02-10', 'Consulta médica', (SELECT id FROM categories WHERE title = 'Saúde'), 'Clínica particular', -180.00);
+INSERT INTO accounts (title, description) VALUES
+('Conta Corrente Nubank', 'Conta principal'),
+('Cartão Inter', 'Cartão para compras'),
+('Carteira', 'Dinheiro em espécie');
+
+INSERT INTO entries (account_id, movement_date, settlement_date, description, category_id, notes, amount) VALUES
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-01', DATE '2026-02-01', 'Salário mensal', (SELECT id FROM categories WHERE title = 'Renda'), 'Crédito de salário', 8500.00),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-02', DATE '2026-02-02', 'Aluguel', (SELECT id FROM categories WHERE title = 'Moradia'), 'Pagamento via TED', -2200.00),
+((SELECT id FROM accounts WHERE title = 'Cartão Inter'), DATE '2026-02-03', DATE '2026-02-03', 'Supermercado', (SELECT id FROM categories WHERE title = 'Alimentação'), 'Compra semanal', -485.73),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-04', DATE '2026-02-04', 'Internet residencial', (SELECT id FROM categories WHERE title = 'Serviços'), 'Fatura mensal', -129.90),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-05', DATE '2026-02-05', 'Energia elétrica', (SELECT id FROM categories WHERE title = 'Serviços'), 'Conta de luz', -214.66),
+((SELECT id FROM accounts WHERE title = 'Carteira'), DATE '2026-02-06', DATE '2026-02-06', 'Almoço', (SELECT id FROM categories WHERE title = 'Restaurantes'), 'Restaurante', -42.50),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-07', DATE '2026-02-07', 'Investimento CDB', (SELECT id FROM categories WHERE title = 'Investimentos'), 'Aplicação mensal', -1000.00),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-08', DATE '2026-02-08', 'Transferência recebida', (SELECT id FROM categories WHERE title = 'Transferências'), 'Reembolso de viagem', 320.00),
+((SELECT id FROM accounts WHERE title = 'Cartão Inter'), DATE '2026-02-09', DATE '2026-02-09', 'Combustível', (SELECT id FROM categories WHERE title = 'Transporte'), 'Abastecimento', -260.18),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-10', DATE '2026-02-10', 'Consulta médica', (SELECT id FROM categories WHERE title = 'Saúde'), 'Clínica particular', -180.00);

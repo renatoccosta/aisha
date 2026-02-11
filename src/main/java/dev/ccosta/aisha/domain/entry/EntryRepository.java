@@ -14,6 +14,8 @@ public interface EntryRepository {
 
     boolean existsByCategoryId(Long categoryId);
 
+    boolean existsByAccountId(Long accountId);
+
     void deleteById(Long id);
 
     void deleteByIds(Collection<Long> ids);

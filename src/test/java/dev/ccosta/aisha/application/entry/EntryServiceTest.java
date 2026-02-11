@@ -6,6 +6,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -29,6 +31,9 @@ class EntryServiceTest {
     private EntryRepository entryRepository;
 
     @Mock
+    private AccountService accountService;
+
+    @Mock
     private CategoryService categoryService;
 
     @InjectMocks
@@ -36,17 +41,19 @@ class EntryServiceTest {
 
     @Test
     void shouldUpdateExistingEntry() {
-        Entry existing = newEntry("Conta antiga", "Descricao antiga", new BigDecimal("10.00"));
-        Entry updatedData = newEntry("Conta nova", "Descricao nova", new BigDecimal("99.90"));
+        Entry existing = newEntry("Descricao antiga", new BigDecimal("10.00"));
+        Entry updatedData = newEntry("Descricao nova", new BigDecimal("99.90"));
+        Account account = newAccount("Conta nova");
         Category category = newCategory("Alimentação");
 
         when(entryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(accountService.findById(6L)).thenReturn(account);
         when(categoryService.findById(7L)).thenReturn(category);
         when(entryRepository.save(existing)).thenReturn(existing);
 
-        Entry updated = entryService.update(1L, updatedData, 7L, null);
+        Entry updated = entryService.update(1L, updatedData, 6L, 7L, null);
 
-        assertThat(updated.getAccount()).isEqualTo("Conta nova");
+        assertThat(updated.getAccount().getTitle()).isEqualTo("Conta nova");
         assertThat(updated.getDescription()).isEqualTo("Descricao nova");
         assertThat(updated.getAmount()).isEqualByComparingTo("99.90");
         assertThat(updated.getCategory().getTitle()).isEqualTo("Alimentação");
@@ -55,10 +62,10 @@ class EntryServiceTest {
 
     @Test
     void shouldFailUpdateWhenEntryDoesNotExist() {
-        Entry updatedData = newEntry("Conta", "Descricao", new BigDecimal("99.90"));
+        Entry updatedData = newEntry("Descricao", new BigDecimal("99.90"));
         when(entryRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> entryService.update(999L, updatedData, 7L, null))
+        assertThatThrownBy(() -> entryService.update(999L, updatedData, 6L, 7L, null))
             .isInstanceOf(EntryNotFoundException.class)
             .hasMessageContaining("999");
 
@@ -82,23 +89,45 @@ class EntryServiceTest {
     }
 
     @Test
+    void shouldCreateWithExistingAccountAndCategory() {
+        Entry input = newEntry("Descricao", new BigDecimal("15.00"));
+        Account account = newAccount("Conta Corrente");
+        Category category = newCategory("Categoria existente");
+
+        when(accountService.findById(2L)).thenReturn(account);
+        when(categoryService.findById(3L)).thenReturn(category);
+        when(entryRepository.save(input)).thenReturn(input);
+
+        Entry created = entryService.create(input, 2L, 3L, null);
+
+        assertThat(created.getAccount().getTitle()).isEqualTo("Conta Corrente");
+        assertThat(created.getCategory().getTitle()).isEqualTo("Categoria existente");
+        verify(accountService).findById(2L);
+        verify(categoryService).findById(3L);
+        verify(entryRepository).save(input);
+    }
+
+    @Test
     void shouldCreateMissingCategoryFromTitle() {
-        Entry input = newEntry("Conta", "Descricao", new BigDecimal("15.00"));
+        Entry input = newEntry("Descricao", new BigDecimal("15.00"));
+        Account account = newAccount("Conta Corrente");
         Category createdCategory = newCategory("Nova categoria");
 
+        when(accountService.findById(2L)).thenReturn(account);
         when(categoryService.findOrCreateByTitle("Nova categoria")).thenReturn(createdCategory);
         when(entryRepository.save(input)).thenReturn(input);
 
-        Entry created = entryService.create(input, null, "Nova categoria");
+        Entry created = entryService.create(input, 2L, null, "Nova categoria");
 
         assertThat(created.getCategory().getTitle()).isEqualTo("Nova categoria");
+        verify(accountService).findById(2L);
         verify(categoryService).findOrCreateByTitle("Nova categoria");
         verify(entryRepository).save(input);
     }
 
-    private Entry newEntry(String account, String description, BigDecimal amount) {
+    private Entry newEntry(String description, BigDecimal amount) {
         Entry entry = new Entry();
-        entry.setAccount(account);
+        entry.setAccount(newAccount("Conta padrão"));
         entry.setDescription(description);
         entry.setCategory(newCategory("Geral"));
         entry.setMovementDate(LocalDate.of(2026, 2, 11));
@@ -111,5 +140,11 @@ class EntryServiceTest {
         Category category = new Category();
         category.setTitle(title);
         return category;
+    }
+
+    private Account newAccount(String title) {
+        Account account = new Account();
+        account.setTitle(title);
+        return account;
     }
 }

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${mode == 'create'} ? #{accounts.form.title.create} : #{accounts.form.title.edit}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+</head>
+<body>
+<header class="topbar">
+    <div class="wrap brand">
+        <div class="brand-text">
+            <h1>AI$HA</h1>
+            <p th:text="#{accounts.form.header.subtitle}"></p>
+            <nav class="topnav">
+                <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
+                <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
+                <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
+            </nav>
+        </div>
+        <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
+    </div>
+</header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="${mode == 'create'} ? #{accounts.form.title.create} : #{accounts.form.title.edit}"></h2>
+
+        <form th:object="${form}" th:action="${mode == 'create'} ? @{/accounts} : @{/accounts/{id}(id=${accountId})}" method="post">
+            <div class="field">
+                <label for="title" th:text="#{accounts.form.field.title.required}"></label>
+                <input id="title" type="text" th:field="*{title}" maxlength="120" required>
+                <p class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+            </div>
+
+            <div class="field">
+                <label for="description" th:text="#{accounts.form.field.description}"></label>
+                <textarea id="description" th:field="*{description}" rows="4" maxlength="300"></textarea>
+                <p class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            </div>
+
+            <div class="actions-inline">
+                <button class="btn btn-primary" type="submit" th:text="${mode == 'create'} ? #{accounts.form.action.save} : #{accounts.form.action.update}"></button>
+                <a class="btn btn-secondary" th:href="@{/accounts}" th:text="#{accounts.form.action.cancel}"></a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

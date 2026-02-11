@@ -1,5 +1,6 @@
 package dev.ccosta.aisha.domain.entry;
 
+import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,8 +22,9 @@ public class Entry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "account", nullable = false, length = 120)
-    private String account;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
     @Column(name = "movement_date", nullable = false)
     private LocalDate movementDate;
@@ -47,11 +49,11 @@ public class Entry {
         return id;
     }
 
-    public String getAccount() {
+    public Account getAccount() {
         return account;
     }
 
-    public void setAccount(String account) {
+    public void setAccount(Account account) {
         this.account = account;
     }
 

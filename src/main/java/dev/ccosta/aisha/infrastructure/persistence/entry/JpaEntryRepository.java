@@ -7,8 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
 
-    @EntityGraph(attributePaths = {"category"})
+    @EntityGraph(attributePaths = {"account", "category"})
     List<Entry> findTop100ByOrderBySettlementDateDescIdDesc();
 
     boolean existsByCategoryId(Long categoryId);
+
+    boolean existsByAccountId(Long accountId);
 }

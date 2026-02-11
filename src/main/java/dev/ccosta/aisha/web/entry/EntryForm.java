@@ -6,17 +6,19 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 public class EntryForm {
 
-    @NotBlank(message = "{entryForm.account.notBlank}")
-    @Size(max = 120, message = "{entryForm.account.size}")
-    private String account;
+    @NotNull(message = "{entryForm.accountId.notNull}")
+    private Long accountId;
 
     @NotNull(message = "{entryForm.movementDate.notNull}")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate movementDate;
 
     @NotNull(message = "{entryForm.settlementDate.notNull}")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate settlementDate;
 
     @NotBlank(message = "{entryForm.description.notBlank}")
@@ -43,12 +45,12 @@ public class EntryForm {
         return form;
     }
 
-    public String getAccount() {
-        return account;
+    public Long getAccountId() {
+        return accountId;
     }
 
-    public void setAccount(String account) {
-        this.account = account;
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
     public LocalDate getMovementDate() {
