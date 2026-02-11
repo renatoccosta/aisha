@@ -5,9 +5,13 @@ spring:
     url: jdbc:hsqldb:mem:aisha
     username: sa
     password:
+  sql:
+    init:
+      mode: embedded
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
     open-in-view: false
   thymeleaf:
     cache: false
