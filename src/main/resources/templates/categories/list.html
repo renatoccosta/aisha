@@ -75,6 +75,44 @@
                 </table>
             </div>
         </form>
+
+        <div class="balances-block" th:if="${categoryBalanceReport != null}">
+            <h3 th:text="#{categories.balance.heading}"></h3>
+            <p
+                th:text="#{categories.balance.subtitle(${#temporals.format(categoryBalanceReport.startDate, 'dd/MM/yyyy')}, ${#temporals.format(categoryBalanceReport.endDate, 'dd/MM/yyyy')})}">
+            </p>
+
+            <div class="table-wrap">
+                <table class="balances-table">
+                    <thead>
+                    <tr>
+                        <th th:text="#{categories.balance.table.category}"></th>
+                        <th class="amount-cell" th:text="#{categories.balance.table.previousPeriod}"></th>
+                        <th class="amount-cell" th:each="bucket : ${categoryBalanceReport.buckets}">
+                            <span th:switch="${categoryBalanceReport.granularity.name()}">
+                                <span th:case="'YEAR'" th:text="${#temporals.format(bucket.startDate, 'yyyy')}"></span>
+                                <span th:case="'MONTH'" th:text="${#temporals.format(bucket.startDate, 'MM/yyyy')}"></span>
+                                <span th:case="*" th:text="${#temporals.format(bucket.startDate, 'dd/MM/yyyy')}"></span>
+                            </span>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(categoryBalanceReport.rows)}">
+                        <td class="empty" th:colspan="${2 + #lists.size(categoryBalanceReport.buckets)}" th:text="#{categories.balance.empty}"></td>
+                    </tr>
+                    <tr th:each="row : ${categoryBalanceReport.rows}">
+                        <td>
+                            <strong th:text="${row.categoryTitle}"></strong>
+                            <p class="cell-subtitle" th:if="${row.categoryDescription != null and !#strings.isEmpty(row.categoryDescription)}" th:text="${row.categoryDescription}"></p>
+                        </td>
+                        <td class="amount-cell" th:text="|R$ ${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}|"></td>
+                        <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="|R$ ${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}|"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </section>
 </main>
 </body>

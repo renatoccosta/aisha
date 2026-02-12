@@ -2,8 +2,10 @@ package dev.ccosta.aisha.web.category;
 
 import dev.ccosta.aisha.application.category.CategoryInUseException;
 import dev.ccosta.aisha.application.category.CategoryNotFoundException;
+import dev.ccosta.aisha.application.category.CategoryBalanceReportService;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
+import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,20 +26,22 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final CategoryBalanceReportService categoryBalanceReportService;
 
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService, CategoryBalanceReportService categoryBalanceReportService) {
         this.categoryService = categoryService;
+        this.categoryBalanceReportService = categoryBalanceReportService;
     }
 
     @GetMapping
-    public String list(Model model) {
-        fillListing(model);
+    public String list(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
+        fillListing(model, globalDateFilter);
         return "categories/list";
     }
 
     @GetMapping("/fragments/table")
-    public String table(Model model) {
-        fillListing(model);
+    public String table(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
+        fillListing(model, globalDateFilter);
         return "categories/list :: table";
     }
 
@@ -93,7 +97,7 @@ public class CategoryController {
     public String delete(@PathVariable Long id, HttpServletRequest request, Model model) {
         categoryService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, null);
             return "categories/list :: table";
         }
         return "redirect:/categories";
@@ -107,7 +111,7 @@ public class CategoryController {
     ) {
         categoryService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, null);
             return "categories/list :: table";
         }
         return "redirect:/categories";
@@ -116,7 +120,7 @@ public class CategoryController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @org.springframework.web.bind.annotation.ExceptionHandler({CategoryInUseException.class, IllegalArgumentException.class})
     public String handleInUse(HttpServletRequest request, Model model) {
-        fillListing(model);
+        fillListing(model, null);
         model.addAttribute("hasError", true);
         if (isHtmx(request)) {
             return "categories/list :: table";
@@ -130,8 +134,25 @@ public class CategoryController {
         return "errors/404";
     }
 
-    private void fillListing(Model model) {
-        model.addAttribute("categories", categoryService.listAllOrdered());
+    private void fillListing(Model model, DateFilterState globalDateFilter) {
+        List<Category> categories = categoryService.listAllOrdered();
+        model.addAttribute("categories", categories);
+
+        DateFilterState effectiveFilter = globalDateFilter != null
+            ? globalDateFilter
+            : (DateFilterState) model.getAttribute("globalDateFilter");
+        if (effectiveFilter == null) {
+            return;
+        }
+
+        model.addAttribute(
+            "categoryBalanceReport",
+            categoryBalanceReportService.buildReport(
+                categories,
+                effectiveFilter.getStartDate(),
+                effectiveFilter.getEndDate()
+            )
+        );
     }
 
     private void fillParentOptions(Model model, Long currentCategoryId) {
