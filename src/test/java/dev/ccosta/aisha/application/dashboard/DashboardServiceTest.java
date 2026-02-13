@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import java.math.BigDecimal;
@@ -154,9 +155,58 @@ class DashboardServiceTest {
         assertThat(evolution.points().get(2).expenses()).isEqualByComparingTo("10.00");
     }
 
+    @Test
+    void shouldBuildExpenseCategoryBreakdownWithTopFiveAndOthers() {
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 2, 28))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 2, 1), "-100.00", "Moradia"),
+            newEntry(LocalDate.of(2026, 2, 2), "-80.00", "Alimentação"),
+            newEntry(LocalDate.of(2026, 2, 3), "-60.00", "Transporte"),
+            newEntry(LocalDate.of(2026, 2, 4), "-40.00", "Saúde"),
+            newEntry(LocalDate.of(2026, 2, 5), "-30.00", "Educação"),
+            newEntry(LocalDate.of(2026, 2, 6), "-20.00", "Lazer"),
+            newEntry(LocalDate.of(2026, 2, 7), "-10.00", "Serviços"),
+            newEntry(LocalDate.of(2026, 2, 7), "25.00", "Salário")
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
+            LocalDate.of(2026, 2, 1),
+            LocalDate.of(2026, 2, 28)
+        );
+
+        assertThat(breakdown.items()).hasSize(6);
+        assertThat(breakdown.items().get(0).categoryName()).isEqualTo("Moradia");
+        assertThat(breakdown.items().get(0).amount()).isEqualByComparingTo("100.00");
+        assertThat(breakdown.items().get(4).categoryName()).isEqualTo("Educação");
+        assertThat(breakdown.items().get(5).others()).isTrue();
+        assertThat(breakdown.items().get(5).amount()).isEqualByComparingTo("30.00");
+    }
+
+    @Test
+    void shouldReturnOnlyExistingCategoriesWhenLessThanFive() {
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 10), "-12.00", "Casa"),
+            newEntry(LocalDate.of(2026, 1, 11), "-8.00", "Transporte")
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31)
+        );
+
+        assertThat(breakdown.items()).hasSize(2);
+        assertThat(breakdown.items().get(0).categoryName()).isEqualTo("Casa");
+        assertThat(breakdown.items().get(0).others()).isFalse();
+        assertThat(breakdown.items().get(1).categoryName()).isEqualTo("Transporte");
+    }
+
     private Entry newEntry(LocalDate settlementDate, String amount) {
+        return newEntry(settlementDate, amount, "Geral");
+    }
+
+    private Entry newEntry(LocalDate settlementDate, String amount, String categoryName) {
         Entry entry = new Entry();
         entry.setAccount(newAccount());
+        entry.setCategory(newCategory(categoryName));
         entry.setSettlementDate(settlementDate);
         entry.setAmount(new BigDecimal(amount));
         return entry;
@@ -166,5 +216,11 @@ class DashboardServiceTest {
         Account account = new Account();
         account.setTitle("Conta");
         return account;
+    }
+
+    private Category newCategory(String title) {
+        Category category = new Category();
+        category.setTitle(title);
+        return category;
     }
 }

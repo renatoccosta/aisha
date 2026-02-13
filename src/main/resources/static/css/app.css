@@ -323,6 +323,12 @@ textarea:focus {
   grid-template-columns: 1fr;
 }
 
+.dashboard-chart-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
 .summary-card {
   position: relative;
   overflow: hidden;
@@ -478,5 +484,11 @@ textarea:focus {
 
   .dashboard-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .dashboard-chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

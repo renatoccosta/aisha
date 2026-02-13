@@ -2,6 +2,8 @@ package dev.ccosta.aisha.web.dashboard.api;
 
 import dev.ccosta.aisha.application.dashboard.DashboardBalanceEvolution;
 import dev.ccosta.aisha.application.dashboard.DashboardBalancePoint;
+import dev.ccosta.aisha.application.dashboard.DashboardExpenseCategoryBreakdown;
+import dev.ccosta.aisha.application.dashboard.DashboardExpenseCategoryItem;
 import dev.ccosta.aisha.application.dashboard.DashboardMetric;
 import dev.ccosta.aisha.application.dashboard.DashboardRevenueExpenseEvolution;
 import dev.ccosta.aisha.application.dashboard.DashboardRevenueExpensePoint;
@@ -79,6 +81,26 @@ public class DashboardApiController {
         );
     }
 
+    @GetMapping("/expenses-by-category")
+    public DashboardExpenseCategoryBreakdownResponse expensesByCategory(HttpSession session) {
+        DateFilterState filter = dateFilterSessionService.getOrCreate(session);
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
+            filter.getStartDate(),
+            filter.getEndDate()
+        );
+
+        List<DashboardExpenseCategoryBreakdownResponse.DashboardExpenseCategoryItemResponse> items = breakdown.items()
+            .stream()
+            .map(this::toExpenseCategoryItem)
+            .toList();
+
+        return new DashboardExpenseCategoryBreakdownResponse(
+            breakdown.startDate(),
+            breakdown.endDate(),
+            items
+        );
+    }
+
     private DashboardSummaryResponse.DashboardMetricResponse toMetric(DashboardMetric metric) {
         return new DashboardSummaryResponse.DashboardMetricResponse(
             metric.currentValue(),
@@ -102,6 +124,16 @@ public class DashboardApiController {
             point.date(),
             point.revenues(),
             point.expenses()
+        );
+    }
+
+    private DashboardExpenseCategoryBreakdownResponse.DashboardExpenseCategoryItemResponse toExpenseCategoryItem(
+        DashboardExpenseCategoryItem item
+    ) {
+        return new DashboardExpenseCategoryBreakdownResponse.DashboardExpenseCategoryItemResponse(
+            item.categoryName(),
+            item.amount(),
+            item.others()
         );
     }
 }

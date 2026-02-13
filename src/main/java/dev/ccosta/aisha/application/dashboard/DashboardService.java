@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DashboardService {
+
+    private static final int EXPENSE_CATEGORY_LIMIT = 5;
 
     private final EntryRepository entryRepository;
 
@@ -140,6 +143,53 @@ public class DashboardService {
         }
 
         return new DashboardRevenueExpenseEvolution(startDate, endDate, granularity, points);
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardExpenseCategoryBreakdown buildExpenseCategoryBreakdown(LocalDate startDate, LocalDate endDate) {
+        validateRange(startDate, endDate);
+
+        List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
+        Map<String, BigDecimal> expensesByCategory = new HashMap<>();
+
+        for (Entry entry : entries) {
+            LocalDate settlementDate = entry.getSettlementDate();
+            if (!isInsideRange(settlementDate, startDate, endDate)) {
+                continue;
+            }
+
+            BigDecimal amount = entry.getAmount();
+            if (amount.signum() >= 0) {
+                continue;
+            }
+
+            String categoryName = entry.getCategory().getTitle();
+            expensesByCategory.merge(categoryName, amount.abs(), BigDecimal::add);
+        }
+
+        List<Map.Entry<String, BigDecimal>> sortedItems = expensesByCategory.entrySet()
+            .stream()
+            .sorted(Map.Entry.<String, BigDecimal>comparingByValue(Comparator.reverseOrder()))
+            .toList();
+
+        List<DashboardExpenseCategoryItem> items = new ArrayList<>();
+        BigDecimal othersTotal = BigDecimal.ZERO;
+
+        for (int i = 0; i < sortedItems.size(); i++) {
+            Map.Entry<String, BigDecimal> item = sortedItems.get(i);
+            if (i < EXPENSE_CATEGORY_LIMIT) {
+                items.add(new DashboardExpenseCategoryItem(item.getKey(), item.getValue(), false));
+                continue;
+            }
+
+            othersTotal = othersTotal.add(item.getValue());
+        }
+
+        if (othersTotal.signum() > 0) {
+            items.add(new DashboardExpenseCategoryItem(null, othersTotal, true));
+        }
+
+        return new DashboardExpenseCategoryBreakdown(startDate, endDate, items);
     }
 
     private DashboardMetric metric(BigDecimal currentValue, BigDecimal previousValue) {
