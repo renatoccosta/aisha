@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{dashboard.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+    <script th:src="@{/webjars/chart.js/4.5.1/dist/chart.umd.min.js}"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{dashboard.header.subtitle})}"></header>
+
+<main class="wrap dashboard-main">
+    <section class="dashboard-card-grid">
+        <article class="card summary-card summary-card-balance loading" id="summary-current-balance">
+            <div class="summary-card-head">
+                <span class="summary-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5v-9Zm2 0v1.25h14V7.5a.5.5 0 0 0-.5-.5h-13a.5.5 0 0 0-.5.5Zm0 3.25v5.75c0 .27.22.5.5.5h13a.5.5 0 0 0 .5-.5v-5.75H5Zm8 3a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z"/>
+                    </svg>
+                </span>
+                <h2 th:text="#{dashboard.card.currentBalance}"></h2>
+            </div>
+            <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+            <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+        </article>
+
+        <article class="card summary-card summary-card-expense loading" id="summary-total-expenses">
+            <div class="summary-card-head">
+                <span class="summary-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M4 4h16v2H4V4Zm0 7h11v2H4v-2Zm0 7h8v2H4v-2Zm14-8 4 4-4 4-1.4-1.4 1.6-1.6H13v-2h5.2l-1.6-1.6L18 10Z"/>
+                    </svg>
+                </span>
+                <h2 th:text="#{dashboard.card.totalExpenses}"></h2>
+            </div>
+            <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+            <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+        </article>
+
+        <article class="card summary-card summary-card-revenue loading" id="summary-total-revenues">
+            <div class="summary-card-head">
+                <span class="summary-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M4 4h16v2H4V4Zm0 7h8v2H4v-2Zm0 7h11v2H4v-2Zm10-8h5.2l-1.6-1.6L19 7l4 4-4 4-1.4-1.4 1.6-1.6H14v-2Z"/>
+                    </svg>
+                </span>
+                <h2 th:text="#{dashboard.card.totalRevenues}"></h2>
+            </div>
+            <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+            <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+        </article>
+    </section>
+
+    <section class="card chart-card loading" id="balance-chart-card">
+        <div class="chart-card-head">
+            <div>
+                <h2 th:text="#{dashboard.chart.title}"></h2>
+                <p th:text="#{dashboard.chart.subtitle}"></p>
+            </div>
+            <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
+                <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated" th:text="#{dashboard.chart.mode.accumulated}"></button>
+                <button class="btn btn-secondary" type="button" data-mode="period" th:text="#{dashboard.chart.mode.period}"></button>
+            </div>
+        </div>
+        <p class="chart-meta" id="balance-chart-meta" th:text="#{dashboard.loading}"></p>
+        <div class="chart-wrap">
+            <canvas id="balance-evolution-chart" th:attr="aria-label=#{dashboard.chart.title}"></canvas>
+        </div>
+    </section>
+</main>
+
+<script th:inline="javascript">
+    const i18n = {
+        loading: /*[[#{dashboard.loading}]]*/ "Carregando...",
+        unavailablePrevious: /*[[#{dashboard.variation.previousUnavailable}]]*/ "Sem base de comparação no período anterior",
+        variationUp: /*[[#{dashboard.variation.up}]]*/ "acima do período anterior",
+        variationDown: /*[[#{dashboard.variation.down}]]*/ "abaixo do período anterior",
+        variationStable: /*[[#{dashboard.variation.stable}]]*/ "igual ao período anterior",
+        chartMeta: /*[[#{dashboard.chart.meta}]]*/ "Período: {0} até {1} ({2})",
+        chartGranularityDay: /*[[#{dashboard.chart.granularity.day}]]*/ "diário",
+        chartGranularityMonth: /*[[#{dashboard.chart.granularity.month}]]*/ "mensal",
+        chartSeriesAccumulated: /*[[#{dashboard.chart.series.accumulated}]]*/ "Saldo acumulado",
+        chartSeriesPeriod: /*[[#{dashboard.chart.series.period}]]*/ "Movimentação no período",
+        chartLoadError: /*[[#{dashboard.chart.error}]]*/ "Não foi possível carregar o gráfico.",
+        summaryLoadError: /*[[#{dashboard.summary.error}]]*/ "Não foi possível carregar este indicador."
+    };
+
+    const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    const PERCENT_FORMATTER = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR");
+    const MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" });
+    let balanceChart = null;
+    let chartPayload = null;
+
+    function formatCurrency(value) {
+        return BRL_FORMATTER.format(Number(value ?? 0));
+    }
+
+    function formatDate(isoDate) {
+        return DATE_FORMATTER.format(new Date(`${isoDate}T00:00:00`));
+    }
+
+    function formatMonth(isoDate) {
+        return MONTH_FORMATTER.format(new Date(`${isoDate}T00:00:00`));
+    }
+
+    function replaceMeta(text, values) {
+        return text.replace("{0}", values[0]).replace("{1}", values[1]).replace("{2}", values[2]);
+    }
+
+    function renderMetric(cardId, metric) {
+        const card = document.getElementById(cardId);
+        if (!card) {
+            return;
+        }
+
+        card.classList.remove("loading");
+        const valueElement = card.querySelector('[data-role="value"]');
+        const variationElement = card.querySelector('[data-role="variation"]');
+
+        valueElement.textContent = formatCurrency(metric.currentValue);
+        valueElement.classList.remove("skeleton-line");
+
+        variationElement.classList.remove("skeleton-line", "variation-up", "variation-down", "variation-stable");
+        if (metric.variationPercent === null) {
+            variationElement.textContent = i18n.unavailablePrevious;
+            return;
+        }
+
+        const percent = Number(metric.variationPercent);
+        const absPercent = PERCENT_FORMATTER.format(Math.abs(percent));
+        if (percent > 0) {
+            variationElement.textContent = `+${absPercent}% ${i18n.variationUp}`;
+            variationElement.classList.add("variation-up");
+            return;
+        }
+        if (percent < 0) {
+            variationElement.textContent = `-${absPercent}% ${i18n.variationDown}`;
+            variationElement.classList.add("variation-down");
+            return;
+        }
+
+        variationElement.textContent = `0,00% ${i18n.variationStable}`;
+        variationElement.classList.add("variation-stable");
+    }
+
+    async function loadSummary() {
+        const cards = [
+            document.getElementById("summary-current-balance"),
+            document.getElementById("summary-total-expenses"),
+            document.getElementById("summary-total-revenues")
+        ];
+
+        try {
+            const response = await fetch("/api/dashboard/summary", { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("summary-failed");
+            }
+            const data = await response.json();
+            renderMetric("summary-current-balance", data.currentBalance);
+            renderMetric("summary-total-expenses", data.totalExpenses);
+            renderMetric("summary-total-revenues", data.totalRevenues);
+        } catch (error) {
+            cards.forEach((card) => {
+                if (!card) {
+                    return;
+                }
+                card.classList.remove("loading");
+                const valueElement = card.querySelector('[data-role="value"]');
+                const variationElement = card.querySelector('[data-role="variation"]');
+                valueElement.textContent = "-";
+                valueElement.classList.remove("skeleton-line");
+                variationElement.textContent = i18n.summaryLoadError;
+                variationElement.classList.remove("skeleton-line");
+            });
+        }
+    }
+
+    function renderChart(mode) {
+        if (!chartPayload) {
+            return;
+        }
+
+        const labels = chartPayload.points.map((point) => (
+            chartPayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
+        ));
+        const dataset = chartPayload.points.map((point) => (
+            mode === "period" ? Number(point.periodAmount) : Number(point.accumulatedBalance)
+        ));
+        const seriesLabel = mode === "period" ? i18n.chartSeriesPeriod : i18n.chartSeriesAccumulated;
+
+        const canvas = document.getElementById("balance-evolution-chart");
+        if (!canvas) {
+            return;
+        }
+
+        if (balanceChart) {
+            balanceChart.destroy();
+        }
+
+        balanceChart = new Chart(canvas, {
+            type: "line",
+            data: {
+                labels,
+                datasets: [{
+                    label: seriesLabel,
+                    data: dataset,
+                    borderColor: "#0b7fab",
+                    backgroundColor: "rgba(11, 127, 171, 0.14)",
+                    fill: true,
+                    tension: 0.25,
+                    pointRadius: 2.5,
+                    pointHoverRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: (value) => formatCurrency(value)
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function loadBalanceEvolution() {
+        const card = document.getElementById("balance-chart-card");
+        const meta = document.getElementById("balance-chart-meta");
+        if (!card || !meta) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/dashboard/balance-evolution", { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("chart-failed");
+            }
+            chartPayload = await response.json();
+            card.classList.remove("loading");
+
+            const granularityLabel = chartPayload.granularity === "MONTH"
+                ? i18n.chartGranularityMonth
+                : i18n.chartGranularityDay;
+
+            meta.textContent = replaceMeta(i18n.chartMeta, [
+                formatDate(chartPayload.startDate),
+                formatDate(chartPayload.endDate),
+                granularityLabel
+            ]);
+
+            renderChart("accumulated");
+        } catch (error) {
+            card.classList.remove("loading");
+            meta.textContent = i18n.chartLoadError;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadSummary();
+        loadBalanceEvolution();
+
+        const selectorButtons = Array.from(document.querySelectorAll(".chart-mode-selector [data-mode]"));
+        selectorButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                selectorButtons.forEach((candidate) => candidate.classList.remove("btn-active"));
+                button.classList.add("btn-active");
+                renderChart(button.dataset.mode);
+            });
+        });
+    });
+</script>
+</body>
+</html>
