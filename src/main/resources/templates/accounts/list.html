@@ -89,8 +89,9 @@
                         <th class="amount-cell" th:each="bucket : ${accountBalanceReport.buckets}">
                             <span th:switch="${accountBalanceReport.granularity.name()}">
                                 <span th:case="'YEAR'" th:text="${#temporals.format(bucket.startDate, 'yyyy')}"></span>
-                                <span th:case="'MONTH'" th:text="${#temporals.format(bucket.startDate, 'MM/yyyy')}"></span>
-                                <span th:case="*" th:text="${#temporals.format(bucket.startDate, 'dd/MM/yyyy')}"></span>
+                                <span th:case="'MONTH'" th:text="${#temporals.format(bucket.startDate, 'MMM')}"></span>
+                                <span th:case="'DAY'" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
+                                <span th:case="*" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
                             </span>
                         </th>
                     </tr>
@@ -102,10 +103,9 @@
                     <tr th:each="row : ${accountBalanceReport.rows}">
                         <td>
                             <strong th:text="${row.accountTitle}"></strong>
-                            <p class="cell-subtitle" th:if="${row.accountDescription != null and !#strings.isEmpty(row.accountDescription)}" th:text="${row.accountDescription}"></p>
                         </td>
-                        <td class="amount-cell" th:text="|R$ ${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}|"></td>
-                        <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="|R$ ${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}|"></td>
+                        <td class="amount-cell" th:text="${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
+                        <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
                     </tr>
                     </tbody>
                 </table>
