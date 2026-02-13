@@ -69,6 +69,19 @@
             <canvas id="balance-evolution-chart" th:attr="aria-label=#{dashboard.chart.title}"></canvas>
         </div>
     </section>
+
+    <section class="card chart-card loading" id="revenues-expenses-chart-card">
+        <div class="chart-card-head">
+            <div>
+                <h2 th:text="#{dashboard.revenueExpenseChart.title}"></h2>
+                <p th:text="#{dashboard.revenueExpenseChart.subtitle}"></p>
+            </div>
+        </div>
+        <p class="chart-meta" id="revenues-expenses-chart-meta" th:text="#{dashboard.loading}"></p>
+        <div class="chart-wrap">
+            <canvas id="revenues-expenses-chart" th:attr="aria-label=#{dashboard.revenueExpenseChart.title}"></canvas>
+        </div>
+    </section>
 </main>
 
 <script th:inline="javascript">
@@ -84,7 +97,10 @@
         chartSeriesAccumulated: /*[[#{dashboard.chart.series.accumulated}]]*/ "Saldo acumulado",
         chartSeriesPeriod: /*[[#{dashboard.chart.series.period}]]*/ "Movimentação no período",
         chartLoadError: /*[[#{dashboard.chart.error}]]*/ "Não foi possível carregar o gráfico.",
-        summaryLoadError: /*[[#{dashboard.summary.error}]]*/ "Não foi possível carregar este indicador."
+        summaryLoadError: /*[[#{dashboard.summary.error}]]*/ "Não foi possível carregar este indicador.",
+        revenueExpenseChartSeriesRevenue: /*[[#{dashboard.revenueExpenseChart.series.revenues}]]*/ "Receitas",
+        revenueExpenseChartSeriesExpense: /*[[#{dashboard.revenueExpenseChart.series.expenses}]]*/ "Despesas",
+        revenueExpenseChartLoadError: /*[[#{dashboard.revenueExpenseChart.error}]]*/ "Não foi possível carregar o gráfico de receitas vs despesas."
     };
 
     const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -93,6 +109,8 @@
     const MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" });
     let balanceChart = null;
     let chartPayload = null;
+    let revenueExpenseChart = null;
+    let revenueExpensePayload = null;
 
     function formatCurrency(value) {
         return BRL_FORMATTER.format(Number(value ?? 0));
@@ -271,9 +289,114 @@
         }
     }
 
+    function renderRevenueExpenseChart() {
+        if (!revenueExpensePayload) {
+            return;
+        }
+
+        const labels = revenueExpensePayload.points.map((point) => (
+            revenueExpensePayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
+        ));
+
+        const revenueData = revenueExpensePayload.points.map((point) => Number(point.revenues));
+        const expenseData = revenueExpensePayload.points.map((point) => Number(point.expenses));
+
+        const canvas = document.getElementById("revenues-expenses-chart");
+        if (!canvas) {
+            return;
+        }
+
+        if (revenueExpenseChart) {
+            revenueExpenseChart.destroy();
+        }
+
+        revenueExpenseChart = new Chart(canvas, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: i18n.revenueExpenseChartSeriesRevenue,
+                        data: revenueData,
+                        backgroundColor: "rgba(36, 138, 84, 0.85)",
+                        borderColor: "#1b7e4b",
+                        borderWidth: 1.2,
+                        stack: "cashflow"
+                    },
+                    {
+                        label: i18n.revenueExpenseChartSeriesExpense,
+                        data: expenseData,
+                        backgroundColor: "rgba(189, 64, 56, 0.85)",
+                        borderColor: "#9e2f2b",
+                        borderWidth: 1.2,
+                        stack: "cashflow"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
+                        ticks: {
+                            callback: (value) => formatCurrency(value)
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function loadRevenueExpenseEvolution() {
+        const card = document.getElementById("revenues-expenses-chart-card");
+        const meta = document.getElementById("revenues-expenses-chart-meta");
+        if (!card || !meta) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/dashboard/revenues-vs-expenses", { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("revenue-expense-chart-failed");
+            }
+            revenueExpensePayload = await response.json();
+            card.classList.remove("loading");
+
+            const granularityLabel = revenueExpensePayload.granularity === "MONTH"
+                ? i18n.chartGranularityMonth
+                : i18n.chartGranularityDay;
+
+            meta.textContent = replaceMeta(i18n.chartMeta, [
+                formatDate(revenueExpensePayload.startDate),
+                formatDate(revenueExpensePayload.endDate),
+                granularityLabel
+            ]);
+
+            renderRevenueExpenseChart();
+        } catch (error) {
+            card.classList.remove("loading");
+            meta.textContent = i18n.revenueExpenseChartLoadError;
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         loadSummary();
         loadBalanceEvolution();
+        loadRevenueExpenseEvolution();
 
         const selectorButtons = Array.from(document.querySelectorAll(".chart-mode-selector [data-mode]"));
         selectorButtons.forEach((button) => {

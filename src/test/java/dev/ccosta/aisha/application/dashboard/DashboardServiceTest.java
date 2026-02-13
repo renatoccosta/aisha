@@ -106,6 +106,54 @@ class DashboardServiceTest {
         assertThat(evolution.points().get(2).periodAmount()).isEqualByComparingTo("10.00");
     }
 
+    @Test
+    void shouldBuildDailyRevenueExpenseEvolutionForRangeShorterThanTwoMonths() {
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 3))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 1), "15.00"),
+            newEntry(LocalDate.of(2026, 1, 1), "-4.00"),
+            newEntry(LocalDate.of(2026, 1, 2), "-3.50")
+        ));
+
+        DashboardRevenueExpenseEvolution evolution = dashboardService.buildRevenueExpenseEvolution(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 3)
+        );
+
+        assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.DAY);
+        assertThat(evolution.points()).hasSize(3);
+        assertThat(evolution.points().get(0).revenues()).isEqualByComparingTo("15.00");
+        assertThat(evolution.points().get(0).expenses()).isEqualByComparingTo("4.00");
+        assertThat(evolution.points().get(1).revenues()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(evolution.points().get(1).expenses()).isEqualByComparingTo("3.50");
+        assertThat(evolution.points().get(2).revenues()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(evolution.points().get(2).expenses()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void shouldBuildMonthlyRevenueExpenseEvolutionForRangeOfTwoMonthsOrMore() {
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 3, 20))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 20), "100.00"),
+            newEntry(LocalDate.of(2026, 2, 5), "-25.00"),
+            newEntry(LocalDate.of(2026, 2, 20), "40.00"),
+            newEntry(LocalDate.of(2026, 3, 2), "-10.00")
+        ));
+
+        DashboardRevenueExpenseEvolution evolution = dashboardService.buildRevenueExpenseEvolution(
+            LocalDate.of(2026, 1, 15),
+            LocalDate.of(2026, 3, 20)
+        );
+
+        assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.MONTH);
+        assertThat(evolution.points()).hasSize(3);
+        assertThat(evolution.points().get(0).date()).isEqualTo(LocalDate.of(2026, 1, 1));
+        assertThat(evolution.points().get(0).revenues()).isEqualByComparingTo("100.00");
+        assertThat(evolution.points().get(0).expenses()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(evolution.points().get(1).revenues()).isEqualByComparingTo("40.00");
+        assertThat(evolution.points().get(1).expenses()).isEqualByComparingTo("25.00");
+        assertThat(evolution.points().get(2).revenues()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(evolution.points().get(2).expenses()).isEqualByComparingTo("10.00");
+    }
+
     private Entry newEntry(LocalDate settlementDate, String amount) {
         Entry entry = new Entry();
         entry.setAccount(newAccount());

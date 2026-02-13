@@ -106,6 +106,42 @@ public class DashboardService {
         return new DashboardBalanceEvolution(startDate, endDate, granularity, openingBalance, points);
     }
 
+    @Transactional(readOnly = true)
+    public DashboardRevenueExpenseEvolution buildRevenueExpenseEvolution(LocalDate startDate, LocalDate endDate) {
+        validateRange(startDate, endDate);
+
+        DashboardSeriesGranularity granularity = resolveGranularity(startDate, endDate);
+        List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
+        Map<LocalDate, BigDecimal> revenuesByBucket = new HashMap<>();
+        Map<LocalDate, BigDecimal> expensesByBucket = new HashMap<>();
+
+        for (Entry entry : entries) {
+            LocalDate settlementDate = entry.getSettlementDate();
+            if (!isInsideRange(settlementDate, startDate, endDate)) {
+                continue;
+            }
+
+            BigDecimal amount = entry.getAmount();
+            LocalDate bucketDate = normalizeBucketStart(settlementDate, granularity);
+            if (amount.signum() < 0) {
+                expensesByBucket.merge(bucketDate, amount.abs(), BigDecimal::add);
+            } else if (amount.signum() > 0) {
+                revenuesByBucket.merge(bucketDate, amount, BigDecimal::add);
+            }
+        }
+
+        List<DashboardRevenueExpensePoint> points = new ArrayList<>();
+        for (LocalDate bucketStart : buildBucketStarts(startDate, endDate, granularity)) {
+            points.add(new DashboardRevenueExpensePoint(
+                bucketStart,
+                revenuesByBucket.getOrDefault(bucketStart, BigDecimal.ZERO),
+                expensesByBucket.getOrDefault(bucketStart, BigDecimal.ZERO)
+            ));
+        }
+
+        return new DashboardRevenueExpenseEvolution(startDate, endDate, granularity, points);
+    }
+
     private DashboardMetric metric(BigDecimal currentValue, BigDecimal previousValue) {
         return new DashboardMetric(currentValue, previousValue, resolveVariationPercent(currentValue, previousValue));
     }

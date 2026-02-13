@@ -3,6 +3,8 @@ package dev.ccosta.aisha.web.dashboard.api;
 import dev.ccosta.aisha.application.dashboard.DashboardBalanceEvolution;
 import dev.ccosta.aisha.application.dashboard.DashboardBalancePoint;
 import dev.ccosta.aisha.application.dashboard.DashboardMetric;
+import dev.ccosta.aisha.application.dashboard.DashboardRevenueExpenseEvolution;
+import dev.ccosta.aisha.application.dashboard.DashboardRevenueExpensePoint;
 import dev.ccosta.aisha.application.dashboard.DashboardService;
 import dev.ccosta.aisha.application.dashboard.DashboardSummary;
 import dev.ccosta.aisha.web.timefilter.DateFilterSessionService;
@@ -56,6 +58,27 @@ public class DashboardApiController {
         );
     }
 
+    @GetMapping("/revenues-vs-expenses")
+    public DashboardRevenueExpenseEvolutionResponse revenuesVsExpenses(HttpSession session) {
+        DateFilterState filter = dateFilterSessionService.getOrCreate(session);
+        DashboardRevenueExpenseEvolution evolution = dashboardService.buildRevenueExpenseEvolution(
+            filter.getStartDate(),
+            filter.getEndDate()
+        );
+
+        List<DashboardRevenueExpenseEvolutionResponse.DashboardRevenueExpensePointResponse> points = evolution.points()
+            .stream()
+            .map(this::toRevenueExpensePoint)
+            .toList();
+
+        return new DashboardRevenueExpenseEvolutionResponse(
+            evolution.startDate(),
+            evolution.endDate(),
+            evolution.granularity(),
+            points
+        );
+    }
+
     private DashboardSummaryResponse.DashboardMetricResponse toMetric(DashboardMetric metric) {
         return new DashboardSummaryResponse.DashboardMetricResponse(
             metric.currentValue(),
@@ -69,6 +92,16 @@ public class DashboardApiController {
             point.date(),
             point.periodAmount(),
             point.accumulatedBalance()
+        );
+    }
+
+    private DashboardRevenueExpenseEvolutionResponse.DashboardRevenueExpensePointResponse toRevenueExpensePoint(
+        DashboardRevenueExpensePoint point
+    ) {
+        return new DashboardRevenueExpenseEvolutionResponse.DashboardRevenueExpensePointResponse(
+            point.date(),
+            point.revenues(),
+            point.expenses()
         );
     }
 }
