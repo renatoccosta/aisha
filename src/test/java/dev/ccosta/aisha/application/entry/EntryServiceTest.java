@@ -131,12 +131,34 @@ class EntryServiceTest {
         LocalDate endDate = LocalDate.of(2026, 2, 28);
         List<Entry> expected = List.of(newEntry("Descricao", new BigDecimal("1.00")));
 
-        when(entryRepository.listTop100MostRecentBySettlementDateBetween(startDate, endDate)).thenReturn(expected);
+        when(entryRepository.listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null)).thenReturn(expected);
 
         List<Entry> result = entryService.listTop100MostRecentBySettlementDateBetween(startDate, endDate);
 
         assertThat(result).isEqualTo(expected);
-        verify(entryRepository).listTop100MostRecentBySettlementDateBetween(startDate, endDate);
+        verify(entryRepository).listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null);
+    }
+
+    @Test
+    void shouldListEntriesWithinSettlementDateRangeByAccountAndCategory() {
+        LocalDate startDate = LocalDate.of(2026, 2, 1);
+        LocalDate endDate = LocalDate.of(2026, 2, 28);
+        Long accountId = 10L;
+        Long categoryId = 20L;
+        List<Entry> expected = List.of(newEntry("Descricao", new BigDecimal("1.00")));
+
+        when(entryRepository.listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId))
+            .thenReturn(expected);
+
+        List<Entry> result = entryService.listTop100MostRecentBySettlementDateBetweenAndFilters(
+            startDate,
+            endDate,
+            accountId,
+            categoryId
+        );
+
+        assertThat(result).isEqualTo(expected);
+        verify(entryRepository).listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId);
     }
 
     @Test
@@ -147,7 +169,7 @@ class EntryServiceTest {
         assertThatThrownBy(() -> entryService.listTop100MostRecentBySettlementDateBetween(startDate, endDate))
             .isInstanceOf(IllegalArgumentException.class);
 
-        verify(entryRepository, never()).listTop100MostRecentBySettlementDateBetween(startDate, endDate);
+        verify(entryRepository, never()).listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null);
     }
 
     private Entry newEntry(String description, BigDecimal amount) {

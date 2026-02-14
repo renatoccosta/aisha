@@ -28,6 +28,41 @@ public class EntryRepositoryAdapter implements EntryRepository {
     }
 
     @Override
+    public List<Entry> listTop100MostRecentBySettlementDateBetweenAndFilters(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long accountId,
+        Long categoryId
+    ) {
+        if (accountId != null && categoryId != null) {
+            return jpaEntryRepository.findTop100BySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(
+                startDate,
+                endDate,
+                accountId,
+                categoryId
+            );
+        }
+
+        if (accountId != null) {
+            return jpaEntryRepository.findTop100BySettlementDateBetweenAndAccountIdOrderBySettlementDateDescIdDesc(
+                startDate,
+                endDate,
+                accountId
+            );
+        }
+
+        if (categoryId != null) {
+            return jpaEntryRepository.findTop100BySettlementDateBetweenAndCategoryIdOrderBySettlementDateDescIdDesc(
+                startDate,
+                endDate,
+                categoryId
+            );
+        }
+
+        return jpaEntryRepository.findTop100BySettlementDateBetweenOrderBySettlementDateDescIdDesc(startDate, endDate);
+    }
+
+    @Override
     public List<Entry> listAllBySettlementDateLessThanEqual(LocalDate endDate) {
         return jpaEntryRepository.findBySettlementDateLessThanEqualOrderBySettlementDateAscIdAsc(endDate);
     }

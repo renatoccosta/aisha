@@ -33,13 +33,23 @@ public class EntryService {
 
     @Transactional(readOnly = true)
     public List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate) {
+        return listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Entry> listTop100MostRecentBySettlementDateBetweenAndFilters(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long accountId,
+        Long categoryId
+    ) {
         if (startDate == null || endDate == null) {
             throw new IllegalArgumentException("Start and end dates are required");
         }
         if (endDate.isBefore(startDate)) {
             throw new IllegalArgumentException("End date must be greater than or equal to start date");
         }
-        return entryRepository.listTop100MostRecentBySettlementDateBetween(startDate, endDate);
+        return entryRepository.listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId);
     }
 
     @Transactional(readOnly = true)

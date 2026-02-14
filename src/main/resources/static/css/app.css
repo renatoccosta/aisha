@@ -169,6 +169,14 @@ p {
   margin-bottom: 0.8rem;
 }
 
+.list-filters {
+  margin-bottom: 0.8rem;
+}
+
+.list-filters .field {
+  margin-top: 0;
+}
+
 .table-wrap {
   width: 100%;
   overflow-x: auto;

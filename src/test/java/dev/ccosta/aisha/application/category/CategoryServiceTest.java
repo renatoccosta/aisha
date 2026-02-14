@@ -118,6 +118,30 @@ class CategoryServiceTest {
         assertThat(idsCaptor.getValue()).containsExactly(1L, 2L, 3L);
     }
 
+    @Test
+    void shouldListHierarchyOptionsSortedAlphabeticallyByLevel() {
+        Category rootZ = newCategory(1L, "Zebra");
+        Category rootA = newCategory(2L, "Alimentacao");
+        Category childA2 = newCategory(3L, "Mercado");
+        childA2.setParent(rootA);
+        Category childA1 = newCategory(4L, "Academia");
+        childA1.setParent(rootA);
+        Category grandChild = newCategory(5L, "Pilates");
+        grandChild.setParent(childA1);
+
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootZ, childA2, grandChild, rootA, childA1));
+
+        List<CategoryOption> options = categoryService.listHierarchyOptions();
+
+        assertThat(options).containsExactly(
+            new CategoryOption(2L, "Alimentacao"),
+            new CategoryOption(4L, "- Academia"),
+            new CategoryOption(5L, "- - Pilates"),
+            new CategoryOption(3L, "- Mercado"),
+            new CategoryOption(1L, "Zebra")
+        );
+    }
+
     private Category newCategory(String title) {
         Category category = new Category();
         category.setTitle(title);
