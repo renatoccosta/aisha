@@ -100,23 +100,80 @@ body {
   flex-wrap: wrap;
 }
 
-.period-filter-row-custom {
-  align-items: end;
-}
-
 .period-filter-label {
   font-weight: 600;
   color: var(--text);
 }
 
-.period-filter-summary {
-  margin: 0;
-  font-weight: 600;
+.period-filter-presets {
+  justify-content: flex-end;
+}
+
+.period-filter-row-main {
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.period-filter-nav {
+  flex: 0 0 auto;
+}
+
+.btn-icon {
+  min-width: 2.5rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.period-filter-inputs-wrap {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1 1 460px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .period-filter-inputs {
   min-width: 160px;
-  flex: 1 1 160px;
+  flex: 1 1 220px;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.period-filter-inputs label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.period-filter-inputs input {
+  flex: 1 1 auto;
+}
+
+.period-filter-apply {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .period-filter-row-main {
+    align-items: stretch;
+  }
+
+  .period-filter-nav {
+    width: 100%;
+  }
+
+  .period-filter-nav .btn {
+    flex: 1 1 0;
+  }
+
+  .period-filter-inputs-wrap {
+    flex: 1 1 100%;
+  }
+
+  .period-filter-apply {
+    width: 100%;
+  }
 }
 
 .btn-active {

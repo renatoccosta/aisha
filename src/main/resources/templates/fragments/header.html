@@ -22,7 +22,7 @@
 
             <div class="period-filter-row">
                 <span class="period-filter-label" th:text="#{dateFilter.label}"></span>
-                <div class="actions-inline">
+                <div class="actions-inline period-filter-presets">
                     <button
                         class="btn btn-secondary"
                         type="submit"
@@ -50,29 +50,28 @@
                 </div>
             </div>
 
-            <div class="period-filter-row period-filter-row-nav">
-                <div class="actions-inline">
-                    <button class="btn btn-secondary" type="submit" name="action" value="GO_PREVIOUS" th:text="#{dateFilter.nav.previous}"></button>
-                    <button class="btn btn-secondary" type="submit" name="action" value="GO_CURRENT" th:text="#{dateFilter.nav.current}"></button>
-                    <button class="btn btn-secondary" type="submit" name="action" value="GO_NEXT" th:text="#{dateFilter.nav.next}"></button>
+            <div class="period-filter-row period-filter-row-main">
+                <div class="actions-inline period-filter-nav">
+                    <button class="btn btn-secondary btn-icon" type="submit" name="action" value="GO_PREVIOUS">
+                        <span aria-hidden="true">&#8592;</span>
+                        <span class="sr-only" th:text="#{dateFilter.nav.previous}"></span>
+                    </button>
+                    <button class="btn btn-secondary btn-icon" type="submit" name="action" value="GO_NEXT">
+                        <span aria-hidden="true">&#8594;</span>
+                        <span class="sr-only" th:text="#{dateFilter.nav.next}"></span>
+                    </button>
                 </div>
-                <p class="period-filter-summary">
-                    <span th:text="${#temporals.format(globalDateFilter.startDate, 'dd/MM/yyyy')}"></span>
-                    <span> - </span>
-                    <span th:text="${#temporals.format(globalDateFilter.endDate, 'dd/MM/yyyy')}"></span>
-                </p>
-            </div>
-
-            <div class="period-filter-row period-filter-row-custom">
-                <div class="period-filter-inputs">
-                    <label for="date-filter-start" th:text="#{dateFilter.field.start}"></label>
-                    <input id="date-filter-start" type="date" name="startDate" th:value="${globalDateFilter.startDate}">
+                <div class="period-filter-inputs-wrap">
+                    <div class="period-filter-inputs">
+                        <label for="date-filter-start" th:text="#{dateFilter.field.start}"></label>
+                        <input id="date-filter-start" type="date" name="startDate" th:value="${globalDateFilter.startDate}">
+                    </div>
+                    <div class="period-filter-inputs">
+                        <label for="date-filter-end" th:text="#{dateFilter.field.end}"></label>
+                        <input id="date-filter-end" type="date" name="endDate" th:value="${globalDateFilter.endDate}">
+                    </div>
                 </div>
-                <div class="period-filter-inputs">
-                    <label for="date-filter-end" th:text="#{dateFilter.field.end}"></label>
-                    <input id="date-filter-end" type="date" name="endDate" th:value="${globalDateFilter.endDate}">
-                </div>
-                <button class="btn btn-primary" type="submit" name="action" value="APPLY_CUSTOM" th:text="#{dateFilter.action.apply}"></button>
+                <button class="btn btn-primary period-filter-apply" type="submit" name="action" value="APPLY_CUSTOM" th:text="#{dateFilter.action.apply}"></button>
             </div>
         </form>
     </div>
