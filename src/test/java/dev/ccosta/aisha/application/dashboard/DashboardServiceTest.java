@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
+import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import java.math.BigDecimal;
@@ -21,6 +22,9 @@ class DashboardServiceTest {
 
     @Mock
     private EntryRepository entryRepository;
+
+    @Mock
+    private CategoryRepository categoryRepository;
 
     @InjectMocks
     private DashboardService dashboardService;
@@ -190,47 +194,112 @@ class DashboardServiceTest {
     }
 
     @Test
-    void shouldBuildExpenseCategoryBreakdownWithTopFiveAndOthers() {
+    void shouldBuildExpenseCategoryBreakdownForRootCategories() {
+        Category rootHousing = newCategory(1L, "Moradia", null);
+        Category rootFood = newCategory(2L, "Alimentação", null);
+        Category rootTransport = newCategory(3L, "Transporte", null);
+        Category rootHealth = newCategory(4L, "Saúde", null);
+        Category rootEducation = newCategory(5L, "Educação", null);
+        Category rootLeisure = newCategory(6L, "Lazer", null);
+        Category rootServices = newCategory(7L, "Serviços", null);
+        Category subMarket = newCategory(8L, "Mercado", rootFood);
+        Category subRestaurant = newCategory(9L, "Restaurante", rootFood);
+
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(
+            rootHousing,
+            rootFood,
+            rootTransport,
+            rootHealth,
+            rootEducation,
+            rootLeisure,
+            rootServices,
+            subMarket,
+            subRestaurant
+        ));
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 2, 28))).thenReturn(List.of(
-            newEntry(LocalDate.of(2026, 2, 1), "-100.00", "Moradia"),
-            newEntry(LocalDate.of(2026, 2, 2), "-80.00", "Alimentação"),
-            newEntry(LocalDate.of(2026, 2, 3), "-60.00", "Transporte"),
-            newEntry(LocalDate.of(2026, 2, 4), "-40.00", "Saúde"),
-            newEntry(LocalDate.of(2026, 2, 5), "-30.00", "Educação"),
-            newEntry(LocalDate.of(2026, 2, 6), "-20.00", "Lazer"),
-            newEntry(LocalDate.of(2026, 2, 7), "-10.00", "Serviços"),
-            newEntry(LocalDate.of(2026, 2, 7), "25.00", "Salário")
+            newEntry(LocalDate.of(2026, 2, 1), "-100.00", rootHousing),
+            newEntry(LocalDate.of(2026, 2, 2), "-80.00", subMarket),
+            newEntry(LocalDate.of(2026, 2, 3), "-20.00", subRestaurant),
+            newEntry(LocalDate.of(2026, 2, 4), "-60.00", rootTransport),
+            newEntry(LocalDate.of(2026, 2, 5), "-40.00", rootHealth),
+            newEntry(LocalDate.of(2026, 2, 6), "-30.00", rootEducation),
+            newEntry(LocalDate.of(2026, 2, 7), "-20.00", rootLeisure),
+            newEntry(LocalDate.of(2026, 2, 8), "-10.00", rootServices)
         ));
 
         DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
             LocalDate.of(2026, 2, 1),
-            LocalDate.of(2026, 2, 28)
+            LocalDate.of(2026, 2, 28),
+            null
         );
 
-        assertThat(breakdown.items()).hasSize(6);
+        assertThat(breakdown.currentParentCategoryId()).isNull();
+        assertThat(breakdown.drillUpParentCategoryId()).isNull();
+        assertThat(breakdown.items()).hasSize(7);
         assertThat(breakdown.items().get(0).categoryName()).isEqualTo("Moradia");
         assertThat(breakdown.items().get(0).amount()).isEqualByComparingTo("100.00");
-        assertThat(breakdown.items().get(4).categoryName()).isEqualTo("Educação");
-        assertThat(breakdown.items().get(5).others()).isTrue();
-        assertThat(breakdown.items().get(5).amount()).isEqualByComparingTo("30.00");
+        assertThat(breakdown.items().get(1).categoryName()).isEqualTo("Alimentação");
+        assertThat(breakdown.items().get(1).amount()).isEqualByComparingTo("100.00");
+        assertThat(breakdown.items().get(1).hasChildren()).isTrue();
     }
 
     @Test
     void shouldReturnOnlyExistingCategoriesWhenLessThanFive() {
+        Category rootHouse = newCategory(10L, "Casa", null);
+        Category rootTransport = newCategory(11L, "Transporte", null);
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootHouse, rootTransport));
+
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
-            newEntry(LocalDate.of(2026, 1, 10), "-12.00", "Casa"),
-            newEntry(LocalDate.of(2026, 1, 11), "-8.00", "Transporte")
+            newEntry(LocalDate.of(2026, 1, 10), "-12.00", rootHouse),
+            newEntry(LocalDate.of(2026, 1, 11), "-8.00", rootTransport)
         ));
 
         DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
             LocalDate.of(2026, 1, 1),
-            LocalDate.of(2026, 1, 31)
+            LocalDate.of(2026, 1, 31),
+            null
         );
 
         assertThat(breakdown.items()).hasSize(2);
         assertThat(breakdown.items().get(0).categoryName()).isEqualTo("Casa");
-        assertThat(breakdown.items().get(0).others()).isFalse();
+        assertThat(breakdown.items().get(0).hasChildren()).isFalse();
         assertThat(breakdown.items().get(1).categoryName()).isEqualTo("Transporte");
+    }
+
+    @Test
+    void shouldDrillDownIntoSelectedRootCategory() {
+        Category rootFood = newCategory(20L, "Alimentação", null);
+        Category rootHealth = newCategory(21L, "Saúde", null);
+        Category subMarket = newCategory(22L, "Mercado", rootFood);
+        Category subRestaurant = newCategory(23L, "Restaurante", rootFood);
+        Category subPharmacy = newCategory(24L, "Farmácia", rootHealth);
+
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(
+            rootFood,
+            rootHealth,
+            subMarket,
+            subRestaurant,
+            subPharmacy
+        ));
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 3, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 3, 1), "-50.00", subMarket),
+            newEntry(LocalDate.of(2026, 3, 2), "-30.00", subRestaurant),
+            newEntry(LocalDate.of(2026, 3, 3), "-20.00", subPharmacy)
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
+            LocalDate.of(2026, 3, 1),
+            LocalDate.of(2026, 3, 31),
+            rootFood.getId()
+        );
+
+        assertThat(breakdown.currentParentCategoryId()).isEqualTo(rootFood.getId());
+        assertThat(breakdown.currentParentCategoryName()).isEqualTo("Alimentação");
+        assertThat(breakdown.drillUpParentCategoryId()).isNull();
+        assertThat(breakdown.items()).hasSize(2);
+        assertThat(breakdown.items().get(0).categoryName()).isEqualTo("Mercado");
+        assertThat(breakdown.items().get(0).amount()).isEqualByComparingTo("50.00");
+        assertThat(breakdown.items().get(1).categoryName()).isEqualTo("Restaurante");
     }
 
     private Entry newEntry(LocalDate settlementDate, String amount) {
@@ -238,9 +307,13 @@ class DashboardServiceTest {
     }
 
     private Entry newEntry(LocalDate settlementDate, String amount, String categoryName) {
+        return newEntry(settlementDate, amount, newCategory(999L, categoryName, null));
+    }
+
+    private Entry newEntry(LocalDate settlementDate, String amount, Category category) {
         Entry entry = new Entry();
         entry.setAccount(newAccount());
-        entry.setCategory(newCategory(categoryName));
+        entry.setCategory(category);
         entry.setSettlementDate(settlementDate);
         entry.setAmount(new BigDecimal(amount));
         return entry;
@@ -252,9 +325,21 @@ class DashboardServiceTest {
         return account;
     }
 
-    private Category newCategory(String title) {
+    private Category newCategory(Long id, String title, Category parent) {
         Category category = new Category();
         category.setTitle(title);
+        category.setParent(parent);
+        setId(category, id, Category.class);
         return category;
+    }
+
+    private <T> void setId(T target, Long id, Class<T> type) {
+        try {
+            var idField = type.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(target, id);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

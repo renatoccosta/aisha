@@ -1,5 +1,7 @@
 package dev.ccosta.aisha.application.dashboard;
 
+import dev.ccosta.aisha.domain.category.Category;
+import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import java.math.BigDecimal;
@@ -16,12 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DashboardService {
 
-    private static final int EXPENSE_CATEGORY_LIMIT = 5;
-
     private final EntryRepository entryRepository;
+    private final CategoryRepository categoryRepository;
 
-    public DashboardService(EntryRepository entryRepository) {
+    public DashboardService(EntryRepository entryRepository, CategoryRepository categoryRepository) {
         this.entryRepository = entryRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Transactional(readOnly = true)
@@ -152,11 +154,28 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
-    public DashboardExpenseCategoryBreakdown buildExpenseCategoryBreakdown(LocalDate startDate, LocalDate endDate) {
+    public DashboardExpenseCategoryBreakdown buildExpenseCategoryBreakdown(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long parentCategoryId
+    ) {
         validateRange(startDate, endDate);
 
+        List<Category> categories = categoryRepository.findAllOrdered();
+        Map<Long, Category> categoryById = new HashMap<>();
+        Map<Long, List<Long>> childrenByParentId = new HashMap<>();
+        for (Category category : categories) {
+            categoryById.put(category.getId(), category);
+            Long key = parentIdOf(category);
+            childrenByParentId.computeIfAbsent(key, ignored -> new ArrayList<>()).add(category.getId());
+        }
+
+        if (parentCategoryId != null && !categoryById.containsKey(parentCategoryId)) {
+            throw new IllegalArgumentException("Parent category was not found");
+        }
+
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
-        Map<String, BigDecimal> expensesByCategory = new HashMap<>();
+        Map<Long, BigDecimal> expenseByCategoryId = new HashMap<>();
 
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
@@ -169,33 +188,31 @@ public class DashboardService {
                 continue;
             }
 
-            String categoryName = entry.getCategory().getTitle();
-            expensesByCategory.merge(categoryName, amount.abs(), BigDecimal::add);
+            Long categoryId = entry.getCategory().getId();
+            expenseByCategoryId.merge(categoryId, amount.abs(), BigDecimal::add);
         }
 
-        List<Map.Entry<String, BigDecimal>> sortedItems = expensesByCategory.entrySet()
+        Map<Long, BigDecimal> subtreeExpenseByCategory = new HashMap<>();
+        for (Long categoryId : categoryById.keySet()) {
+            subtreeExpense(categoryId, childrenByParentId, expenseByCategoryId, subtreeExpenseByCategory);
+        }
+
+        List<Long> visibleCategoryIds = childrenByParentId.getOrDefault(parentCategoryId, List.of());
+        List<DashboardExpenseCategoryItem> items = visibleCategoryIds
             .stream()
-            .sorted(Map.Entry.<String, BigDecimal>comparingByValue(Comparator.reverseOrder()))
+            .map(categoryId -> toItem(categoryId, categoryById, childrenByParentId, subtreeExpenseByCategory))
+            .filter(item -> item.amount().signum() > 0)
+            .sorted(Comparator.comparing(DashboardExpenseCategoryItem::amount).reversed())
             .toList();
 
-        List<DashboardExpenseCategoryItem> items = new ArrayList<>();
-        BigDecimal othersTotal = BigDecimal.ZERO;
-
-        for (int i = 0; i < sortedItems.size(); i++) {
-            Map.Entry<String, BigDecimal> item = sortedItems.get(i);
-            if (i < EXPENSE_CATEGORY_LIMIT) {
-                items.add(new DashboardExpenseCategoryItem(item.getKey(), item.getValue(), false));
-                continue;
-            }
-
-            othersTotal = othersTotal.add(item.getValue());
-        }
-
-        if (othersTotal.signum() > 0) {
-            items.add(new DashboardExpenseCategoryItem(null, othersTotal, true));
-        }
-
-        return new DashboardExpenseCategoryBreakdown(startDate, endDate, items);
+        return new DashboardExpenseCategoryBreakdown(
+            startDate,
+            endDate,
+            parentCategoryId,
+            currentParentName(parentCategoryId, categoryById),
+            parentOfCurrent(parentCategoryId, categoryById),
+            items
+        );
     }
 
     private DashboardMetric metric(BigDecimal currentValue, BigDecimal previousValue) {
@@ -276,6 +293,67 @@ public class DashboardService {
             return first;
         }
         return first.isAfter(second) ? first : second;
+    }
+
+    private DashboardExpenseCategoryItem toItem(
+        Long categoryId,
+        Map<Long, Category> categoryById,
+        Map<Long, List<Long>> childrenByParentId,
+        Map<Long, BigDecimal> subtreeExpenseByCategory
+    ) {
+        Category category = categoryById.get(categoryId);
+        return new DashboardExpenseCategoryItem(
+            categoryId,
+            category == null ? "" : category.getTitle(),
+            subtreeExpenseByCategory.getOrDefault(categoryId, BigDecimal.ZERO),
+            !childrenByParentId.getOrDefault(categoryId, List.of()).isEmpty()
+        );
+    }
+
+    private BigDecimal subtreeExpense(
+        Long categoryId,
+        Map<Long, List<Long>> childrenByParentId,
+        Map<Long, BigDecimal> expenseByCategoryId,
+        Map<Long, BigDecimal> memo
+    ) {
+        BigDecimal cached = memo.get(categoryId);
+        if (cached != null) {
+            return cached;
+        }
+
+        BigDecimal total = expenseByCategoryId.getOrDefault(categoryId, BigDecimal.ZERO);
+        for (Long childId : childrenByParentId.getOrDefault(categoryId, List.of())) {
+            total = total.add(subtreeExpense(childId, childrenByParentId, expenseByCategoryId, memo));
+        }
+
+        memo.put(categoryId, total);
+        return total;
+    }
+
+    private Long parentIdOf(Category category) {
+        if (category.getParent() == null) {
+            return null;
+        }
+        return category.getParent().getId();
+    }
+
+    private String currentParentName(Long parentCategoryId, Map<Long, Category> categoryById) {
+        if (parentCategoryId == null) {
+            return null;
+        }
+        Category category = categoryById.get(parentCategoryId);
+        return category == null ? null : category.getTitle();
+    }
+
+    private Long parentOfCurrent(Long parentCategoryId, Map<Long, Category> categoryById) {
+        if (parentCategoryId == null) {
+            return null;
+        }
+        Category category = categoryById.get(parentCategoryId);
+        if (category == null || category.getParent() == null) {
+            return null;
+        }
+        return category.getParent().getId();
     }
 
     private LocalDate resolvePreviousStart(LocalDate startDate, LocalDate endDate) {

@@ -7,8 +7,16 @@ import java.util.List;
 public record DashboardExpenseCategoryBreakdownResponse(
     LocalDate startDate,
     LocalDate endDate,
+    Long currentParentCategoryId,
+    String currentParentCategoryName,
+    Long drillUpParentCategoryId,
     List<DashboardExpenseCategoryItemResponse> items
 ) {
-    public record DashboardExpenseCategoryItemResponse(String categoryName, BigDecimal amount, boolean others) {
+    public record DashboardExpenseCategoryItemResponse(
+        Long categoryId,
+        String categoryName,
+        BigDecimal amount,
+        boolean hasChildren
+    ) {
     }
 }

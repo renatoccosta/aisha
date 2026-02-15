@@ -90,6 +90,7 @@
                     <h2 th:text="#{dashboard.expenseCategoryChart.title}"></h2>
                     <p th:text="#{dashboard.expenseCategoryChart.subtitle}"></p>
                 </div>
+                <button class="btn btn-secondary" id="expense-category-drill-up" type="button" disabled th:text="#{dashboard.expenseCategoryChart.drillUp}"></button>
             </div>
             <p class="chart-meta" id="expense-category-chart-meta" th:text="#{dashboard.loading}"></p>
             <div class="chart-wrap">
@@ -117,8 +118,9 @@
         revenueExpenseChartSeriesExpense: /*[[#{dashboard.revenueExpenseChart.series.expenses}]]*/ "Despesas",
         revenueExpenseChartLoadError: /*[[#{dashboard.revenueExpenseChart.error}]]*/ "Não foi possível carregar o gráfico de receitas vs despesas.",
         expenseCategoryChartLoadError: /*[[#{dashboard.expenseCategoryChart.error}]]*/ "Não foi possível carregar o gráfico de gastos por categoria.",
-        expenseCategoryChartOthers: /*[[#{dashboard.expenseCategoryChart.others}]]*/ "Outros",
         expenseCategoryChartEmpty: /*[[#{dashboard.expenseCategoryChart.empty}]]*/ "Sem despesas no período",
+        expenseCategoryChartLevelRoot: /*[[#{dashboard.expenseCategoryChart.level.root}]]*/ "Nível: categorias raiz",
+        expenseCategoryChartLevelChild: /*[[#{dashboard.expenseCategoryChart.level.child}]]*/ "Nível: subcategorias de {0}",
         chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}"
     };
 
@@ -132,6 +134,7 @@
     let revenueExpensePayload = null;
     let expenseCategoryChart = null;
     let expenseCategoryPayload = null;
+    let expenseCategoryDrillUpParentId = null;
 
     function formatCurrency(value) {
         return BRL_FORMATTER.format(Number(value ?? 0));
@@ -430,7 +433,7 @@
 
         const hasItems = expenseCategoryPayload.items.length > 0;
         const labels = hasItems
-            ? expenseCategoryPayload.items.map((item) => (item.others ? i18n.expenseCategoryChartOthers : item.categoryName))
+            ? expenseCategoryPayload.items.map((item) => item.categoryName)
             : [i18n.expenseCategoryChartEmpty];
         const data = hasItems
             ? expenseCategoryPayload.items.map((item) => Number(item.amount))
@@ -471,35 +474,64 @@
                             }
                         }
                     }
+                },
+                onClick: (_, elements) => {
+                    if (!hasItems || elements.length === 0) {
+                        return;
+                    }
+                    const index = elements[0].index;
+                    const selectedItem = expenseCategoryPayload.items[index];
+                    if (!selectedItem || !selectedItem.hasChildren) {
+                        return;
+                    }
+                    loadExpenseCategoryBreakdown(selectedItem.categoryId);
                 }
             }
         });
     }
 
-    async function loadExpenseCategoryBreakdown() {
+    async function loadExpenseCategoryBreakdown(parentCategoryId = null) {
         const card = document.getElementById("expense-category-chart-card");
         const meta = document.getElementById("expense-category-chart-meta");
+        const drillUpButton = document.getElementById("expense-category-drill-up");
         if (!card || !meta) {
             return;
         }
 
         try {
-            const response = await fetch("/api/dashboard/expenses-by-category", { headers: { Accept: "application/json" } });
+            const url = new URL("/api/dashboard/expenses-by-category", window.location.origin);
+            if (parentCategoryId !== null) {
+                url.searchParams.set("parentCategoryId", String(parentCategoryId));
+            }
+
+            const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
             if (!response.ok) {
                 throw new Error("expense-category-chart-failed");
             }
             expenseCategoryPayload = await response.json();
             card.classList.remove("loading");
 
-            meta.textContent = replaceMetaRange(i18n.chartMetaRange, [
+            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
                 formatDate(expenseCategoryPayload.startDate),
                 formatDate(expenseCategoryPayload.endDate)
             ]);
+            const levelLabel = expenseCategoryPayload.currentParentCategoryName
+                ? i18n.expenseCategoryChartLevelChild.replace("{0}", expenseCategoryPayload.currentParentCategoryName)
+                : i18n.expenseCategoryChartLevelRoot;
+            meta.textContent = `${periodLabel} • ${levelLabel}`;
+
+            expenseCategoryDrillUpParentId = expenseCategoryPayload.drillUpParentCategoryId;
+            if (drillUpButton) {
+                drillUpButton.disabled = expenseCategoryPayload.currentParentCategoryId === null;
+            }
 
             renderExpenseCategoryChart();
         } catch (error) {
             card.classList.remove("loading");
             meta.textContent = i18n.expenseCategoryChartLoadError;
+            if (drillUpButton) {
+                drillUpButton.disabled = true;
+            }
         }
     }
 
@@ -508,6 +540,13 @@
         loadBalanceEvolution();
         loadRevenueExpenseEvolution();
         loadExpenseCategoryBreakdown();
+
+        const drillUpButton = document.getElementById("expense-category-drill-up");
+        if (drillUpButton) {
+            drillUpButton.addEventListener("click", () => {
+                loadExpenseCategoryBreakdown(expenseCategoryDrillUpParentId);
+            });
+        }
 
         const selectorButtons = Array.from(document.querySelectorAll(".chart-mode-selector [data-mode]"));
         selectorButtons.forEach((button) => {

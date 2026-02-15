@@ -14,6 +14,7 @@ import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -82,11 +83,15 @@ public class DashboardApiController {
     }
 
     @GetMapping("/expenses-by-category")
-    public DashboardExpenseCategoryBreakdownResponse expensesByCategory(HttpSession session) {
+    public DashboardExpenseCategoryBreakdownResponse expensesByCategory(
+        HttpSession session,
+        @RequestParam(required = false) Long parentCategoryId
+    ) {
         DateFilterState filter = dateFilterSessionService.getOrCreate(session);
         DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
             filter.getStartDate(),
-            filter.getEndDate()
+            filter.getEndDate(),
+            parentCategoryId
         );
 
         List<DashboardExpenseCategoryBreakdownResponse.DashboardExpenseCategoryItemResponse> items = breakdown.items()
@@ -97,6 +102,9 @@ public class DashboardApiController {
         return new DashboardExpenseCategoryBreakdownResponse(
             breakdown.startDate(),
             breakdown.endDate(),
+            breakdown.currentParentCategoryId(),
+            breakdown.currentParentCategoryName(),
+            breakdown.drillUpParentCategoryId(),
             items
         );
     }
@@ -131,9 +139,10 @@ public class DashboardApiController {
         DashboardExpenseCategoryItem item
     ) {
         return new DashboardExpenseCategoryBreakdownResponse.DashboardExpenseCategoryItemResponse(
+            item.categoryId(),
             item.categoryName(),
             item.amount(),
-            item.others()
+            item.hasChildren()
         );
     }
 }
