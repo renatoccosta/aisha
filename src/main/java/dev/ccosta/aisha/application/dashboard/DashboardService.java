@@ -81,6 +81,7 @@ public class DashboardService {
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
         Map<LocalDate, BigDecimal> periodAmountsByBucket = new HashMap<>();
         BigDecimal openingBalance = BigDecimal.ZERO;
+        LocalDate lastBucketWithRecords = null;
 
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
@@ -96,11 +97,13 @@ public class DashboardService {
 
             LocalDate bucketDate = normalizeBucketStart(settlementDate, granularity);
             periodAmountsByBucket.merge(bucketDate, amount, BigDecimal::add);
+            lastBucketWithRecords = maxDate(lastBucketWithRecords, bucketDate);
         }
 
         List<DashboardBalancePoint> points = new ArrayList<>();
         BigDecimal accumulatedBalance = openingBalance;
-        for (LocalDate bucketStart : buildBucketStarts(startDate, endDate, granularity)) {
+        LocalDate effectiveEndDate = resolveEffectiveEndDate(endDate, lastBucketWithRecords, granularity);
+        for (LocalDate bucketStart : buildBucketStarts(startDate, effectiveEndDate, granularity)) {
             BigDecimal periodAmount = periodAmountsByBucket.getOrDefault(bucketStart, BigDecimal.ZERO);
             accumulatedBalance = accumulatedBalance.add(periodAmount);
             points.add(new DashboardBalancePoint(bucketStart, periodAmount, accumulatedBalance));
@@ -117,6 +120,7 @@ public class DashboardService {
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
         Map<LocalDate, BigDecimal> revenuesByBucket = new HashMap<>();
         Map<LocalDate, BigDecimal> expensesByBucket = new HashMap<>();
+        LocalDate lastBucketWithRecords = null;
 
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
@@ -131,10 +135,12 @@ public class DashboardService {
             } else if (amount.signum() > 0) {
                 revenuesByBucket.merge(bucketDate, amount, BigDecimal::add);
             }
+            lastBucketWithRecords = maxDate(lastBucketWithRecords, bucketDate);
         }
 
         List<DashboardRevenueExpensePoint> points = new ArrayList<>();
-        for (LocalDate bucketStart : buildBucketStarts(startDate, endDate, granularity)) {
+        LocalDate effectiveEndDate = resolveEffectiveEndDate(endDate, lastBucketWithRecords, granularity);
+        for (LocalDate bucketStart : buildBucketStarts(startDate, effectiveEndDate, granularity)) {
             points.add(new DashboardRevenueExpensePoint(
                 bucketStart,
                 revenuesByBucket.getOrDefault(bucketStart, BigDecimal.ZERO),
@@ -218,6 +224,10 @@ public class DashboardService {
     }
 
     private List<LocalDate> buildBucketStarts(LocalDate startDate, LocalDate endDate, DashboardSeriesGranularity granularity) {
+        if (endDate == null || endDate.isBefore(startDate)) {
+            return List.of();
+        }
+
         List<LocalDate> bucketStarts = new ArrayList<>();
         LocalDate cursor = normalizeBucketStart(startDate, granularity);
 
@@ -241,6 +251,31 @@ public class DashboardService {
             return date.plusMonths(1);
         }
         return date.plusDays(1);
+    }
+
+    private LocalDate resolveEffectiveEndDate(LocalDate fallbackEndDate, LocalDate lastBucketWithRecords, DashboardSeriesGranularity granularity) {
+        if (lastBucketWithRecords == null) {
+            return startOfPreviousBucket(fallbackEndDate, granularity);
+        }
+        return lastBucketWithRecords;
+    }
+
+    private LocalDate startOfPreviousBucket(LocalDate date, DashboardSeriesGranularity granularity) {
+        LocalDate normalized = normalizeBucketStart(date, granularity);
+        if (granularity == DashboardSeriesGranularity.MONTH) {
+            return normalized.minusMonths(1);
+        }
+        return normalized.minusDays(1);
+    }
+
+    private LocalDate maxDate(LocalDate first, LocalDate second) {
+        if (first == null) {
+            return second;
+        }
+        if (second == null) {
+            return first;
+        }
+        return first.isAfter(second) ? first : second;
     }
 
     private LocalDate resolvePreviousStart(LocalDate startDate, LocalDate endDate) {

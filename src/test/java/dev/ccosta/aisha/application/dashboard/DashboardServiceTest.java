@@ -77,12 +77,11 @@ class DashboardServiceTest {
 
         assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.DAY);
         assertThat(evolution.openingBalance()).isEqualByComparingTo("200.00");
-        assertThat(evolution.points()).hasSize(3);
+        assertThat(evolution.points()).hasSize(2);
         assertThat(evolution.points().get(0).periodAmount()).isEqualByComparingTo("10.00");
         assertThat(evolution.points().get(0).accumulatedBalance()).isEqualByComparingTo("210.00");
         assertThat(evolution.points().get(1).periodAmount()).isEqualByComparingTo("-3.00");
         assertThat(evolution.points().get(1).accumulatedBalance()).isEqualByComparingTo("207.00");
-        assertThat(evolution.points().get(2).periodAmount()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
@@ -121,13 +120,48 @@ class DashboardServiceTest {
         );
 
         assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.DAY);
-        assertThat(evolution.points()).hasSize(3);
+        assertThat(evolution.points()).hasSize(2);
         assertThat(evolution.points().get(0).revenues()).isEqualByComparingTo("15.00");
         assertThat(evolution.points().get(0).expenses()).isEqualByComparingTo("4.00");
         assertThat(evolution.points().get(1).revenues()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(evolution.points().get(1).expenses()).isEqualByComparingTo("3.50");
-        assertThat(evolution.points().get(2).revenues()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(evolution.points().get(2).expenses()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void shouldTrimTrailingMonthlyBucketsWithoutRecordsInBalanceEvolution() {
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 6, 30))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 20), "50.00"),
+            newEntry(LocalDate.of(2026, 2, 10), "-10.00")
+        ));
+
+        DashboardBalanceEvolution evolution = dashboardService.buildBalanceEvolution(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 6, 30)
+        );
+
+        assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.MONTH);
+        assertThat(evolution.points()).hasSize(2);
+        assertThat(evolution.points().get(0).date()).isEqualTo(LocalDate.of(2026, 1, 1));
+        assertThat(evolution.points().get(1).date()).isEqualTo(LocalDate.of(2026, 2, 1));
+    }
+
+    @Test
+    void shouldTrimTrailingMonthlyBucketsWithoutRecordsInRevenueExpenseEvolution() {
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 5, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 15), "100.00"),
+            newEntry(LocalDate.of(2026, 3, 10), "-20.00")
+        ));
+
+        DashboardRevenueExpenseEvolution evolution = dashboardService.buildRevenueExpenseEvolution(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 5, 31)
+        );
+
+        assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.MONTH);
+        assertThat(evolution.points()).hasSize(3);
+        assertThat(evolution.points().get(0).date()).isEqualTo(LocalDate.of(2026, 1, 1));
+        assertThat(evolution.points().get(1).date()).isEqualTo(LocalDate.of(2026, 2, 1));
+        assertThat(evolution.points().get(2).date()).isEqualTo(LocalDate.of(2026, 3, 1));
     }
 
     @Test
