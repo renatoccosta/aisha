@@ -36,7 +36,7 @@
             </div>
 
             <div class="table-wrap">
-                <table>
+                <table class="responsive-list">
                     <thead>
                     <tr>
                         <th><span class="sr-only" th:text="#{categories.list.table.select}"></span></th>
@@ -47,17 +47,17 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:if="${#lists.isEmpty(categories)}">
+                    <tr th:if="${#lists.isEmpty(categories)}" class="empty-row">
                         <td colspan="5" class="empty" th:text="#{categories.list.empty}"></td>
                     </tr>
                     <tr th:each="category : ${categories}">
-                        <td>
+                        <td class="cell-select" th:attr="data-label=#{categories.list.table.select}">
                             <input type="checkbox" name="ids" th:value="${category.id}" th:attr="aria-label=#{categories.list.table.selectItem}">
                         </td>
-                        <td th:text="${category.title}"></td>
-                        <td th:text="${category.description}"></td>
-                        <td th:text="${category.parent != null ? category.parent.title : '-'}"></td>
-                        <td>
+                        <td th:attr="data-label=#{categories.list.table.title}" th:text="${category.title}"></td>
+                        <td th:attr="data-label=#{categories.list.table.description}" th:text="${category.description}"></td>
+                        <td th:attr="data-label=#{categories.list.table.parent}" th:text="${category.parent != null ? category.parent.title : '-'}"></td>
+                        <td class="cell-actions" th:attr="data-label=#{categories.list.table.actions}">
                             <div class="actions-inline">
                                 <a class="btn btn-secondary" th:href="@{/categories/{id}/edit(id=${category.id})}" th:text="#{categories.list.action.edit}"></a>
                                 <button

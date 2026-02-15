@@ -72,7 +72,7 @@
             </div>
 
             <div class="table-wrap">
-                <table>
+                <table class="responsive-list">
                     <thead>
                     <tr>
                         <th><span class="sr-only" th:text="#{entries.list.table.select}"></span></th>
@@ -86,21 +86,21 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:if="${#lists.isEmpty(entries)}">
+                    <tr th:if="${#lists.isEmpty(entries)}" class="empty-row">
                         <td colspan="8" class="empty" th:text="#{entries.list.empty}"></td>
                     </tr>
                     <tr th:each="entry : ${entries}">
-                        <td>
+                        <td class="cell-select" th:attr="data-label=#{entries.list.table.select}">
                             <input type="checkbox" name="ids" th:value="${entry.id}" th:attr="aria-label=#{entries.list.table.selectItem}">
                         </td>
-                        <td th:text="${entry.account.title}"></td>
-                        <td th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></td>
-                        <td th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy')}"></td>
-                        <td th:text="${entry.description}"></td>
-                        <td th:text="${entry.category.title}"></td>
-                        <td th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></td>
-                        <td>
-                            <div class="actions-inline">
+                        <td th:attr="data-label=#{entries.list.table.account}" th:text="${entry.account.title}"></td>
+                        <td th:attr="data-label=#{entries.list.table.movementDate}" th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></td>
+                        <td th:attr="data-label=#{entries.list.table.settlementDate}" th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy')}"></td>
+                        <td th:attr="data-label=#{entries.list.table.description}" th:text="${entry.description}"></td>
+                        <td th:attr="data-label=#{entries.list.table.category}" th:text="${entry.category.title}"></td>
+                        <td class="amount-cell" th:attr="data-label=#{entries.list.table.amount}" th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></td>
+                        <td class="cell-actions" th:attr="data-label=#{entries.list.table.actions}">
+                            <div class="actions-inline entry-actions-inline">
                                 <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id})}" th:text="#{entries.list.action.edit}"></a>
                                 <button
                                     class="btn btn-danger"

@@ -28,6 +28,7 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
   
 ## UI / UX standards (Web)
 - The UI must be fully responsive (mobile-first).
+- In listing screens (entries, categories, accounts, and future list pages), when columns do not fit viewport width, render rows as stacked cards (multi-line content) instead of requiring horizontal scrolling.
 - Use a modern visual style:
   - consistent spacing scale
   - clear typography hierarchy (h1/h2/body)

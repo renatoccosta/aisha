@@ -278,6 +278,87 @@ th {
   min-width: 760px;
 }
 
+@media (max-width: 960px) {
+  .responsive-list {
+    min-width: 100%;
+  }
+
+  .responsive-list thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+
+  .responsive-list tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .responsive-list tbody tr {
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #f9fcff;
+    overflow: hidden;
+  }
+
+  .responsive-list tbody tr.empty-row {
+    border: 0;
+    background: transparent;
+  }
+
+  .responsive-list tbody td {
+    display: grid;
+    grid-template-columns: minmax(120px, 38%) minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: center;
+    padding: 0.7rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .responsive-list tbody tr td:last-child {
+    border-bottom: 0;
+  }
+
+  .responsive-list tbody td::before {
+    content: attr(data-label);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+
+  .responsive-list tbody td.empty {
+    display: block;
+    text-align: center;
+    border-bottom: 0;
+  }
+
+  .responsive-list tbody td.empty::before {
+    content: none;
+  }
+
+  .responsive-list tbody td.cell-select input[type="checkbox"] {
+    justify-self: start;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .responsive-list tbody td.amount-cell {
+    text-align: left;
+  }
+
+  .responsive-list tbody td.cell-actions .actions-inline {
+    justify-content: flex-start;
+  }
+}
+
 .cell-subtitle {
   margin-top: 0.2rem;
   font-size: 0.85rem;
@@ -376,6 +457,14 @@ textarea:focus {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.entry-actions-inline {
+  flex-wrap: nowrap;
+}
+
+.entry-actions-inline .btn {
+  white-space: nowrap;
 }
 
 .dashboard-main {

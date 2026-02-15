@@ -36,7 +36,7 @@
             </div>
 
             <div class="table-wrap">
-                <table>
+                <table class="responsive-list">
                     <thead>
                     <tr>
                         <th><span class="sr-only" th:text="#{accounts.list.table.select}"></span></th>
@@ -46,16 +46,16 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:if="${#lists.isEmpty(accounts)}">
+                    <tr th:if="${#lists.isEmpty(accounts)}" class="empty-row">
                         <td colspan="4" class="empty" th:text="#{accounts.list.empty}"></td>
                     </tr>
                     <tr th:each="account : ${accounts}">
-                        <td>
+                        <td class="cell-select" th:attr="data-label=#{accounts.list.table.select}">
                             <input type="checkbox" name="ids" th:value="${account.id}" th:attr="aria-label=#{accounts.list.table.selectItem}">
                         </td>
-                        <td th:text="${account.title}"></td>
-                        <td th:text="${account.description}"></td>
-                        <td>
+                        <td th:attr="data-label=#{accounts.list.table.title}" th:text="${account.title}"></td>
+                        <td th:attr="data-label=#{accounts.list.table.description}" th:text="${account.description}"></td>
+                        <td class="cell-actions" th:attr="data-label=#{accounts.list.table.actions}">
                             <div class="actions-inline">
                                 <a class="btn btn-secondary" th:href="@{/accounts/{id}/edit(id=${account.id})}" th:text="#{accounts.list.action.edit}"></a>
                                 <button
