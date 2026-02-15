@@ -27,6 +27,20 @@
                 <p class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
             </div>
 
+            <div class="grid-2">
+                <div class="field">
+                    <label for="initialBalance" th:text="#{accounts.form.field.initialBalance.required}"></label>
+                    <input id="initialBalance" type="number" th:field="*{initialBalance}" step="0.01" required>
+                    <p class="error" th:if="${#fields.hasErrors('initialBalance')}" th:errors="*{initialBalance}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="initialBalanceDate" th:text="#{accounts.form.field.initialBalanceDate.required}"></label>
+                    <input id="initialBalanceDate" type="date" th:field="*{initialBalanceDate}" required>
+                    <p class="error" th:if="${#fields.hasErrors('initialBalanceDate')}" th:errors="*{initialBalanceDate}"></p>
+                </div>
+            </div>
+
             <div class="actions-inline">
                 <button class="btn btn-primary" type="submit" th:text="${mode == 'create'} ? #{accounts.form.action.save} : #{accounts.form.action.update}"></button>
                 <a class="btn btn-secondary" th:href="@{/accounts}" th:text="#{accounts.form.action.cancel}"></a>

@@ -1,7 +1,12 @@
 package dev.ccosta.aisha.web.account;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 public class AccountForm {
 
@@ -11,6 +16,14 @@ public class AccountForm {
 
     @Size(max = 300, message = "{accountForm.description.size}")
     private String description;
+
+    @NotNull(message = "{accountForm.initialBalance.notNull}")
+    @Digits(integer = 17, fraction = 2, message = "{accountForm.initialBalance.digits}")
+    private BigDecimal initialBalance;
+
+    @NotNull(message = "{accountForm.initialBalanceDate.notNull}")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate initialBalanceDate;
 
     public String getTitle() {
         return title;
@@ -26,5 +39,21 @@ public class AccountForm {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public BigDecimal getInitialBalance() {
+        return initialBalance;
+    }
+
+    public void setInitialBalance(BigDecimal initialBalance) {
+        this.initialBalance = initialBalance;
+    }
+
+    public LocalDate getInitialBalanceDate() {
+        return initialBalanceDate;
+    }
+
+    public void setInitialBalanceDate(LocalDate initialBalanceDate) {
+        this.initialBalanceDate = initialBalanceDate;
     }
 }

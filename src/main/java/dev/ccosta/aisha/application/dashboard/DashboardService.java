@@ -1,5 +1,7 @@
 package dev.ccosta.aisha.application.dashboard;
 
+import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -19,10 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class DashboardService {
 
     private final EntryRepository entryRepository;
+    private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
 
-    public DashboardService(EntryRepository entryRepository, CategoryRepository categoryRepository) {
+    public DashboardService(
+        EntryRepository entryRepository,
+        AccountRepository accountRepository,
+        CategoryRepository categoryRepository
+    ) {
         this.entryRepository = entryRepository;
+        this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
     }
 
@@ -33,9 +41,10 @@ public class DashboardService {
         LocalDate previousStartDate = resolvePreviousStart(startDate, endDate);
         LocalDate previousEndDate = startDate.minusDays(1);
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
+        List<Account> accounts = accountRepository.findAllOrdered();
 
-        BigDecimal currentBalance = BigDecimal.ZERO;
-        BigDecimal previousBalance = BigDecimal.ZERO;
+        BigDecimal currentBalance = sumInitialBalancesUntil(accounts, endDate);
+        BigDecimal previousBalance = sumInitialBalancesUntil(accounts, previousEndDate);
         BigDecimal currentExpenses = BigDecimal.ZERO;
         BigDecimal previousExpenses = BigDecimal.ZERO;
         BigDecimal currentRevenues = BigDecimal.ZERO;
@@ -44,6 +53,9 @@ public class DashboardService {
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
             BigDecimal amount = entry.getAmount();
+            if (mustIgnoreEntryByAccountStartingPoint(entry)) {
+                continue;
+            }
 
             currentBalance = currentBalance.add(amount);
             if (settlementDate.isBefore(startDate)) {
@@ -81,13 +93,30 @@ public class DashboardService {
 
         DashboardSeriesGranularity granularity = resolveGranularity(startDate, endDate);
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
+        List<Account> accounts = accountRepository.findAllOrdered();
         Map<LocalDate, BigDecimal> periodAmountsByBucket = new HashMap<>();
-        BigDecimal openingBalance = BigDecimal.ZERO;
+        BigDecimal openingBalance = sumInitialBalancesUntil(accounts, startDate.minusDays(1));
         LocalDate lastBucketWithRecords = null;
+
+        for (Account account : accounts) {
+            if (account.getInitialBalance() == null || account.getInitialBalanceDate() == null) {
+                continue;
+            }
+            if (account.getInitialBalanceDate().isBefore(startDate) || account.getInitialBalanceDate().isAfter(endDate)) {
+                continue;
+            }
+
+            LocalDate bucketDate = normalizeBucketStart(account.getInitialBalanceDate(), granularity);
+            periodAmountsByBucket.merge(bucketDate, account.getInitialBalance(), BigDecimal::add);
+            lastBucketWithRecords = maxDate(lastBucketWithRecords, bucketDate);
+        }
 
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
             BigDecimal amount = entry.getAmount();
+            if (mustIgnoreEntryByAccountStartingPoint(entry)) {
+                continue;
+            }
 
             if (settlementDate.isBefore(startDate)) {
                 openingBalance = openingBalance.add(amount);
@@ -378,6 +407,27 @@ public class DashboardService {
             return first;
         }
         return first.isAfter(second) ? first : second;
+    }
+
+    private BigDecimal sumInitialBalancesUntil(List<Account> accounts, LocalDate date) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Account account : accounts) {
+            if (account.getInitialBalance() == null || account.getInitialBalanceDate() == null) {
+                continue;
+            }
+            if (account.getInitialBalanceDate().isAfter(date)) {
+                continue;
+            }
+            total = total.add(account.getInitialBalance());
+        }
+        return total;
+    }
+
+    private boolean mustIgnoreEntryByAccountStartingPoint(Entry entry) {
+        if (entry.getAccount() == null || entry.getAccount().getInitialBalanceDate() == null) {
+            return false;
+        }
+        return entry.getSettlementDate().isBefore(entry.getAccount().getInitialBalanceDate());
     }
 
     private DashboardCategoryTotalsSeries toCategoryTotalsSeries(CategorySeriesData data, List<LocalDate> buckets) {

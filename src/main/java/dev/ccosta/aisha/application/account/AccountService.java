@@ -41,6 +41,8 @@ public class AccountService {
         Account existing = findById(id);
         existing.setTitle(updatedData.getTitle());
         existing.setDescription(updatedData.getDescription());
+        existing.setInitialBalance(updatedData.getInitialBalance());
+        existing.setInitialBalanceDate(updatedData.getInitialBalanceDate());
         return accountRepository.save(existing);
     }
 

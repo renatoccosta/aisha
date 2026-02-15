@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "accounts")
@@ -20,6 +22,12 @@ public class Account {
 
     @Column(name = "description", length = 300)
     private String description;
+
+    @Column(name = "initial_balance", precision = 19, scale = 2)
+    private BigDecimal initialBalance;
+
+    @Column(name = "initial_balance_date")
+    private LocalDate initialBalanceDate;
 
     public Long getId() {
         return id;
@@ -39,5 +47,21 @@ public class Account {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public BigDecimal getInitialBalance() {
+        return initialBalance;
+    }
+
+    public void setInitialBalance(BigDecimal initialBalance) {
+        this.initialBalance = initialBalance;
+    }
+
+    public LocalDate getInitialBalanceDate() {
+        return initialBalanceDate;
+    }
+
+    public void setInitialBalanceDate(LocalDate initialBalanceDate) {
+        this.initialBalanceDate = initialBalanceDate;
     }
 }

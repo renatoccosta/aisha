@@ -33,12 +33,30 @@ public class AccountBalanceReportService {
         AccountBalanceGranularity granularity = resolveGranularity(startDate, endDate);
         List<AccountBalanceBucket> buckets = buildBuckets(startDate, endDate, granularity);
 
+        Map<Long, Account> accountById = new HashMap<>();
+        for (Account account : accounts) {
+            accountById.put(account.getId(), account);
+        }
+
         Map<Long, BigDecimal> previousBalancesByAccount = new HashMap<>();
         Map<Long, Map<LocalDate, BigDecimal>> periodBalancesByAccount = new HashMap<>();
+
+        for (Account account : accounts) {
+            applyInitialBalance(account, startDate, endDate, granularity, previousBalancesByAccount, periodBalancesByAccount);
+        }
+
         for (Entry entry : entryRepository.listAllBySettlementDateLessThanEqual(endDate)) {
             Long accountId = entry.getAccount().getId();
+            Account account = accountById.get(accountId);
+            if (account == null) {
+                continue;
+            }
+
             BigDecimal amount = entry.getAmount();
             LocalDate settlementDate = entry.getSettlementDate();
+            if (mustIgnoreEntry(settlementDate, account)) {
+                continue;
+            }
 
             if (settlementDate.isBefore(startDate)) {
                 previousBalancesByAccount.merge(accountId, amount, BigDecimal::add);
@@ -131,6 +149,36 @@ public class AccountBalanceReportService {
 
     private LocalDate min(LocalDate first, LocalDate second) {
         return first.isBefore(second) ? first : second;
+    }
+
+    private void applyInitialBalance(
+        Account account,
+        LocalDate startDate,
+        LocalDate endDate,
+        AccountBalanceGranularity granularity,
+        Map<Long, BigDecimal> previousBalancesByAccount,
+        Map<Long, Map<LocalDate, BigDecimal>> periodBalancesByAccount
+    ) {
+        if (account.getInitialBalanceDate() == null || account.getInitialBalance() == null) {
+            return;
+        }
+        if (account.getInitialBalanceDate().isAfter(endDate)) {
+            return;
+        }
+        if (account.getInitialBalanceDate().isBefore(startDate)) {
+            previousBalancesByAccount.merge(account.getId(), account.getInitialBalance(), BigDecimal::add);
+            return;
+        }
+
+        LocalDate bucketStart = normalizeBucketStart(account.getInitialBalanceDate(), granularity);
+        periodBalancesByAccount
+            .computeIfAbsent(account.getId(), ignored -> new HashMap<>())
+            .merge(bucketStart, account.getInitialBalance(), BigDecimal::add);
+    }
+
+    private boolean mustIgnoreEntry(LocalDate settlementDate, Account account) {
+        LocalDate initialBalanceDate = account.getInitialBalanceDate();
+        return initialBalanceDate != null && settlementDate.isBefore(initialBalanceDate);
     }
 
 }

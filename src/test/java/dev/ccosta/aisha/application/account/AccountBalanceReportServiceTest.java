@@ -26,10 +26,11 @@ class AccountBalanceReportServiceTest {
 
     @Test
     void shouldBuildMonthlyBalancesForOneYearRange() {
-        Account checking = newAccount(1L, "Conta Corrente");
-        Account cash = newAccount(2L, "Carteira");
+        Account checking = newAccount(1L, "Conta Corrente", "50.00", LocalDate.of(2025, 12, 1));
+        Account cash = newAccount(2L, "Carteira", "20.00", LocalDate.of(2026, 2, 1));
 
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 12, 31))).thenReturn(List.of(
+            newEntry(1L, LocalDate.of(2025, 11, 10), "999.00"),
             newEntry(1L, LocalDate.of(2025, 12, 10), "100.00"),
             newEntry(1L, LocalDate.of(2026, 1, 10), "500.00"),
             newEntry(1L, LocalDate.of(2026, 2, 5), "-120.50"),
@@ -48,20 +49,20 @@ class AccountBalanceReportServiceTest {
         assertThat(report.buckets().get(11).startDate()).isEqualTo(LocalDate.of(2026, 12, 1));
 
         AccountBalanceRow checkingRow = report.rows().get(0);
-        assertThat(checkingRow.previousPeriodBalance()).isEqualByComparingTo("100.00");
+        assertThat(checkingRow.previousPeriodBalance()).isEqualByComparingTo("150.00");
         assertThat(checkingRow.periodBalances().get(0)).isEqualByComparingTo("500.00");
         assertThat(checkingRow.periodBalances().get(1)).isEqualByComparingTo("-120.50");
         assertThat(checkingRow.periodBalances().get(2)).isEqualByComparingTo(BigDecimal.ZERO);
 
         AccountBalanceRow cashRow = report.rows().get(1);
         assertThat(cashRow.previousPeriodBalance()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(cashRow.periodBalances().get(1)).isEqualByComparingTo("40.00");
+        assertThat(cashRow.periodBalances().get(1)).isEqualByComparingTo("60.00");
         assertThat(cashRow.periodBalances().get(10)).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void shouldBuildDailyBalancesForShortRange() {
-        Account checking = newAccount(1L, "Conta Corrente");
+        Account checking = newAccount(1L, "Conta Corrente", "300.00", LocalDate.of(2026, 2, 10));
 
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 2, 13))).thenReturn(List.of(
             newEntry(1L, LocalDate.of(2026, 2, 9), "200.00"),
@@ -79,18 +80,20 @@ class AccountBalanceReportServiceTest {
         assertThat(report.buckets()).hasSize(4);
 
         AccountBalanceRow row = report.rows().getFirst();
-        assertThat(row.previousPeriodBalance()).isEqualByComparingTo("200.00");
+        assertThat(row.previousPeriodBalance()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(row.periodBalances()).containsExactly(
-            new BigDecimal("-50.00"),
+            new BigDecimal("250.00"),
             BigDecimal.ZERO,
             new BigDecimal("25.00"),
             BigDecimal.ZERO
         );
     }
 
-    private Account newAccount(Long id, String title) {
+    private Account newAccount(Long id, String title, String initialBalance, LocalDate initialBalanceDate) {
         Account account = new Account();
         account.setTitle(title);
+        account.setInitialBalance(new BigDecimal(initialBalance));
+        account.setInitialBalanceDate(initialBalanceDate);
 
         try {
             var idField = Account.class.getDeclaredField("id");
@@ -105,7 +108,7 @@ class AccountBalanceReportServiceTest {
 
     private Entry newEntry(Long accountId, LocalDate settlementDate, String amount) {
         Entry entry = new Entry();
-        entry.setAccount(newAccount(accountId, "Conta"));
+        entry.setAccount(newAccount(accountId, "Conta", "0.00", LocalDate.of(1900, 1, 1)));
         entry.setSettlementDate(settlementDate);
         entry.setAmount(new BigDecimal(amount));
         return entry;

@@ -159,6 +159,8 @@ public class AccountController {
         Account account = new Account();
         account.setTitle(form.getTitle());
         account.setDescription(form.getDescription());
+        account.setInitialBalance(form.getInitialBalance());
+        account.setInitialBalanceDate(form.getInitialBalanceDate());
         return account;
     }
 
@@ -166,6 +168,8 @@ public class AccountController {
         AccountForm form = new AccountForm();
         form.setTitle(account.getTitle());
         form.setDescription(account.getDescription());
+        form.setInitialBalance(account.getInitialBalance());
+        form.setInitialBalanceDate(account.getInitialBalanceDate());
         return form;
     }
 }

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -24,6 +25,9 @@ class DashboardServiceTest {
     private EntryRepository entryRepository;
 
     @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
     private CategoryRepository categoryRepository;
 
     @InjectMocks
@@ -31,6 +35,10 @@ class DashboardServiceTest {
 
     @Test
     void shouldBuildSummaryWithPreviousEquivalentPeriod() {
+        when(accountRepository.findAllOrdered()).thenReturn(List.of(
+            newAccount("Conta A", "100.00", LocalDate.of(2026, 2, 1)),
+            newAccount("Conta B", "50.00", LocalDate.of(2026, 3, 10))
+        ));
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 3, 31))).thenReturn(List.of(
             newEntry(LocalDate.of(2026, 2, 10), "80.00"),
             newEntry(LocalDate.of(2026, 2, 12), "-30.00"),
@@ -41,9 +49,9 @@ class DashboardServiceTest {
 
         DashboardSummary summary = dashboardService.buildSummary(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31));
 
-        assertThat(summary.currentBalance().currentValue()).isEqualByComparingTo("170.00");
-        assertThat(summary.currentBalance().previousValue()).isEqualByComparingTo("50.00");
-        assertThat(summary.currentBalance().variationPercent()).isEqualByComparingTo("240.00");
+        assertThat(summary.currentBalance().currentValue()).isEqualByComparingTo("320.00");
+        assertThat(summary.currentBalance().previousValue()).isEqualByComparingTo("150.00");
+        assertThat(summary.currentBalance().variationPercent()).isEqualByComparingTo("113.33");
 
         assertThat(summary.totalExpenses().currentValue()).isEqualByComparingTo("40.00");
         assertThat(summary.totalExpenses().previousValue()).isEqualByComparingTo("30.00");
@@ -56,6 +64,7 @@ class DashboardServiceTest {
 
     @Test
     void shouldReturnNullVariationWhenPreviousValueIsZeroAndCurrentHasValue() {
+        when(accountRepository.findAllOrdered()).thenReturn(List.of());
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
             newEntry(LocalDate.of(2026, 1, 10), "90.00")
         ));
@@ -68,6 +77,7 @@ class DashboardServiceTest {
 
     @Test
     void shouldBuildDailyEvolutionForRangeShorterThanTwoMonths() {
+        when(accountRepository.findAllOrdered()).thenReturn(List.of());
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 3))).thenReturn(List.of(
             newEntry(LocalDate.of(2025, 12, 31), "200.00"),
             newEntry(LocalDate.of(2026, 1, 1), "10.00"),
@@ -89,7 +99,29 @@ class DashboardServiceTest {
     }
 
     @Test
+    void shouldIncludeInitialBalanceInsidePeriodInBalanceEvolution() {
+        when(accountRepository.findAllOrdered()).thenReturn(List.of(
+            newAccount("Conta com saldo inicial", "100.00", LocalDate.of(2026, 1, 2))
+        ));
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 3))).thenReturn(List.of());
+
+        DashboardBalanceEvolution evolution = dashboardService.buildBalanceEvolution(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 3)
+        );
+
+        assertThat(evolution.openingBalance()).isEqualByComparingTo("0.00");
+        assertThat(evolution.points()).hasSize(2);
+        assertThat(evolution.points().get(0).date()).isEqualTo(LocalDate.of(2026, 1, 1));
+        assertThat(evolution.points().get(0).periodAmount()).isEqualByComparingTo("0.00");
+        assertThat(evolution.points().get(1).date()).isEqualTo(LocalDate.of(2026, 1, 2));
+        assertThat(evolution.points().get(1).periodAmount()).isEqualByComparingTo("100.00");
+        assertThat(evolution.points().get(1).accumulatedBalance()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
     void shouldBuildMonthlyEvolutionForRangeOfTwoMonthsOrMore() {
+        when(accountRepository.findAllOrdered()).thenReturn(List.of());
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 3, 15))).thenReturn(List.of(
             newEntry(LocalDate.of(2025, 12, 10), "40.00"),
             newEntry(LocalDate.of(2026, 1, 20), "100.00"),
@@ -133,6 +165,7 @@ class DashboardServiceTest {
 
     @Test
     void shouldTrimTrailingMonthlyBucketsWithoutRecordsInBalanceEvolution() {
+        when(accountRepository.findAllOrdered()).thenReturn(List.of());
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 6, 30))).thenReturn(List.of(
             newEntry(LocalDate.of(2026, 1, 20), "50.00"),
             newEntry(LocalDate.of(2026, 2, 10), "-10.00")
@@ -395,6 +428,14 @@ class DashboardServiceTest {
     private Account newAccount() {
         Account account = new Account();
         account.setTitle("Conta");
+        return account;
+    }
+
+    private Account newAccount(String title, String initialBalance, LocalDate initialBalanceDate) {
+        Account account = new Account();
+        account.setTitle(title);
+        account.setInitialBalance(new BigDecimal(initialBalance));
+        account.setInitialBalanceDate(initialBalanceDate);
         return account;
     }
 
