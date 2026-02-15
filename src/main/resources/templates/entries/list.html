@@ -22,12 +22,50 @@
 
     <section id="table-container" th:fragment="table" class="card">
         <form
+            class="list-filters"
+            method="get"
+            th:action="@{/entries}"
+            hx-get="/entries/fragments/table"
+            hx-target="#table-container"
+            hx-swap="outerHTML"
+            hx-trigger="change from:select">
+            <div class="grid-2">
+                <div class="field">
+                    <label for="filter-account" th:text="#{entries.list.filter.account}"></label>
+                    <select id="filter-account" name="accountId">
+                        <option value="" th:text="#{entries.list.filter.allAccounts}"></option>
+                        <option
+                            th:each="account : ${accountOptions}"
+                            th:value="${account.id}"
+                            th:selected="${selectedAccountId != null and selectedAccountId == account.id}"
+                            th:text="${account.title}">
+                        </option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="filter-category" th:text="#{entries.list.filter.category}"></label>
+                    <select id="filter-category" name="categoryId">
+                        <option value="" th:text="#{entries.list.filter.allCategories}"></option>
+                        <option
+                            th:each="category : ${categoryOptions}"
+                            th:value="${category.id}"
+                            th:selected="${selectedCategoryId != null and selectedCategoryId == category.id}"
+                            th:text="${category.label}">
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        <form
             th:action="@{/entries/bulk-delete}"
             method="post"
             hx-post="/entries/bulk-delete"
             hx-target="#table-container"
             hx-swap="outerHTML"
             th:attr="hx-confirm=#{entries.list.confirm.bulkDelete}">
+            <input type="hidden" name="accountId" th:value="${selectedAccountId}">
+            <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
 
             <div class="table-actions">
                 <button class="btn btn-danger" type="submit" th:text="#{entries.list.action.bulkDelete}"></button>
@@ -67,7 +105,7 @@
                                 <button
                                     class="btn btn-danger"
                                     type="button"
-                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
+                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId})},hx-confirm=#{entries.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <span th:text="#{entries.list.action.delete}"></span>

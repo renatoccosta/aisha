@@ -42,14 +42,24 @@ public class EntryController {
     }
 
     @GetMapping
-    public String list(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
-        fillListing(model, globalDateFilter);
+    public String list(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "categoryId", required = false) Long categoryId,
+        Model model
+    ) {
+        fillListing(model, globalDateFilter, accountId, categoryId);
         return "entries/list";
     }
 
     @GetMapping("/fragments/table")
-    public String table(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
-        fillListing(model, globalDateFilter);
+    public String table(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "categoryId", required = false) Long categoryId,
+        Model model
+    ) {
+        fillListing(model, globalDateFilter, accountId, categoryId);
         return "entries/list :: table";
     }
 
@@ -156,12 +166,14 @@ public class EntryController {
     public String delete(
         @PathVariable Long id,
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "categoryId", required = false) Long categoryId,
         HttpServletRequest request,
         Model model
     ) {
         entryService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter);
+            fillListing(model, globalDateFilter, accountId, categoryId);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -171,12 +183,14 @@ public class EntryController {
     public String bulkDelete(
         @RequestParam(name = "ids", required = false) List<Long> ids,
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "categoryId", required = false) Long categoryId,
         HttpServletRequest request,
         Model model
     ) {
         entryService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter);
+            fillListing(model, globalDateFilter, accountId, categoryId);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -188,14 +202,20 @@ public class EntryController {
         return "errors/404";
     }
 
-    private void fillListing(Model model, DateFilterState globalDateFilter) {
+    private void fillListing(Model model, DateFilterState globalDateFilter, Long accountId, Long categoryId) {
         model.addAttribute(
             "entries",
-            entryService.listTop100MostRecentBySettlementDateBetween(
+            entryService.listTop100MostRecentBySettlementDateBetweenAndFilters(
                 globalDateFilter.getStartDate(),
-                globalDateFilter.getEndDate()
+                globalDateFilter.getEndDate(),
+                accountId,
+                categoryId
             )
         );
+        model.addAttribute("selectedAccountId", accountId);
+        model.addAttribute("selectedCategoryId", categoryId);
+        fillAccountOptions(model);
+        fillCategoryOptions(model);
     }
 
     private boolean isHtmx(HttpServletRequest request) {

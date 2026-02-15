@@ -2,6 +2,7 @@ package dev.ccosta.aisha.application.category;
 
 import dev.ccosta.aisha.domain.category.Category;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,9 @@ final class CategoryHierarchyBuilder {
 
             childrenByParent.computeIfAbsent(parent.getId(), key -> new ArrayList<>()).add(category);
         }
+
+        roots.sort(byTitleAndId());
+        childrenByParent.values().forEach(children -> children.sort(byTitleAndId()));
 
         List<CategoryOption> options = new ArrayList<>();
         for (Category root : roots) {
@@ -50,6 +54,16 @@ final class CategoryHierarchyBuilder {
     }
 
     private static String prefix(int depth) {
-        return "  ".repeat(Math.max(0, depth));
+        if (depth <= 0) {
+            return "";
+        }
+        return "- ".repeat(depth);
+    }
+
+    private static Comparator<Category> byTitleAndId() {
+        return Comparator
+            .comparing(Category::getTitle, String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(Category::getTitle)
+            .thenComparing(Category::getId, Comparator.nullsLast(Long::compareTo));
     }
 }

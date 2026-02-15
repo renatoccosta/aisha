@@ -21,7 +21,7 @@ public class DateFilterController {
         @RequestParam DateFilterAction action,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-        @RequestParam(defaultValue = "/entries") String redirectTo,
+        @RequestParam(defaultValue = "/dashboard") String redirectTo,
         HttpSession session
     ) {
         try {
@@ -31,7 +31,7 @@ public class DateFilterController {
         }
 
         if (!redirectTo.startsWith("/")) {
-            return "redirect:/entries";
+            return "redirect:/dashboard";
         }
 
         return "redirect:" + redirectTo;

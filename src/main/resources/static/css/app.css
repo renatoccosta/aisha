@@ -169,6 +169,14 @@ p {
   margin-bottom: 0.8rem;
 }
 
+.list-filters {
+  margin-bottom: 0.8rem;
+}
+
+.list-filters .field {
+  margin-top: 0;
+}
+
 .table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -313,6 +321,159 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+.dashboard-main {
+  gap: 1.1rem;
+}
+
+.dashboard-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.dashboard-chart-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.summary-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.summary-card-head h2 {
+  font-size: 1.05rem;
+}
+
+.summary-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: currentColor;
+}
+
+.summary-card-balance {
+  border-color: #bed9ea;
+  background: linear-gradient(160deg, #ffffff 0%, #edf8ff 100%);
+}
+
+.summary-card-balance .summary-icon {
+  background: rgba(6, 110, 138, 0.16);
+  color: #075b74;
+}
+
+.summary-card-expense {
+  border-color: #f4cecc;
+  background: linear-gradient(160deg, #ffffff 0%, #fff4f3 100%);
+}
+
+.summary-card-expense .summary-icon {
+  background: rgba(178, 46, 57, 0.14);
+  color: #8f1f29;
+}
+
+.summary-card-revenue {
+  border-color: #c7e2c5;
+  background: linear-gradient(160deg, #ffffff 0%, #f2fbf1 100%);
+}
+
+.summary-card-revenue .summary-icon {
+  background: rgba(44, 132, 83, 0.15);
+  color: #1f7346;
+}
+
+.summary-value {
+  margin-top: 0.75rem;
+  font-size: clamp(1.45rem, 3.4vw, 2.1rem);
+  line-height: 1.1;
+  font-weight: 700;
+  color: #0f2436;
+}
+
+.summary-variation {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.variation-up {
+  color: #0a7f55;
+}
+
+.variation-down {
+  color: #a43a1b;
+}
+
+.variation-stable {
+  color: #436078;
+}
+
+.chart-card {
+  min-height: 370px;
+}
+
+.chart-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: start;
+  flex-wrap: wrap;
+}
+
+.chart-mode-selector {
+  display: inline-flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.chart-meta {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.chart-wrap {
+  position: relative;
+  margin-top: 0.95rem;
+  height: min(54vh, 340px);
+}
+
+.loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(247, 251, 255, 0.9) 50%, rgba(255, 255, 255, 0) 100%);
+  transform: translateX(-100%);
+  animation: skeleton-loading 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.skeleton-line {
+  color: transparent;
+  border-radius: 6px;
+  background: #e8eff5;
+}
+
+@keyframes skeleton-loading {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -327,5 +488,15 @@ textarea:focus {
 @media (min-width: 780px) {
   .grid-2 {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .dashboard-chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
