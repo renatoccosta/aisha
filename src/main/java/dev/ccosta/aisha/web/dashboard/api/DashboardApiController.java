@@ -2,6 +2,8 @@ package dev.ccosta.aisha.web.dashboard.api;
 
 import dev.ccosta.aisha.application.dashboard.DashboardBalanceEvolution;
 import dev.ccosta.aisha.application.dashboard.DashboardBalancePoint;
+import dev.ccosta.aisha.application.dashboard.DashboardCategoryTotalsEvolution;
+import dev.ccosta.aisha.application.dashboard.DashboardCategoryTotalsSeries;
 import dev.ccosta.aisha.application.dashboard.DashboardExpenseCategoryBreakdown;
 import dev.ccosta.aisha.application.dashboard.DashboardExpenseCategoryItem;
 import dev.ccosta.aisha.application.dashboard.DashboardMetric;
@@ -109,6 +111,35 @@ public class DashboardApiController {
         );
     }
 
+    @GetMapping("/category-totals")
+    public DashboardCategoryTotalsEvolutionResponse categoryTotals(
+        HttpSession session,
+        @RequestParam(required = false) Long parentCategoryId
+    ) {
+        DateFilterState filter = dateFilterSessionService.getOrCreate(session);
+        DashboardCategoryTotalsEvolution evolution = dashboardService.buildCategoryTotalsEvolution(
+            filter.getStartDate(),
+            filter.getEndDate(),
+            parentCategoryId
+        );
+
+        List<DashboardCategoryTotalsEvolutionResponse.DashboardCategoryTotalsSeriesResponse> series = evolution.series()
+            .stream()
+            .map(this::toCategoryTotalsSeries)
+            .toList();
+
+        return new DashboardCategoryTotalsEvolutionResponse(
+            evolution.startDate(),
+            evolution.endDate(),
+            evolution.granularity(),
+            evolution.currentParentCategoryId(),
+            evolution.currentParentCategoryName(),
+            evolution.drillUpParentCategoryId(),
+            evolution.buckets(),
+            series
+        );
+    }
+
     private DashboardSummaryResponse.DashboardMetricResponse toMetric(DashboardMetric metric) {
         return new DashboardSummaryResponse.DashboardMetricResponse(
             metric.currentValue(),
@@ -143,6 +174,17 @@ public class DashboardApiController {
             item.categoryName(),
             item.amount(),
             item.hasChildren()
+        );
+    }
+
+    private DashboardCategoryTotalsEvolutionResponse.DashboardCategoryTotalsSeriesResponse toCategoryTotalsSeries(
+        DashboardCategoryTotalsSeries series
+    ) {
+        return new DashboardCategoryTotalsEvolutionResponse.DashboardCategoryTotalsSeriesResponse(
+            series.categoryId(),
+            series.categoryName(),
+            series.hasChildren(),
+            series.values()
         );
     }
 }

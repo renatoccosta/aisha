@@ -98,6 +98,20 @@
             </div>
         </article>
     </section>
+
+    <section class="card chart-card loading" id="category-totals-chart-card">
+        <div class="chart-card-head">
+            <div>
+                <h2 th:text="#{dashboard.categoryTotalsChart.title}"></h2>
+                <p th:text="#{dashboard.categoryTotalsChart.subtitle}"></p>
+            </div>
+            <button class="btn btn-secondary" id="category-totals-drill-up" type="button" disabled th:text="#{dashboard.categoryTotalsChart.drillUp}"></button>
+        </div>
+        <p class="chart-meta" id="category-totals-chart-meta" th:text="#{dashboard.loading}"></p>
+        <div class="chart-wrap">
+            <canvas id="category-totals-chart" th:attr="aria-label=#{dashboard.categoryTotalsChart.title}"></canvas>
+        </div>
+    </section>
 </main>
 
 <script th:inline="javascript">
@@ -121,6 +135,10 @@
         expenseCategoryChartEmpty: /*[[#{dashboard.expenseCategoryChart.empty}]]*/ "Sem despesas no período",
         expenseCategoryChartLevelRoot: /*[[#{dashboard.expenseCategoryChart.level.root}]]*/ "Nível: categorias raiz",
         expenseCategoryChartLevelChild: /*[[#{dashboard.expenseCategoryChart.level.child}]]*/ "Nível: subcategorias de {0}",
+        categoryTotalsChartLoadError: /*[[#{dashboard.categoryTotalsChart.error}]]*/ "Não foi possível carregar o gráfico de totais por categoria.",
+        categoryTotalsChartEmpty: /*[[#{dashboard.categoryTotalsChart.empty}]]*/ "Sem dados no período",
+        categoryTotalsChartLevelRoot: /*[[#{dashboard.categoryTotalsChart.level.root}]]*/ "Nível: categorias raiz",
+        categoryTotalsChartLevelChild: /*[[#{dashboard.categoryTotalsChart.level.child}]]*/ "Nível: subcategorias de {0}",
         chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}"
     };
 
@@ -135,6 +153,9 @@
     let expenseCategoryChart = null;
     let expenseCategoryPayload = null;
     let expenseCategoryDrillUpParentId = null;
+    let categoryTotalsChart = null;
+    let categoryTotalsPayload = null;
+    let categoryTotalsDrillUpParentId = null;
 
     function formatCurrency(value) {
         return BRL_FORMATTER.format(Number(value ?? 0));
@@ -535,16 +556,147 @@
         }
     }
 
+    function renderCategoryTotalsChart() {
+        if (!categoryTotalsPayload) {
+            return;
+        }
+
+        const canvas = document.getElementById("category-totals-chart");
+        if (!canvas) {
+            return;
+        }
+
+        const hasData = categoryTotalsPayload.buckets.length > 0 && categoryTotalsPayload.series.length > 0;
+        const labels = hasData
+            ? categoryTotalsPayload.buckets.map((bucket) => (
+                categoryTotalsPayload.granularity === "MONTH" ? formatMonth(bucket) : formatDate(bucket)
+            ))
+            : [i18n.categoryTotalsChartEmpty];
+
+        const palette = ["#0b7fab", "#1f7346", "#a75f00", "#7a4c8e", "#ba3f32", "#64748b", "#0f766e", "#9a3412"];
+        const datasets = hasData
+            ? categoryTotalsPayload.series.map((series, index) => ({
+                label: series.categoryName,
+                data: series.values.map((value) => Number(value)),
+                backgroundColor: palette[index % palette.length],
+                borderColor: "#ffffff",
+                borderWidth: 1,
+                stack: "categoryTotals"
+            }))
+            : [{
+                label: i18n.categoryTotalsChartEmpty,
+                data: [0],
+                backgroundColor: "#d6dde5",
+                stack: "categoryTotals"
+            }];
+
+        if (categoryTotalsChart) {
+            categoryTotalsChart.destroy();
+        }
+
+        categoryTotalsChart = new Chart(canvas, {
+            type: "bar",
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true },
+                    y: {
+                        stacked: true,
+                        ticks: {
+                            callback: (value) => formatCurrency(value)
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { position: "bottom" },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`
+                        }
+                    }
+                },
+                onClick: (_, elements) => {
+                    if (!hasData || elements.length === 0) {
+                        return;
+                    }
+                    const selectedSeries = categoryTotalsPayload.series[elements[0].datasetIndex];
+                    if (!selectedSeries || !selectedSeries.hasChildren) {
+                        return;
+                    }
+                    loadCategoryTotalsEvolution(selectedSeries.categoryId);
+                }
+            }
+        });
+    }
+
+    async function loadCategoryTotalsEvolution(parentCategoryId = null) {
+        const card = document.getElementById("category-totals-chart-card");
+        const meta = document.getElementById("category-totals-chart-meta");
+        const drillUpButton = document.getElementById("category-totals-drill-up");
+        if (!card || !meta) {
+            return;
+        }
+
+        try {
+            const url = new URL("/api/dashboard/category-totals", window.location.origin);
+            if (parentCategoryId !== null) {
+                url.searchParams.set("parentCategoryId", String(parentCategoryId));
+            }
+
+            const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("category-totals-chart-failed");
+            }
+            categoryTotalsPayload = await response.json();
+            card.classList.remove("loading");
+
+            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
+                formatDate(categoryTotalsPayload.startDate),
+                formatDate(categoryTotalsPayload.endDate)
+            ]);
+            const levelLabel = categoryTotalsPayload.currentParentCategoryName
+                ? i18n.categoryTotalsChartLevelChild.replace("{0}", categoryTotalsPayload.currentParentCategoryName)
+                : i18n.categoryTotalsChartLevelRoot;
+            const granularityLabel = categoryTotalsPayload.granularity === "MONTH"
+                ? i18n.chartGranularityMonth
+                : i18n.chartGranularityDay;
+            meta.textContent = `${periodLabel} • ${levelLabel} • ${granularityLabel}`;
+
+            categoryTotalsDrillUpParentId = categoryTotalsPayload.drillUpParentCategoryId;
+            if (drillUpButton) {
+                drillUpButton.disabled = categoryTotalsPayload.currentParentCategoryId === null;
+            }
+
+            renderCategoryTotalsChart();
+        } catch (error) {
+            card.classList.remove("loading");
+            meta.textContent = i18n.categoryTotalsChartLoadError;
+            if (drillUpButton) {
+                drillUpButton.disabled = true;
+            }
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         loadSummary();
         loadBalanceEvolution();
         loadRevenueExpenseEvolution();
         loadExpenseCategoryBreakdown();
+        loadCategoryTotalsEvolution();
 
         const drillUpButton = document.getElementById("expense-category-drill-up");
         if (drillUpButton) {
             drillUpButton.addEventListener("click", () => {
                 loadExpenseCategoryBreakdown(expenseCategoryDrillUpParentId);
+            });
+        }
+
+        const categoryTotalsDrillUpButton = document.getElementById("category-totals-drill-up");
+        if (categoryTotalsDrillUpButton) {
+            categoryTotalsDrillUpButton.addEventListener("click", () => {
+                loadCategoryTotalsEvolution(categoryTotalsDrillUpParentId);
             });
         }
 

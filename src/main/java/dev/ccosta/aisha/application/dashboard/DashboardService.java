@@ -215,6 +215,91 @@ public class DashboardService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public DashboardCategoryTotalsEvolution buildCategoryTotalsEvolution(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long parentCategoryId
+    ) {
+        validateRange(startDate, endDate);
+
+        DashboardSeriesGranularity granularity = resolveGranularity(startDate, endDate);
+        List<Category> categories = categoryRepository.findAllOrdered();
+        Map<Long, Category> categoryById = new HashMap<>();
+        Map<Long, List<Long>> childrenByParentId = new HashMap<>();
+        for (Category category : categories) {
+            categoryById.put(category.getId(), category);
+            Long key = parentIdOf(category);
+            childrenByParentId.computeIfAbsent(key, ignored -> new ArrayList<>()).add(category.getId());
+        }
+
+        if (parentCategoryId != null && !categoryById.containsKey(parentCategoryId)) {
+            throw new IllegalArgumentException("Parent category was not found");
+        }
+
+        List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
+        Map<Long, Map<LocalDate, BigDecimal>> directAmountsByCategory = new HashMap<>();
+
+        for (Entry entry : entries) {
+            LocalDate settlementDate = entry.getSettlementDate();
+            if (!isInsideRange(settlementDate, startDate, endDate)) {
+                continue;
+            }
+
+            Long categoryId = entry.getCategory().getId();
+            LocalDate bucketDate = normalizeBucketStart(settlementDate, granularity);
+            directAmountsByCategory
+                .computeIfAbsent(categoryId, ignored -> new HashMap<>())
+                .merge(bucketDate, entry.getAmount(), BigDecimal::add);
+        }
+
+        Map<Long, Map<LocalDate, BigDecimal>> subtreeAmountsByCategory = new HashMap<>();
+        for (Long categoryId : categoryById.keySet()) {
+            subtreeAmounts(categoryId, childrenByParentId, directAmountsByCategory, subtreeAmountsByCategory);
+        }
+
+        List<Long> visibleCategoryIds = childrenByParentId.getOrDefault(parentCategoryId, List.of());
+        LocalDate lastBucketWithRecords = null;
+        List<CategorySeriesData> categorySeries = new ArrayList<>();
+
+        for (Long categoryId : visibleCategoryIds) {
+            Map<LocalDate, BigDecimal> valuesByBucket = subtreeAmountsByCategory.getOrDefault(categoryId, Map.of());
+            if (valuesByBucket.isEmpty()) {
+                continue;
+            }
+
+            Category category = categoryById.get(categoryId);
+            categorySeries.add(new CategorySeriesData(
+                categoryId,
+                category == null ? "" : category.getTitle(),
+                !childrenByParentId.getOrDefault(categoryId, List.of()).isEmpty(),
+                valuesByBucket,
+                sumAmounts(valuesByBucket)
+            ));
+            lastBucketWithRecords = maxDate(lastBucketWithRecords, latestBucket(valuesByBucket));
+        }
+
+        categorySeries.sort(Comparator.comparing(CategorySeriesData::total).reversed());
+
+        LocalDate effectiveEndDate = resolveEffectiveEndDate(endDate, lastBucketWithRecords, granularity);
+        List<LocalDate> buckets = buildBucketStarts(startDate, effectiveEndDate, granularity);
+        List<DashboardCategoryTotalsSeries> series = categorySeries
+            .stream()
+            .map(data -> toCategoryTotalsSeries(data, buckets))
+            .toList();
+
+        return new DashboardCategoryTotalsEvolution(
+            startDate,
+            endDate,
+            granularity,
+            parentCategoryId,
+            currentParentName(parentCategoryId, categoryById),
+            parentOfCurrent(parentCategoryId, categoryById),
+            buckets,
+            series
+        );
+    }
+
     private DashboardMetric metric(BigDecimal currentValue, BigDecimal previousValue) {
         return new DashboardMetric(currentValue, previousValue, resolveVariationPercent(currentValue, previousValue));
     }
@@ -295,6 +380,53 @@ public class DashboardService {
         return first.isAfter(second) ? first : second;
     }
 
+    private DashboardCategoryTotalsSeries toCategoryTotalsSeries(CategorySeriesData data, List<LocalDate> buckets) {
+        List<BigDecimal> values = new ArrayList<>(buckets.size());
+        for (LocalDate bucket : buckets) {
+            values.add(data.valuesByBucket().getOrDefault(bucket, BigDecimal.ZERO));
+        }
+        return new DashboardCategoryTotalsSeries(data.categoryId(), data.categoryName(), data.hasChildren(), values);
+    }
+
+    private Map<LocalDate, BigDecimal> subtreeAmounts(
+        Long categoryId,
+        Map<Long, List<Long>> childrenByParentId,
+        Map<Long, Map<LocalDate, BigDecimal>> directAmountsByCategory,
+        Map<Long, Map<LocalDate, BigDecimal>> memo
+    ) {
+        Map<LocalDate, BigDecimal> cached = memo.get(categoryId);
+        if (cached != null) {
+            return cached;
+        }
+
+        Map<LocalDate, BigDecimal> totalByBucket = new HashMap<>(directAmountsByCategory.getOrDefault(categoryId, Map.of()));
+        for (Long childId : childrenByParentId.getOrDefault(categoryId, List.of())) {
+            Map<LocalDate, BigDecimal> childValues = subtreeAmounts(childId, childrenByParentId, directAmountsByCategory, memo);
+            for (Map.Entry<LocalDate, BigDecimal> childEntry : childValues.entrySet()) {
+                totalByBucket.merge(childEntry.getKey(), childEntry.getValue(), BigDecimal::add);
+            }
+        }
+
+        memo.put(categoryId, totalByBucket);
+        return totalByBucket;
+    }
+
+    private BigDecimal sumAmounts(Map<LocalDate, BigDecimal> valuesByBucket) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (BigDecimal value : valuesByBucket.values()) {
+            total = total.add(value.abs());
+        }
+        return total;
+    }
+
+    private LocalDate latestBucket(Map<LocalDate, BigDecimal> valuesByBucket) {
+        LocalDate latest = null;
+        for (LocalDate bucket : valuesByBucket.keySet()) {
+            latest = maxDate(latest, bucket);
+        }
+        return latest;
+    }
+
     private DashboardExpenseCategoryItem toItem(
         Long categoryId,
         Map<Long, Category> categoryById,
@@ -354,6 +486,15 @@ public class DashboardService {
             return null;
         }
         return category.getParent().getId();
+    }
+
+    private record CategorySeriesData(
+        Long categoryId,
+        String categoryName,
+        boolean hasChildren,
+        Map<LocalDate, BigDecimal> valuesByBucket,
+        BigDecimal total
+    ) {
     }
 
     private LocalDate resolvePreviousStart(LocalDate startDate, LocalDate endDate) {

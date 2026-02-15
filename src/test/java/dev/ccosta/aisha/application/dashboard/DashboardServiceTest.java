@@ -302,6 +302,79 @@ class DashboardServiceTest {
         assertThat(breakdown.items().get(1).categoryName()).isEqualTo("Restaurante");
     }
 
+    @Test
+    void shouldBuildCategoryTotalsEvolutionForRootCategories() {
+        Category rootFood = newCategory(30L, "Alimentação", null);
+        Category rootHealth = newCategory(31L, "Saúde", null);
+        Category subMarket = newCategory(32L, "Mercado", rootFood);
+        Category subRestaurant = newCategory(33L, "Restaurante", rootFood);
+        Category subPharmacy = newCategory(34L, "Farmácia", rootHealth);
+
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(
+            rootFood,
+            rootHealth,
+            subMarket,
+            subRestaurant,
+            subPharmacy
+        ));
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 3, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 10), "-80.00", subMarket),
+            newEntry(LocalDate.of(2026, 2, 12), "-20.00", subRestaurant),
+            newEntry(LocalDate.of(2026, 3, 2), "-30.00", subPharmacy)
+        ));
+
+        DashboardCategoryTotalsEvolution evolution = dashboardService.buildCategoryTotalsEvolution(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 3, 31),
+            null
+        );
+
+        assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.MONTH);
+        assertThat(evolution.currentParentCategoryId()).isNull();
+        assertThat(evolution.buckets()).containsExactly(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 2, 1),
+            LocalDate.of(2026, 3, 1)
+        );
+        assertThat(evolution.series()).hasSize(2);
+        assertThat(evolution.series().get(0).categoryName()).isEqualTo("Alimentação");
+        assertThat(evolution.series().get(0).values()).containsExactly(
+            new BigDecimal("-80.00"),
+            new BigDecimal("-20.00"),
+            BigDecimal.ZERO
+        );
+        assertThat(evolution.series().get(0).hasChildren()).isTrue();
+    }
+
+    @Test
+    void shouldDrillDownCategoryTotalsEvolutionAndTrimTrailingBuckets() {
+        Category rootFood = newCategory(40L, "Alimentação", null);
+        Category subMarket = newCategory(41L, "Mercado", rootFood);
+        Category subRestaurant = newCategory(42L, "Restaurante", rootFood);
+
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootFood, subMarket, subRestaurant));
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 6, 30))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 5), "-10.00", subMarket),
+            newEntry(LocalDate.of(2026, 2, 7), "-15.00", subRestaurant)
+        ));
+
+        DashboardCategoryTotalsEvolution evolution = dashboardService.buildCategoryTotalsEvolution(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 6, 30),
+            rootFood.getId()
+        );
+
+        assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.MONTH);
+        assertThat(evolution.currentParentCategoryId()).isEqualTo(rootFood.getId());
+        assertThat(evolution.currentParentCategoryName()).isEqualTo("Alimentação");
+        assertThat(evolution.drillUpParentCategoryId()).isNull();
+        assertThat(evolution.buckets()).containsExactly(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 2, 1)
+        );
+        assertThat(evolution.series()).hasSize(2);
+    }
+
     private Entry newEntry(LocalDate settlementDate, String amount) {
         return newEntry(settlementDate, amount, "Geral");
     }
