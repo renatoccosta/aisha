@@ -17,7 +17,7 @@
             <h2 th:text="#{entries.list.heading}"></h2>
             <p th:text="#{entries.list.subtitle}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/entries/new}" th:text="#{entries.list.action.new}"></a>
+        <a class="btn btn-primary" th:href="@{/entries/new}" data-icon="➕" th:text="#{entries.list.action.new}"></a>
     </section>
 
     <section id="table-container" th:fragment="table" class="card">
@@ -69,21 +69,24 @@
             <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
 
             <div class="table-actions">
-                <button class="btn btn-danger" type="submit" th:text="#{entries.list.action.bulkDelete}"></button>
+                <button class="btn btn-danger" type="submit" data-icon="🗑️" th:text="#{entries.list.action.bulkDelete}"></button>
             </div>
 
             <div class="table-wrap">
                 <table class="responsive-list">
                     <thead>
                     <tr>
-                        <th><span class="sr-only" th:text="#{entries.list.table.select}"></span></th>
-                        <th th:text="#{entries.list.table.account}"></th>
-                        <th th:text="#{entries.list.table.movementDate}"></th>
-                        <th th:text="#{entries.list.table.settlementDate}"></th>
-                        <th th:text="#{entries.list.table.description}"></th>
-                        <th th:text="#{entries.list.table.category}"></th>
-                        <th th:text="#{entries.list.table.amount}"></th>
-                        <th th:text="#{entries.list.table.actions}"></th>
+                        <th>
+                            <span class="table-heading-label" data-icon="☑️" aria-hidden="true"></span>
+                            <span class="sr-only" th:text="#{entries.list.table.select}"></span>
+                        </th>
+                        <th><span class="table-heading-label" data-icon="💼" th:text="#{entries.list.table.account}"></span></th>
+                        <th><span class="table-heading-label" data-icon="📅" th:text="#{entries.list.table.movementDate}"></span></th>
+                        <th><span class="table-heading-label" data-icon="📆" th:text="#{entries.list.table.settlementDate}"></span></th>
+                        <th><span class="table-heading-label" data-icon="📝" th:text="#{entries.list.table.description}"></span></th>
+                        <th><span class="table-heading-label" data-icon="🏷️" th:text="#{entries.list.table.category}"></span></th>
+                        <th><span class="table-heading-label" data-icon="💰" th:text="#{entries.list.table.amount}"></span></th>
+                        <th><span class="table-heading-label" data-icon="⚙️" th:text="#{entries.list.table.actions}"></span></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -102,10 +105,11 @@
                         <td class="amount-cell" th:attr="data-label=#{entries.list.table.amount}" th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></td>
                         <td class="cell-actions" th:attr="data-label=#{entries.list.table.actions}">
                             <div class="actions-inline entry-actions-inline">
-                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id})}" th:text="#{entries.list.action.edit}"></a>
+                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id})}" data-icon="✏️" th:text="#{entries.list.action.edit}"></a>
                                 <button
                                     class="btn btn-danger"
                                     type="button"
+                                    data-icon="🗑️"
                                     th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId})},hx-confirm=#{entries.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">

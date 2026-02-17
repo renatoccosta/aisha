@@ -20,10 +20,10 @@
                 <h1>AI$HA</h1>
                 <p th:text="${subtitle}"></p>
                 <nav class="topnav">
-                    <a th:href="@{/dashboard}" th:text="#{nav.dashboard}"></a>
-                    <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
-                    <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
-                    <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
+                    <a th:href="@{/dashboard}" data-icon="📊" th:text="#{nav.dashboard}"></a>
+                    <a th:href="@{/entries}" data-icon="🧾" th:text="#{nav.entries}"></a>
+                    <a th:href="@{/categories}" data-icon="🏷️" th:text="#{nav.categories}"></a>
+                    <a th:href="@{/accounts}" data-icon="💼" th:text="#{nav.accounts}"></a>
                 </nav>
             </div>
         </div>
@@ -35,12 +35,13 @@
             <div class="actions-inline topbar-controls">
                 <form method="post" th:action="@{/logout}" th:if="${currentUsername != null}">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                    <button type="submit" class="btn btn-secondary" th:text="#{auth.header.logout}"></button>
+                    <button type="submit" class="btn btn-secondary" data-icon="🚪" th:text="#{auth.header.logout}"></button>
                 </form>
                 <button
                     type="button"
                     id="theme-toggle"
                     class="btn btn-secondary"
+                    data-icon="🌓"
                     th:attr="aria-label=#{theme.toggle.aria},data-label-light=#{theme.toggle.light},data-label-dark=#{theme.toggle.dark}">
                 </button>
             </div>
@@ -60,6 +61,7 @@
                         type="submit"
                         name="action"
                         value="SET_WEEK"
+                        data-icon="🗓️"
                         th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'WEEK'} ? ' btn-active' : ''"
                         th:text="#{dateFilter.preset.week}">
                     </button>
@@ -68,6 +70,7 @@
                         type="submit"
                         name="action"
                         value="SET_MONTH"
+                        data-icon="🗓️"
                         th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'MONTH'} ? ' btn-active' : ''"
                         th:text="#{dateFilter.preset.month}">
                     </button>
@@ -76,6 +79,7 @@
                         type="submit"
                         name="action"
                         value="SET_YEAR"
+                        data-icon="🗓️"
                         th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'YEAR'} ? ' btn-active' : ''"
                         th:text="#{dateFilter.preset.year}">
                     </button>
@@ -103,7 +107,7 @@
                         <input id="date-filter-end" type="date" name="endDate" th:value="${globalDateFilter.endDate}">
                     </div>
                 </div>
-                <button class="btn btn-primary period-filter-apply" type="submit" name="action" value="APPLY_CUSTOM" th:text="#{dateFilter.action.apply}"></button>
+                <button class="btn btn-primary period-filter-apply" type="submit" name="action" value="APPLY_CUSTOM" data-icon="✅" th:text="#{dateFilter.action.apply}"></button>
             </div>
         </form>
     </div>

@@ -43,8 +43,8 @@
             </div>
 
             <div class="actions-inline">
-                <button class="btn btn-primary" type="submit" th:text="${mode == 'create'} ? #{accounts.form.action.save} : #{accounts.form.action.update}"></button>
-                <a class="btn btn-secondary" th:href="@{/accounts}" th:text="#{accounts.form.action.cancel}"></a>
+                <button class="btn btn-primary" type="submit" data-icon="💾" th:text="${mode == 'create'} ? #{accounts.form.action.save} : #{accounts.form.action.update}"></button>
+                <a class="btn btn-secondary" th:href="@{/accounts}" data-icon="↩️" th:text="#{accounts.form.action.cancel}"></a>
             </div>
         </form>
     </section>

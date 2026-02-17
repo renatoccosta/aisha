@@ -130,6 +130,14 @@ body {
   color: var(--color-action-secondary-bg);
   text-decoration: none;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.topnav a::before {
+  content: attr(data-icon);
+  line-height: 1;
 }
 
 .topnav a:hover {
@@ -361,6 +369,17 @@ th {
   color: var(--muted);
 }
 
+.table-heading-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.table-heading-label::before {
+  content: attr(data-icon);
+  line-height: 1;
+}
+
 .empty {
   text-align: center;
   color: var(--muted);
@@ -535,7 +554,13 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.42rem;
   cursor: pointer;
+}
+
+.btn:not(.btn-icon)::before {
+  content: attr(data-icon);
+  line-height: 1;
 }
 
 .btn-primary {
