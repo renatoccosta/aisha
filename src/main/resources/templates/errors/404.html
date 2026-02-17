@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{errors.notFound.title}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
 </head>
 <body>
 <header th:replace="~{fragments/header :: topbar(subtitle=#{errors.notFound.title})}"></header>
@@ -13,7 +13,10 @@
     <section class="card form-card">
         <h1 th:text="#{errors.notFound.code}"></h1>
         <p th:text="#{errors.notFound.message}"></p>
-        <a class="btn btn-primary" th:href="@{/entries}" th:text="#{errors.notFound.backToEntries}"></a>
+        <a class="btn btn-primary" th:href="@{/entries}">
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+            <span th:text="#{errors.notFound.backToEntries}"></span>
+        </a>
     </section>
 </main>
 </body>

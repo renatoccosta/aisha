@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{accounts.list.title}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
@@ -17,7 +17,10 @@
             <h2 th:text="#{accounts.list.heading}"></h2>
             <p th:text="#{accounts.list.subtitle}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/accounts/new}" th:text="#{accounts.list.action.new}"></a>
+        <a class="btn btn-primary" th:href="@{/accounts/new}">
+            <i data-lucide="plus" aria-hidden="true"></i>
+            <span th:text="#{accounts.list.action.new}"></span>
+        </a>
     </section>
 
     <section id="table-container" th:fragment="table" class="card">
@@ -33,17 +36,40 @@
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
             <div class="table-actions">
-                <button class="btn btn-danger" type="submit" th:text="#{accounts.list.action.bulkDelete}"></button>
+                <button class="btn btn-danger" type="submit">
+                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                    <span th:text="#{accounts.list.action.bulkDelete}"></span>
+                </button>
             </div>
 
             <div class="table-wrap">
                 <table class="responsive-list">
                     <thead>
                     <tr>
-                        <th><span class="sr-only" th:text="#{accounts.list.table.select}"></span></th>
-                        <th th:text="#{accounts.list.table.title}"></th>
-                        <th th:text="#{accounts.list.table.description}"></th>
-                        <th th:text="#{accounts.list.table.actions}"></th>
+                        <th>
+                            <span class="table-heading-label" aria-hidden="true">
+                                <i data-lucide="check-square" aria-hidden="true"></i>
+                            </span>
+                            <span class="sr-only" th:text="#{accounts.list.table.select}"></span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="briefcase" aria-hidden="true"></i>
+                                <span th:text="#{accounts.list.table.title}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="file-text" aria-hidden="true"></i>
+                                <span th:text="#{accounts.list.table.description}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="settings" aria-hidden="true"></i>
+                                <span th:text="#{accounts.list.table.actions}"></span>
+                            </span>
+                        </th>
                     </tr>
                     </thead>
                     <tbody>
@@ -58,13 +84,17 @@
                         <td th:attr="data-label=#{accounts.list.table.description}" th:text="${account.description}"></td>
                         <td class="cell-actions" th:attr="data-label=#{accounts.list.table.actions}">
                             <div class="actions-inline">
-                                <a class="btn btn-secondary" th:href="@{/accounts/{id}/edit(id=${account.id})}" th:text="#{accounts.list.action.edit}"></a>
+                                <a class="btn btn-secondary" th:href="@{/accounts/{id}/edit(id=${account.id})}">
+                                    <i data-lucide="edit-3" aria-hidden="true"></i>
+                                    <span th:text="#{accounts.list.action.edit}"></span>
+                                </a>
                                 <button
                                     class="btn btn-danger"
                                     type="button"
                                     th:attr="hx-post=@{/accounts/{id}/delete(id=${account.id})},hx-confirm=#{accounts.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
+                                    <i data-lucide="trash-2" aria-hidden="true"></i>
                                     <span th:text="#{accounts.list.action.delete}"></span>
                                 </button>
                             </div>
@@ -85,14 +115,27 @@
                 <table class="balances-table">
                     <thead>
                     <tr>
-                        <th th:text="#{accounts.balance.table.account}"></th>
-                        <th class="amount-cell" th:text="#{accounts.balance.table.previousPeriod}"></th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="briefcase" aria-hidden="true"></i>
+                                <span th:text="#{accounts.balance.table.account}"></span>
+                            </span>
+                        </th>
+                        <th class="amount-cell">
+                            <span class="table-heading-label">
+                                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                                <span th:text="#{accounts.balance.table.previousPeriod}"></span>
+                            </span>
+                        </th>
                         <th class="amount-cell" th:each="bucket : ${accountBalanceReport.buckets}">
-                            <span th:switch="${accountBalanceReport.granularity.name()}">
+                            <span class="table-heading-label">
+                                <i data-lucide="calendar" aria-hidden="true"></i>
+                                <span th:switch="${accountBalanceReport.granularity.name()}">
                                 <span th:case="'YEAR'" th:text="${#temporals.format(bucket.startDate, 'yyyy')}"></span>
                                 <span th:case="'MONTH'" th:text="${#temporals.format(bucket.startDate, 'MMM')}"></span>
                                 <span th:case="'DAY'" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
                                 <span th:case="*" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
+                                </span>
                             </span>
                         </th>
                     </tr>

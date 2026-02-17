@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{categories.list.title}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
@@ -17,7 +17,10 @@
             <h2 th:text="#{categories.list.heading}"></h2>
             <p th:text="#{categories.list.subtitle}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/categories/new}" th:text="#{categories.list.action.new}"></a>
+        <a class="btn btn-primary" th:href="@{/categories/new}">
+            <i data-lucide="plus" aria-hidden="true"></i>
+            <span th:text="#{categories.list.action.new}"></span>
+        </a>
     </section>
 
     <section id="table-container" th:fragment="table" class="card">
@@ -33,18 +36,26 @@
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
             <div class="table-actions">
-                <button class="btn btn-danger" type="submit" th:text="#{categories.list.action.bulkDelete}"></button>
+                <button class="btn btn-danger" type="submit">
+                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                    <span th:text="#{categories.list.action.bulkDelete}"></span>
+                </button>
             </div>
 
             <div class="table-wrap">
                 <table class="responsive-list">
                     <thead>
                     <tr>
-                        <th><span class="sr-only" th:text="#{categories.list.table.select}"></span></th>
-                        <th th:text="#{categories.list.table.title}"></th>
-                        <th th:text="#{categories.list.table.description}"></th>
-                        <th th:text="#{categories.list.table.parent}"></th>
-                        <th th:text="#{categories.list.table.actions}"></th>
+                        <th>
+                            <span class="table-heading-label" aria-hidden="true">
+                                <i data-lucide="check-square" aria-hidden="true"></i>
+                            </span>
+                            <span class="sr-only" th:text="#{categories.list.table.select}"></span>
+                        </th>
+                        <th><span class="table-heading-label"><i data-lucide="tag" aria-hidden="true"></i><span th:text="#{categories.list.table.title}"></span></span></th>
+                        <th><span class="table-heading-label"><i data-lucide="file-text" aria-hidden="true"></i><span th:text="#{categories.list.table.description}"></span></span></th>
+                        <th><span class="table-heading-label"><i data-lucide="git-branch" aria-hidden="true"></i><span th:text="#{categories.list.table.parent}"></span></span></th>
+                        <th><span class="table-heading-label"><i data-lucide="settings" aria-hidden="true"></i><span th:text="#{categories.list.table.actions}"></span></span></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -60,13 +71,17 @@
                         <td th:attr="data-label=#{categories.list.table.parent}" th:text="${category.parent != null ? category.parent.title : '-'}"></td>
                         <td class="cell-actions" th:attr="data-label=#{categories.list.table.actions}">
                             <div class="actions-inline">
-                                <a class="btn btn-secondary" th:href="@{/categories/{id}/edit(id=${category.id})}" th:text="#{categories.list.action.edit}"></a>
+                                <a class="btn btn-secondary" th:href="@{/categories/{id}/edit(id=${category.id})}">
+                                    <i data-lucide="edit-3" aria-hidden="true"></i>
+                                    <span th:text="#{categories.list.action.edit}"></span>
+                                </a>
                                 <button
                                     class="btn btn-danger"
                                     type="button"
                                     th:attr="hx-post=@{/categories/{id}/delete(id=${category.id})},hx-confirm=#{categories.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
+                                    <i data-lucide="trash-2" aria-hidden="true"></i>
                                     <span th:text="#{categories.list.action.delete}"></span>
                                 </button>
                             </div>
@@ -87,14 +102,27 @@
                 <table class="balances-table">
                     <thead>
                     <tr>
-                        <th th:text="#{categories.balance.table.category}"></th>
-                        <th class="amount-cell" th:text="#{categories.balance.table.previousPeriod}"></th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="tag" aria-hidden="true"></i>
+                                <span th:text="#{categories.balance.table.category}"></span>
+                            </span>
+                        </th>
+                        <th class="amount-cell">
+                            <span class="table-heading-label">
+                                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                                <span th:text="#{categories.balance.table.previousPeriod}"></span>
+                            </span>
+                        </th>
                         <th class="amount-cell" th:each="bucket : ${categoryBalanceReport.buckets}">
-                            <span th:switch="${categoryBalanceReport.granularity.name()}">
+                            <span class="table-heading-label">
+                                <i data-lucide="calendar" aria-hidden="true"></i>
+                                <span th:switch="${categoryBalanceReport.granularity.name()}">
                                 <span th:case="'YEAR'" th:text="${#temporals.format(bucket.startDate, 'yyyy')}"></span>
                                 <span th:case="'MONTH'" th:text="${#temporals.format(bucket.startDate, 'MMM')}"></span>
                                 <span th:case="'DAY'" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
                                 <span th:case="*" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
+                                </span>
                             </span>
                         </th>
                     </tr>

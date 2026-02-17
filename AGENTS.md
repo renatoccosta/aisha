@@ -67,6 +67,13 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Prefer simple, reusable components via template fragments (header, navbar, card, form controls).
 - Avoid custom JavaScript unless strictly necessary; use HTMX for interactivity.
 - Validate user input both client-side (when easy) and server-side (always).
+- Iconography is mandatory and must be consistent:
+  - Use Lucide icons (https://lucide.dev) as the default icon set for all current and future implementations.
+  - Every button with visible text must show a representative icon on the left.
+  - Ignore buttons that are icon-only by design.
+  - Every listing table column header must show a representative icon on the left.
+  - Every main navigation functionality (Dashboard, Lançamentos, Categorias, Contas, and future items) must have a representative icon shown to the left of its name.
+  - This must be the default behavior for new implementations.
 
 ## Controller guidelines
 - Controllers may return full pages or HTML fragments.

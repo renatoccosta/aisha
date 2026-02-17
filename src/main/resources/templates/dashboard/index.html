@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{dashboard.title}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
     <script th:src="@{/webjars/chart.js/4.5.1/dist/chart.umd.min.js}"></script>
 </head>
 <body>
@@ -16,9 +16,7 @@
         <article class="card summary-card summary-card-balance loading" id="summary-current-balance">
             <div class="summary-card-head">
                 <span class="summary-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5v-9Zm2 0v1.25h14V7.5a.5.5 0 0 0-.5-.5h-13a.5.5 0 0 0-.5.5Zm0 3.25v5.75c0 .27.22.5.5.5h13a.5.5 0 0 0 .5-.5v-5.75H5Zm8 3a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z"/>
-                    </svg>
+                    <i data-lucide="briefcase" aria-hidden="true"></i>
                 </span>
                 <h2 th:text="#{dashboard.card.currentBalance}"></h2>
             </div>
@@ -29,9 +27,7 @@
         <article class="card summary-card summary-card-expense loading" id="summary-total-expenses">
             <div class="summary-card-head">
                 <span class="summary-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M4 4h16v2H4V4Zm0 7h11v2H4v-2Zm0 7h8v2H4v-2Zm14-8 4 4-4 4-1.4-1.4 1.6-1.6H13v-2h5.2l-1.6-1.6L18 10Z"/>
-                    </svg>
+                    <i data-lucide="arrow-down-right" aria-hidden="true"></i>
                 </span>
                 <h2 th:text="#{dashboard.card.totalExpenses}"></h2>
             </div>
@@ -42,9 +38,7 @@
         <article class="card summary-card summary-card-revenue loading" id="summary-total-revenues">
             <div class="summary-card-head">
                 <span class="summary-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M4 4h16v2H4V4Zm0 7h8v2H4v-2Zm0 7h11v2H4v-2Zm10-8h5.2l-1.6-1.6L19 7l4 4-4 4-1.4-1.4 1.6-1.6H14v-2Z"/>
-                    </svg>
+                    <i data-lucide="arrow-up-right" aria-hidden="true"></i>
                 </span>
                 <h2 th:text="#{dashboard.card.totalRevenues}"></h2>
             </div>
@@ -60,8 +54,14 @@
                 <p th:text="#{dashboard.chart.subtitle}"></p>
             </div>
             <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
-                <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated" th:text="#{dashboard.chart.mode.accumulated}"></button>
-                <button class="btn btn-secondary" type="button" data-mode="period" th:text="#{dashboard.chart.mode.period}"></button>
+                <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated">
+                    <i data-lucide="trending-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.chart.mode.accumulated}"></span>
+                </button>
+                <button class="btn btn-secondary" type="button" data-mode="period">
+                    <i data-lucide="bar-chart-2" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.chart.mode.period}"></span>
+                </button>
             </div>
         </div>
         <p class="chart-meta" id="balance-chart-meta" th:text="#{dashboard.loading}"></p>
@@ -90,7 +90,10 @@
                     <h2 th:text="#{dashboard.expenseCategoryChart.title}"></h2>
                     <p th:text="#{dashboard.expenseCategoryChart.subtitle}"></p>
                 </div>
-                <button class="btn btn-secondary" id="expense-category-drill-up" type="button" disabled th:text="#{dashboard.expenseCategoryChart.drillUp}"></button>
+                <button class="btn btn-secondary" id="expense-category-drill-up" type="button" disabled>
+                    <i data-lucide="arrow-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.expenseCategoryChart.drillUp}"></span>
+                </button>
             </div>
             <p class="chart-meta" id="expense-category-chart-meta" th:text="#{dashboard.loading}"></p>
             <div class="chart-wrap">
@@ -105,7 +108,10 @@
                 <h2 th:text="#{dashboard.categoryTotalsChart.title}"></h2>
                 <p th:text="#{dashboard.categoryTotalsChart.subtitle}"></p>
             </div>
-            <button class="btn btn-secondary" id="category-totals-drill-up" type="button" disabled th:text="#{dashboard.categoryTotalsChart.drillUp}"></button>
+            <button class="btn btn-secondary" id="category-totals-drill-up" type="button" disabled>
+                <i data-lucide="arrow-up" aria-hidden="true"></i>
+                <span th:text="#{dashboard.categoryTotalsChart.drillUp}"></span>
+            </button>
         </div>
         <p class="chart-meta" id="category-totals-chart-meta" th:text="#{dashboard.loading}"></p>
         <div class="chart-wrap">
@@ -175,6 +181,19 @@
 
     function replaceMetaRange(text, values) {
         return text.replace("{0}", values[0]).replace("{1}", values[1]);
+    }
+
+    function getThemeColor(variableName, fallback) {
+        const color = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        return color || fallback;
+    }
+
+    function getChartTheme() {
+        return {
+            text: getThemeColor("--color-text-secondary", "#35506a"),
+            grid: getThemeColor("--color-border-default", "#d7e0e8"),
+            surface: getThemeColor("--color-bg-card", "#ffffff")
+        };
     }
 
     function renderMetric(cardId, metric) {
@@ -249,6 +268,7 @@
         if (!chartPayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const labels = chartPayload.points.map((point) => (
             chartPayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
@@ -274,8 +294,8 @@
                 datasets: [{
                     label: seriesLabel,
                     data: dataset,
-                    borderColor: "#0b7fab",
-                    backgroundColor: "rgba(11, 127, 171, 0.14)",
+                    borderColor: "#19647e",
+                    backgroundColor: "rgba(25, 100, 126, 0.16)",
                     fill: true,
                     tension: 0.25,
                     pointRadius: 2.5,
@@ -287,14 +307,29 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
+                        grid: {
+                            color: chartTheme.grid
+                        },
                         ticks: {
+                            color: chartTheme.text,
                             callback: (value) => formatCurrency(value)
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
                         }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: true
+                        display: true,
+                        labels: {
+                            color: chartTheme.text
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -342,6 +377,7 @@
         if (!revenueExpensePayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const labels = revenueExpensePayload.points.map((point) => (
             revenueExpensePayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
@@ -367,16 +403,16 @@
                     {
                         label: i18n.revenueExpenseChartSeriesRevenue,
                         data: revenueData,
-                        backgroundColor: "rgba(36, 138, 84, 0.85)",
-                        borderColor: "#1b7e4b",
+                        backgroundColor: "rgba(34, 191, 150, 0.85)",
+                        borderColor: "#22bf96",
                         borderWidth: 1.2,
                         stack: "cashflow"
                     },
                     {
                         label: i18n.revenueExpenseChartSeriesExpense,
                         data: expenseData,
-                        backgroundColor: "rgba(189, 64, 56, 0.85)",
-                        borderColor: "#9e2f2b",
+                        backgroundColor: "rgba(207, 103, 112, 0.85)",
+                        borderColor: "#cf6770",
                         borderWidth: 1.2,
                         stack: "cashflow"
                     }
@@ -387,18 +423,31 @@
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        stacked: true
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
+                        }
                     },
                     y: {
                         stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
                         ticks: {
+                            color: chartTheme.text,
                             callback: (value) => formatCurrency(value)
                         }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: true
+                        display: true,
+                        labels: {
+                            color: chartTheme.text
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -446,6 +495,7 @@
         if (!expenseCategoryPayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const canvas = document.getElementById("expense-category-chart");
         if (!canvas) {
@@ -460,8 +510,8 @@
             ? expenseCategoryPayload.items.map((item) => Number(item.amount))
             : [1];
         const colors = hasItems
-            ? ["#0b7fab", "#1f7346", "#a75f00", "#7a4c8e", "#ba3f32", "#64748b"]
-            : ["#d6dde5"];
+            ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7"]
+            : ["#d7e0e8"];
 
         if (expenseCategoryChart) {
             expenseCategoryChart.destroy();
@@ -474,7 +524,7 @@
                 datasets: [{
                     data,
                     backgroundColor: colors,
-                    borderColor: "#ffffff",
+                    borderColor: chartTheme.surface,
                     borderWidth: 2
                 }]
             },
@@ -483,7 +533,10 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: "bottom"
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -560,6 +613,7 @@
         if (!categoryTotalsPayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const canvas = document.getElementById("category-totals-chart");
         if (!canvas) {
@@ -573,20 +627,20 @@
             ))
             : [i18n.categoryTotalsChartEmpty];
 
-        const palette = ["#0b7fab", "#1f7346", "#a75f00", "#7a4c8e", "#ba3f32", "#64748b", "#0f766e", "#9a3412"];
+        const palette = ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7", "#22bf96", "#cf6770"];
         const datasets = hasData
             ? categoryTotalsPayload.series.map((series, index) => ({
                 label: series.categoryName,
                 data: series.values.map((value) => Number(value)),
                 backgroundColor: palette[index % palette.length],
-                borderColor: "#ffffff",
+                borderColor: chartTheme.surface,
                 borderWidth: 1,
                 stack: "categoryTotals"
             }))
             : [{
                 label: i18n.categoryTotalsChartEmpty,
                 data: [0],
-                backgroundColor: "#d6dde5",
+                backgroundColor: "#d7e0e8",
                 stack: "categoryTotals"
             }];
 
@@ -601,16 +655,33 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { stacked: true },
+                    x: {
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
+                        }
+                    },
                     y: {
                         stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
                         ticks: {
+                            color: chartTheme.text,
                             callback: (value) => formatCurrency(value)
                         }
                     }
                 },
                 plugins: {
-                    legend: { position: "bottom" },
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
                     tooltip: {
                         callbacks: {
                             label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`
@@ -707,6 +778,15 @@
                 button.classList.add("btn-active");
                 renderChart(button.dataset.mode);
             });
+        });
+
+        window.addEventListener("aisha-theme-changed", () => {
+            const activeModeButton = document.querySelector(".chart-mode-selector .btn-active");
+            const mode = activeModeButton?.dataset.mode ?? "accumulated";
+            renderChart(mode);
+            renderRevenueExpenseChart();
+            renderExpenseCategoryChart();
+            renderCategoryTotalsChart();
         });
     });
 </script>

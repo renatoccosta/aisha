@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${mode == 'create'} ? #{accounts.form.title.create} : #{accounts.form.title.edit}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
 </head>
 <body>
 <header th:replace="~{fragments/header :: topbar(subtitle=#{accounts.form.header.subtitle})}"></header>
@@ -43,8 +43,14 @@
             </div>
 
             <div class="actions-inline">
-                <button class="btn btn-primary" type="submit" th:text="${mode == 'create'} ? #{accounts.form.action.save} : #{accounts.form.action.update}"></button>
-                <a class="btn btn-secondary" th:href="@{/accounts}" th:text="#{accounts.form.action.cancel}"></a>
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="save" aria-hidden="true"></i>
+                    <span th:text="${mode == 'create'} ? #{accounts.form.action.save} : #{accounts.form.action.update}"></span>
+                </button>
+                <a class="btn btn-secondary" th:href="@{/accounts}">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <span th:text="#{accounts.form.action.cancel}"></span>
+                </a>
             </div>
         </form>
     </section>
