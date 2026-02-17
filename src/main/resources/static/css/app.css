@@ -143,8 +143,7 @@ body {
   width: 56px;
   height: 56px;
   flex: 0 0 auto;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px var(--color-logo-shadow);
+  background: transparent;
 }
 
 .topbar-user {
