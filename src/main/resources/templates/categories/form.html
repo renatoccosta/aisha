@@ -43,8 +43,14 @@
             </div>
 
             <div class="actions-inline">
-                <button class="btn btn-primary" type="submit" data-icon="💾" th:text="${mode == 'create'} ? #{categories.form.action.save} : #{categories.form.action.update}"></button>
-                <a class="btn btn-secondary" th:href="@{/categories}" data-icon="↩️" th:text="#{categories.form.action.cancel}"></a>
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="save" aria-hidden="true"></i>
+                    <span th:text="${mode == 'create'} ? #{categories.form.action.save} : #{categories.form.action.update}"></span>
+                </button>
+                <a class="btn btn-secondary" th:href="@{/categories}">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <span th:text="#{categories.form.action.cancel}"></span>
+                </a>
             </div>
         </form>
     </section>

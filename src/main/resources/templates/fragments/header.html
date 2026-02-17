@@ -2,6 +2,8 @@
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <body>
 <header th:fragment="topbar(subtitle)" class="topbar">
+    <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script defer th:src="@{/js/lucide-init.js}"></script>
     <script th:inline="javascript">
         (function () {
             const key = "aisha-theme";
@@ -20,10 +22,22 @@
                 <h1>AI$HA</h1>
                 <p th:text="${subtitle}"></p>
                 <nav class="topnav">
-                    <a th:href="@{/dashboard}" data-icon="📊" th:text="#{nav.dashboard}"></a>
-                    <a th:href="@{/entries}" data-icon="🧾" th:text="#{nav.entries}"></a>
-                    <a th:href="@{/categories}" data-icon="🏷️" th:text="#{nav.categories}"></a>
-                    <a th:href="@{/accounts}" data-icon="💼" th:text="#{nav.accounts}"></a>
+                    <a th:href="@{/dashboard}">
+                        <i data-lucide="home" aria-hidden="true"></i>
+                        <span th:text="#{nav.dashboard}"></span>
+                    </a>
+                    <a th:href="@{/entries}">
+                        <i data-lucide="file-text" aria-hidden="true"></i>
+                        <span th:text="#{nav.entries}"></span>
+                    </a>
+                    <a th:href="@{/categories}">
+                        <i data-lucide="tag" aria-hidden="true"></i>
+                        <span th:text="#{nav.categories}"></span>
+                    </a>
+                    <a th:href="@{/accounts}">
+                        <i data-lucide="briefcase" aria-hidden="true"></i>
+                        <span th:text="#{nav.accounts}"></span>
+                    </a>
                 </nav>
             </div>
         </div>
@@ -35,14 +49,23 @@
             <div class="actions-inline topbar-controls">
                 <form method="post" th:action="@{/logout}" th:if="${currentUsername != null}">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                    <button type="submit" class="btn btn-secondary" data-icon="🚪" th:text="#{auth.header.logout}"></button>
+                    <button type="submit" class="btn btn-secondary">
+                        <i data-lucide="log-out" aria-hidden="true"></i>
+                        <span th:text="#{auth.header.logout}"></span>
+                    </button>
                 </form>
                 <button
                     type="button"
                     id="theme-toggle"
                     class="btn btn-secondary"
-                    data-icon="🌓"
                     th:attr="aria-label=#{theme.toggle.aria},data-label-light=#{theme.toggle.light},data-label-dark=#{theme.toggle.dark}">
+                    <span data-role="icon-dark">
+                        <i data-lucide="moon" aria-hidden="true"></i>
+                    </span>
+                    <span data-role="icon-light" hidden>
+                        <i data-lucide="sun" aria-hidden="true"></i>
+                    </span>
+                    <span data-role="label"></span>
                 </button>
             </div>
         </div>
@@ -61,27 +84,27 @@
                         type="submit"
                         name="action"
                         value="SET_WEEK"
-                        data-icon="🗓️"
-                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'WEEK'} ? ' btn-active' : ''"
-                        th:text="#{dateFilter.preset.week}">
+                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'WEEK'} ? ' btn-active' : ''">
+                        <i data-lucide="calendar" aria-hidden="true"></i>
+                        <span th:text="#{dateFilter.preset.week}"></span>
                     </button>
                     <button
                         class="btn btn-secondary"
                         type="submit"
                         name="action"
                         value="SET_MONTH"
-                        data-icon="🗓️"
-                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'MONTH'} ? ' btn-active' : ''"
-                        th:text="#{dateFilter.preset.month}">
+                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'MONTH'} ? ' btn-active' : ''">
+                        <i data-lucide="calendar" aria-hidden="true"></i>
+                        <span th:text="#{dateFilter.preset.month}"></span>
                     </button>
                     <button
                         class="btn btn-secondary"
                         type="submit"
                         name="action"
                         value="SET_YEAR"
-                        data-icon="🗓️"
-                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'YEAR'} ? ' btn-active' : ''"
-                        th:text="#{dateFilter.preset.year}">
+                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'YEAR'} ? ' btn-active' : ''">
+                        <i data-lucide="calendar" aria-hidden="true"></i>
+                        <span th:text="#{dateFilter.preset.year}"></span>
                     </button>
                 </div>
             </div>
@@ -89,11 +112,11 @@
             <div class="period-filter-row period-filter-row-main">
                 <div class="actions-inline period-filter-nav">
                     <button class="btn btn-secondary btn-icon" type="submit" name="action" value="GO_PREVIOUS">
-                        <span aria-hidden="true">&#8592;</span>
+                        <i data-lucide="chevron-left" aria-hidden="true"></i>
                         <span class="sr-only" th:text="#{dateFilter.nav.previous}"></span>
                     </button>
                     <button class="btn btn-secondary btn-icon" type="submit" name="action" value="GO_NEXT">
-                        <span aria-hidden="true">&#8594;</span>
+                        <i data-lucide="chevron-right" aria-hidden="true"></i>
                         <span class="sr-only" th:text="#{dateFilter.nav.next}"></span>
                     </button>
                 </div>
@@ -107,7 +130,10 @@
                         <input id="date-filter-end" type="date" name="endDate" th:value="${globalDateFilter.endDate}">
                     </div>
                 </div>
-                <button class="btn btn-primary period-filter-apply" type="submit" name="action" value="APPLY_CUSTOM" data-icon="✅" th:text="#{dateFilter.action.apply}"></button>
+                <button class="btn btn-primary period-filter-apply" type="submit" name="action" value="APPLY_CUSTOM">
+                    <i data-lucide="check" aria-hidden="true"></i>
+                    <span th:text="#{dateFilter.action.apply}"></span>
+                </button>
             </div>
         </form>
     </div>
@@ -119,6 +145,10 @@
                 return;
             }
 
+            const themeToggleLabel = themeToggle.querySelector('[data-role="label"]');
+            const themeIconDark = themeToggle.querySelector('[data-role="icon-dark"]');
+            const themeIconLight = themeToggle.querySelector('[data-role="icon-light"]');
+
             function readCurrentTheme() {
                 return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
             }
@@ -129,7 +159,14 @@
                 const label = nextTheme === "dark"
                     ? themeToggle.dataset.labelDark
                     : themeToggle.dataset.labelLight;
-                themeToggle.textContent = label;
+
+                if (themeToggleLabel) {
+                    themeToggleLabel.textContent = label;
+                }
+                if (themeIconDark && themeIconLight) {
+                    themeIconDark.hidden = nextTheme !== "dark";
+                    themeIconLight.hidden = nextTheme !== "light";
+                }
                 themeToggle.setAttribute("aria-pressed", String(currentTheme === "dark"));
             }
 

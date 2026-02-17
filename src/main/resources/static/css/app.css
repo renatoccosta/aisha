@@ -135,11 +135,6 @@ body {
   gap: 0.35rem;
 }
 
-.topnav a::before {
-  content: attr(data-icon);
-  line-height: 1;
-}
-
 .topnav a:hover {
   text-decoration: underline;
 }
@@ -375,11 +370,6 @@ th {
   gap: 0.35rem;
 }
 
-.table-heading-label::before {
-  content: attr(data-icon);
-  line-height: 1;
-}
-
 .empty {
   text-align: center;
   color: var(--muted);
@@ -558,11 +548,6 @@ textarea:focus {
   cursor: pointer;
 }
 
-.btn:not(.btn-icon)::before {
-  content: attr(data-icon);
-  line-height: 1;
-}
-
 .btn-primary {
   background: var(--primary);
   color: var(--color-text-on-primary);
@@ -647,7 +632,25 @@ textarea:focus {
 .summary-icon svg {
   width: 1.15rem;
   height: 1.15rem;
-  fill: currentColor;
+  stroke-width: 2;
+}
+
+.lucide {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 2;
+  flex: 0 0 auto;
+}
+
+.btn-icon .lucide {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.summary-icon .lucide {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke-width: 2.1;
 }
 
 .summary-card-balance {

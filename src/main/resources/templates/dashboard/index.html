@@ -16,9 +16,7 @@
         <article class="card summary-card summary-card-balance loading" id="summary-current-balance">
             <div class="summary-card-head">
                 <span class="summary-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5v-9Zm2 0v1.25h14V7.5a.5.5 0 0 0-.5-.5h-13a.5.5 0 0 0-.5.5Zm0 3.25v5.75c0 .27.22.5.5.5h13a.5.5 0 0 0 .5-.5v-5.75H5Zm8 3a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z"/>
-                    </svg>
+                    <i data-lucide="briefcase" aria-hidden="true"></i>
                 </span>
                 <h2 th:text="#{dashboard.card.currentBalance}"></h2>
             </div>
@@ -29,9 +27,7 @@
         <article class="card summary-card summary-card-expense loading" id="summary-total-expenses">
             <div class="summary-card-head">
                 <span class="summary-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M4 4h16v2H4V4Zm0 7h11v2H4v-2Zm0 7h8v2H4v-2Zm14-8 4 4-4 4-1.4-1.4 1.6-1.6H13v-2h5.2l-1.6-1.6L18 10Z"/>
-                    </svg>
+                    <i data-lucide="arrow-down-right" aria-hidden="true"></i>
                 </span>
                 <h2 th:text="#{dashboard.card.totalExpenses}"></h2>
             </div>
@@ -42,9 +38,7 @@
         <article class="card summary-card summary-card-revenue loading" id="summary-total-revenues">
             <div class="summary-card-head">
                 <span class="summary-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M4 4h16v2H4V4Zm0 7h8v2H4v-2Zm0 7h11v2H4v-2Zm10-8h5.2l-1.6-1.6L19 7l4 4-4 4-1.4-1.4 1.6-1.6H14v-2Z"/>
-                    </svg>
+                    <i data-lucide="arrow-up-right" aria-hidden="true"></i>
                 </span>
                 <h2 th:text="#{dashboard.card.totalRevenues}"></h2>
             </div>
@@ -60,8 +54,14 @@
                 <p th:text="#{dashboard.chart.subtitle}"></p>
             </div>
             <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
-                <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated" data-icon="📈" th:text="#{dashboard.chart.mode.accumulated}"></button>
-                <button class="btn btn-secondary" type="button" data-mode="period" data-icon="📊" th:text="#{dashboard.chart.mode.period}"></button>
+                <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated">
+                    <i data-lucide="trending-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.chart.mode.accumulated}"></span>
+                </button>
+                <button class="btn btn-secondary" type="button" data-mode="period">
+                    <i data-lucide="bar-chart-2" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.chart.mode.period}"></span>
+                </button>
             </div>
         </div>
         <p class="chart-meta" id="balance-chart-meta" th:text="#{dashboard.loading}"></p>
@@ -90,7 +90,10 @@
                     <h2 th:text="#{dashboard.expenseCategoryChart.title}"></h2>
                     <p th:text="#{dashboard.expenseCategoryChart.subtitle}"></p>
                 </div>
-                <button class="btn btn-secondary" id="expense-category-drill-up" type="button" data-icon="⬆️" disabled th:text="#{dashboard.expenseCategoryChart.drillUp}"></button>
+                <button class="btn btn-secondary" id="expense-category-drill-up" type="button" disabled>
+                    <i data-lucide="arrow-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.expenseCategoryChart.drillUp}"></span>
+                </button>
             </div>
             <p class="chart-meta" id="expense-category-chart-meta" th:text="#{dashboard.loading}"></p>
             <div class="chart-wrap">
@@ -105,7 +108,10 @@
                 <h2 th:text="#{dashboard.categoryTotalsChart.title}"></h2>
                 <p th:text="#{dashboard.categoryTotalsChart.subtitle}"></p>
             </div>
-            <button class="btn btn-secondary" id="category-totals-drill-up" type="button" data-icon="⬆️" disabled th:text="#{dashboard.categoryTotalsChart.drillUp}"></button>
+            <button class="btn btn-secondary" id="category-totals-drill-up" type="button" disabled>
+                <i data-lucide="arrow-up" aria-hidden="true"></i>
+                <span th:text="#{dashboard.categoryTotalsChart.drillUp}"></span>
+            </button>
         </div>
         <p class="chart-meta" id="category-totals-chart-meta" th:text="#{dashboard.loading}"></p>
         <div class="chart-wrap">
