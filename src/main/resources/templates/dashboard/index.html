@@ -177,6 +177,19 @@
         return text.replace("{0}", values[0]).replace("{1}", values[1]);
     }
 
+    function getThemeColor(variableName, fallback) {
+        const color = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        return color || fallback;
+    }
+
+    function getChartTheme() {
+        return {
+            text: getThemeColor("--color-text-secondary", "#35506a"),
+            grid: getThemeColor("--color-border-default", "#d7e0e8"),
+            surface: getThemeColor("--color-bg-card", "#ffffff")
+        };
+    }
+
     function renderMetric(cardId, metric) {
         const card = document.getElementById(cardId);
         if (!card) {
@@ -249,6 +262,7 @@
         if (!chartPayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const labels = chartPayload.points.map((point) => (
             chartPayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
@@ -274,8 +288,8 @@
                 datasets: [{
                     label: seriesLabel,
                     data: dataset,
-                    borderColor: "#0b7fab",
-                    backgroundColor: "rgba(11, 127, 171, 0.14)",
+                    borderColor: "#19647e",
+                    backgroundColor: "rgba(25, 100, 126, 0.16)",
                     fill: true,
                     tension: 0.25,
                     pointRadius: 2.5,
@@ -287,14 +301,29 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
+                        grid: {
+                            color: chartTheme.grid
+                        },
                         ticks: {
+                            color: chartTheme.text,
                             callback: (value) => formatCurrency(value)
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
                         }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: true
+                        display: true,
+                        labels: {
+                            color: chartTheme.text
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -342,6 +371,7 @@
         if (!revenueExpensePayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const labels = revenueExpensePayload.points.map((point) => (
             revenueExpensePayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
@@ -367,16 +397,16 @@
                     {
                         label: i18n.revenueExpenseChartSeriesRevenue,
                         data: revenueData,
-                        backgroundColor: "rgba(36, 138, 84, 0.85)",
-                        borderColor: "#1b7e4b",
+                        backgroundColor: "rgba(34, 191, 150, 0.85)",
+                        borderColor: "#22bf96",
                         borderWidth: 1.2,
                         stack: "cashflow"
                     },
                     {
                         label: i18n.revenueExpenseChartSeriesExpense,
                         data: expenseData,
-                        backgroundColor: "rgba(189, 64, 56, 0.85)",
-                        borderColor: "#9e2f2b",
+                        backgroundColor: "rgba(207, 103, 112, 0.85)",
+                        borderColor: "#cf6770",
                         borderWidth: 1.2,
                         stack: "cashflow"
                     }
@@ -387,18 +417,31 @@
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        stacked: true
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
+                        }
                     },
                     y: {
                         stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
                         ticks: {
+                            color: chartTheme.text,
                             callback: (value) => formatCurrency(value)
                         }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: true
+                        display: true,
+                        labels: {
+                            color: chartTheme.text
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -446,6 +489,7 @@
         if (!expenseCategoryPayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const canvas = document.getElementById("expense-category-chart");
         if (!canvas) {
@@ -460,8 +504,8 @@
             ? expenseCategoryPayload.items.map((item) => Number(item.amount))
             : [1];
         const colors = hasItems
-            ? ["#0b7fab", "#1f7346", "#a75f00", "#7a4c8e", "#ba3f32", "#64748b"]
-            : ["#d6dde5"];
+            ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7"]
+            : ["#d7e0e8"];
 
         if (expenseCategoryChart) {
             expenseCategoryChart.destroy();
@@ -474,7 +518,7 @@
                 datasets: [{
                     data,
                     backgroundColor: colors,
-                    borderColor: "#ffffff",
+                    borderColor: chartTheme.surface,
                     borderWidth: 2
                 }]
             },
@@ -483,7 +527,10 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: "bottom"
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -560,6 +607,7 @@
         if (!categoryTotalsPayload) {
             return;
         }
+        const chartTheme = getChartTheme();
 
         const canvas = document.getElementById("category-totals-chart");
         if (!canvas) {
@@ -573,20 +621,20 @@
             ))
             : [i18n.categoryTotalsChartEmpty];
 
-        const palette = ["#0b7fab", "#1f7346", "#a75f00", "#7a4c8e", "#ba3f32", "#64748b", "#0f766e", "#9a3412"];
+        const palette = ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7", "#22bf96", "#cf6770"];
         const datasets = hasData
             ? categoryTotalsPayload.series.map((series, index) => ({
                 label: series.categoryName,
                 data: series.values.map((value) => Number(value)),
                 backgroundColor: palette[index % palette.length],
-                borderColor: "#ffffff",
+                borderColor: chartTheme.surface,
                 borderWidth: 1,
                 stack: "categoryTotals"
             }))
             : [{
                 label: i18n.categoryTotalsChartEmpty,
                 data: [0],
-                backgroundColor: "#d6dde5",
+                backgroundColor: "#d7e0e8",
                 stack: "categoryTotals"
             }];
 
@@ -601,16 +649,33 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { stacked: true },
+                    x: {
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
+                        }
+                    },
                     y: {
                         stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
                         ticks: {
+                            color: chartTheme.text,
                             callback: (value) => formatCurrency(value)
                         }
                     }
                 },
                 plugins: {
-                    legend: { position: "bottom" },
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
                     tooltip: {
                         callbacks: {
                             label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`
@@ -707,6 +772,15 @@
                 button.classList.add("btn-active");
                 renderChart(button.dataset.mode);
             });
+        });
+
+        window.addEventListener("aisha-theme-changed", () => {
+            const activeModeButton = document.querySelector(".chart-mode-selector .btn-active");
+            const mode = activeModeButton?.dataset.mode ?? "accumulated";
+            renderChart(mode);
+            renderRevenueExpenseChart();
+            renderExpenseCategoryChart();
+            renderCategoryTotalsChart();
         });
     });
 </script>
