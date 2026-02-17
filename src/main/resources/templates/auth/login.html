@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{auth.login.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo-option-1.svg}">
+</head>
+<body>
+<main class="wrap auth-main">
+    <section class="card auth-card">
+        <div class="auth-brand">
+            <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
+            <h1 th:text="#{auth.login.heading}"></h1>
+            <p th:text="#{auth.login.subtitle}"></p>
+        </div>
+
+        <p class="error" th:if="${param.error}" th:text="#{auth.login.error}"></p>
+        <p class="helper" th:if="${param.logout}" th:text="#{auth.login.logout.success}"></p>
+        <p class="helper" th:if="${param.expired}" th:text="#{auth.login.expired}"></p>
+
+        <form method="post" th:action="@{/login}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <div class="field">
+                <label for="username" th:text="#{auth.login.field.username}"></label>
+                <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+            </div>
+
+            <div class="field">
+                <label for="password" th:text="#{auth.login.field.password}"></label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+            </div>
+
+            <div class="actions-inline">
+                <button class="btn btn-primary" type="submit" th:text="#{auth.login.action.submit}"></button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

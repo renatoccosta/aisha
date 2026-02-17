@@ -2,6 +2,7 @@ package dev.ccosta.aisha.web.timefilter;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.security.Principal;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -26,5 +27,10 @@ public class DateFilterModelAdvice {
             return request.getRequestURI();
         }
         return request.getRequestURI() + "?" + queryString;
+    }
+
+    @ModelAttribute("currentUsername")
+    public String currentUsername(Principal principal) {
+        return principal != null ? principal.getName() : null;
     }
 }

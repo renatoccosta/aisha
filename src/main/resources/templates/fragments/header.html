@@ -3,21 +3,34 @@
 <body>
 <header th:fragment="topbar(subtitle)" class="topbar">
     <div class="wrap brand">
-        <div class="brand-text">
-            <h1>AI$HA</h1>
-            <p th:text="${subtitle}"></p>
-            <nav class="topnav">
-                <a th:href="@{/dashboard}" th:text="#{nav.dashboard}"></a>
-                <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
-                <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
-                <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
-            </nav>
+        <div class="brand-main">
+            <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
+            <div class="brand-text">
+                <h1>AI$HA</h1>
+                <p th:text="${subtitle}"></p>
+                <nav class="topnav">
+                    <a th:href="@{/dashboard}" th:text="#{nav.dashboard}"></a>
+                    <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
+                    <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
+                    <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
+                </nav>
+            </div>
         </div>
-        <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
+        <div class="topbar-user">
+            <p class="topbar-user-greeting" th:if="${currentUsername != null}">
+                <span th:text="#{auth.header.greeting}"></span>
+                <strong th:text="${currentUsername}"></strong>
+            </p>
+            <form method="post" th:action="@{/logout}" th:if="${currentUsername != null}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="btn btn-secondary" th:text="#{auth.header.logout}"></button>
+            </form>
+        </div>
     </div>
 
     <div class="wrap period-filter-wrap">
         <form class="period-filter" method="post" th:action="@{/date-filter}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="redirectTo" th:value="${currentPath}">
 
             <div class="period-filter-row">

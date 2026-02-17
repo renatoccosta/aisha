@@ -17,6 +17,36 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
   - Resource Server (JWT/Opaque token validation)
   - OAuth2 Client when needed (calling external APIs)
 
+### Current local-auth baseline (already implemented)
+- Authentication mechanism: Spring Security form login with server-side session (`JSESSIONID`).
+- Login/Logout routes:
+  - `GET /login` (login page)
+  - `POST /login` (authentication)
+  - `POST /logout` (session invalidation)
+- Route protection: all routes require authentication except `/login` and static assets.
+- Local user storage:
+  - Table: `local_user_accounts`
+  - Seed user on startup: `admin/admin` (password stored as hash, never plain text)
+  - Config keys: `aisha.security.seed.username`, `aisha.security.seed.password`
+- Password hashing: BCrypt.
+- Session hardening:
+  - session fixation protection enabled (session id migration after login)
+  - idle timeout: 45 minutes
+  - absolute timeout: 12 hours (custom filter)
+  - max concurrent sessions per user: 1 (new login replaces previous session)
+- Cookie/session settings:
+  - HttpOnly enabled
+  - SameSite=Lax
+  - Secure=true in `prod` profile
+- CSRF:
+  - enabled globally
+  - all POST forms (including HTMX flows) must include CSRF token
+- Audit logs (minimum):
+  - authentication success
+  - authentication failure
+  - logout success
+  - never log passwords
+
 ## Front-end architecture
 - Server-side rendered HTML using Spring MVC.
 - Use HTMX for interactivity (partial page updates, forms, tables).

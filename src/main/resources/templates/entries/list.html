@@ -64,6 +64,7 @@
             hx-target="#table-container"
             hx-swap="outerHTML"
             th:attr="hx-confirm=#{entries.list.confirm.bulkDelete}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="accountId" th:value="${selectedAccountId}">
             <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
 
