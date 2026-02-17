@@ -291,7 +291,15 @@ main {
 }
 
 .auth-brand .brand-logo {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
   margin: 0 auto 0.65rem;
+}
+
+.auth-actions {
+  margin-top: 1rem;
 }
 
 .card {
