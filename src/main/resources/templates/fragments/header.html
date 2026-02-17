@@ -3,18 +3,20 @@
 <body>
 <header th:fragment="topbar(subtitle)" class="topbar">
     <div class="wrap brand">
-        <div class="brand-text">
-            <h1>AI$HA</h1>
-            <p th:text="${subtitle}"></p>
-            <nav class="topnav">
-                <a th:href="@{/dashboard}" th:text="#{nav.dashboard}"></a>
-                <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
-                <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
-                <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
-            </nav>
+        <div class="brand-main">
+            <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
+            <div class="brand-text">
+                <h1>AI$HA</h1>
+                <p th:text="${subtitle}"></p>
+                <nav class="topnav">
+                    <a th:href="@{/dashboard}" th:text="#{nav.dashboard}"></a>
+                    <a th:href="@{/entries}" th:text="#{nav.entries}"></a>
+                    <a th:href="@{/categories}" th:text="#{nav.categories}"></a>
+                    <a th:href="@{/accounts}" th:text="#{nav.accounts}"></a>
+                </nav>
+            </div>
         </div>
         <div class="topbar-user">
-            <img class="brand-logo" th:src="@{/img/logo-option-1.svg}" th:alt="#{app.logo.alt}">
             <p class="topbar-user-greeting" th:if="${currentUsername != null}">
                 <span th:text="#{auth.header.greeting}"></span>
                 <strong th:text="${currentUsername}"></strong>
