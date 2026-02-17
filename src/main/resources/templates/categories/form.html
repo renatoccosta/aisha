@@ -15,6 +15,7 @@
         <h2 th:text="${mode == 'create'} ? #{categories.form.title.create} : #{categories.form.title.edit}"></h2>
 
         <form th:object="${form}" th:action="${mode == 'create'} ? @{/categories} : @{/categories/{id}(id=${categoryId})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <div class="field">
                 <label for="title" th:text="#{categories.form.field.title.required}"></label>
                 <input id="title" type="text" th:field="*{title}" maxlength="120" required>

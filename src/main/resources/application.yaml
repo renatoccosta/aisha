@@ -15,6 +15,20 @@ spring:
     open-in-view: false
   thymeleaf:
     cache: false
+server:
+  servlet:
+    session:
+      timeout: 45m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: false
+
+aisha:
+  security:
+    seed:
+      username: admin
+      password: admin
 
 ---
 spring:
@@ -31,3 +45,14 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true

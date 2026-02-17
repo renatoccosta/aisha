@@ -13,6 +13,45 @@ AI$HA is a web application built with Spring Boot and server-side rendering (Thy
 
 The application starts with embedded HSQLDB by default and supports PostgreSQL through profile configuration.
 
+## Security Architecture (Current Baseline)
+
+The current implementation uses **local authentication with secure server-side sessions** as a baseline, while keeping the codebase ready for future OAuth2/OIDC evolution.
+
+- Security framework: Spring Security
+- Auth flow: form login (`/login`) + session cookie (`JSESSIONID`)
+- User store: local database table `local_user_accounts` (JPA)
+- Password storage: BCrypt hash
+- Protected routes: all routes require authentication except login and static assets
+- CSRF: enabled by default and enforced for state-changing requests (including HTMX form flows)
+- Session fixation: mitigated via session id regeneration after login
+- Session policy:
+  - idle timeout: 45 minutes
+  - absolute timeout: 12 hours (custom filter)
+  - concurrent sessions per user: 1 (new login invalidates previous session)
+- Session cookie policy:
+  - `HttpOnly=true`
+  - `SameSite=Lax`
+  - `Secure=true` in `prod` profile
+- Security audit logs (minimum):
+  - login success
+  - login failure
+  - logout
+  - no password logging
+
+### Default Local User (Development Bootstrap)
+
+At startup, the application seeds a local user if missing:
+
+- username: `admin`
+- password: `admin`
+
+Configurable properties:
+
+- `aisha.security.seed.username`
+- `aisha.security.seed.password`
+
+Important: change default credentials in non-development environments.
+
 ## Technology Stack
 
 - Java 25 (LTS)
@@ -87,7 +126,10 @@ Main organization:
 
 ## Main Web Endpoints
 
-- `/` redirects to `/entries`
+- `/` redirects to `/dashboard`
+- `/login`
+- `/logout` (POST)
+- `/dashboard`
 - `/entries`
 - `/accounts`
 - `/categories`

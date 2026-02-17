@@ -30,6 +30,7 @@
             hx-target="#table-container"
             hx-swap="outerHTML"
             th:attr="hx-confirm=#{accounts.list.confirm.bulkDelete}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
             <div class="table-actions">
                 <button class="btn btn-danger" type="submit" th:text="#{accounts.list.action.bulkDelete}"></button>
