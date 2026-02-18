@@ -5,6 +5,7 @@ import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
+import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 @RequestMapping("/entries")
@@ -34,11 +36,18 @@ public class EntryController {
     private final EntryService entryService;
     private final AccountService accountService;
     private final CategoryService categoryService;
+    private final EntryImportJobCoordinator entryImportJobCoordinator;
 
-    public EntryController(EntryService entryService, AccountService accountService, CategoryService categoryService) {
+    public EntryController(
+        EntryService entryService,
+        AccountService accountService,
+        CategoryService categoryService,
+        EntryImportJobCoordinator entryImportJobCoordinator
+    ) {
         this.entryService = entryService;
         this.accountService = accountService;
         this.categoryService = categoryService;
+        this.entryImportJobCoordinator = entryImportJobCoordinator;
     }
 
     @GetMapping
@@ -61,6 +70,37 @@ public class EntryController {
     ) {
         fillListing(model, globalDateFilter, accountId, categoryId);
         return "entries/list :: table";
+    }
+
+    @GetMapping("/import")
+    public String importPage(Model model) {
+        model.addAttribute("mode", "idle");
+        return "entries/import";
+    }
+
+    @PostMapping("/import/jobs")
+    public String startImport(@RequestParam(name = "file", required = false) MultipartFile file, Model model) {
+        try {
+            String jobId = entryImportJobCoordinator.startJob(file);
+            fillImportJobModel(model, entryImportJobCoordinator.getSnapshot(jobId));
+        } catch (IllegalArgumentException ex) {
+            fillImportErrorModel(model, ex.getMessage());
+        }
+        return "entries/import :: result";
+    }
+
+    @GetMapping("/import/jobs/{jobId}")
+    public String importStatus(@PathVariable String jobId, Model model) {
+        EntryImportJobSnapshot snapshot = entryImportJobCoordinator.getSnapshot(jobId);
+        if (snapshot == null) {
+            model.addAttribute("mode", "failed");
+            model.addAttribute("failureCauseKey", "entries.import.result.failure.unknown");
+            model.addAttribute("failedRow", null);
+            return "entries/import :: result";
+        }
+
+        fillImportJobModel(model, snapshot);
+        return "entries/import :: result";
     }
 
     @GetMapping("/new")
@@ -264,5 +304,68 @@ public class EntryController {
         bindingResult.addError(
             new FieldError("form", "categoryId", form.getCategoryId(), false, new String[] {"entryForm.categoryId.notNull"}, null, null)
         );
+    }
+
+    private void fillImportErrorModel(Model model, String rawMessage) {
+        model.addAttribute("mode", "failed");
+        model.addAttribute("failedRow", null);
+        model.addAttribute("failureCauseKey", toFailureMessageKey(rawMessage, EntryImportFailureCause.UNKNOWN_ERROR));
+    }
+
+    private void fillImportJobModel(Model model, EntryImportJobSnapshot snapshot) {
+        if (snapshot == null) {
+            model.addAttribute("mode", "failed");
+            model.addAttribute("failureCauseKey", "entries.import.result.failure.unknown");
+            model.addAttribute("failedRow", null);
+            return;
+        }
+
+        if (snapshot.status() == EntryImportJobStatus.PROCESSING) {
+            model.addAttribute("mode", "processing");
+            model.addAttribute("jobId", snapshot.jobId());
+            model.addAttribute("processedRows", snapshot.processedRows());
+            model.addAttribute("totalRows", snapshot.totalRows());
+            model.addAttribute("progressPercent", toProgressPercent(snapshot.processedRows(), snapshot.totalRows(), false));
+            return;
+        }
+
+        if (snapshot.status() == EntryImportJobStatus.SUCCESS) {
+            model.addAttribute("mode", "success");
+            model.addAttribute("summary", snapshot.summary());
+            model.addAttribute("progressPercent", 100);
+            return;
+        }
+
+        model.addAttribute("mode", "failed");
+        model.addAttribute("failedRow", snapshot.failedRow());
+        model.addAttribute("failureCauseKey", toFailureMessageKey(snapshot.failureMessage(), snapshot.failureCause()));
+        model.addAttribute("progressPercent", toProgressPercent(snapshot.processedRows(), snapshot.totalRows(), true));
+    }
+
+    private int toProgressPercent(int processedRows, int totalRows, boolean forceCompleteOnEmpty) {
+        if (totalRows <= 0) {
+            return forceCompleteOnEmpty ? 100 : 0;
+        }
+        return Math.min(100, (processedRows * 100) / totalRows);
+    }
+
+    private String toFailureMessageKey(String rawMessage, EntryImportFailureCause causeType) {
+        if (rawMessage != null) {
+            String normalizedMessage = rawMessage.toLowerCase();
+            if (normalizedMessage.contains("must not be empty")) {
+                return "entries.import.result.failure.emptyFile";
+            }
+            if (normalizedMessage.contains("only csv files are accepted")) {
+                return "entries.import.result.failure.invalidFileType";
+            }
+        }
+
+        if (causeType == EntryImportFailureCause.MISSING_REQUIRED_FIELD) {
+            return "entries.import.result.failure.missingData";
+        }
+        if (causeType == EntryImportFailureCause.INVALID_FORMAT) {
+            return "entries.import.result.failure.invalidFormat";
+        }
+        return "entries.import.result.failure.unknown";
     }
 }

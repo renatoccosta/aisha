@@ -1,5 +1,6 @@
 package dev.ccosta.aisha.domain.entry;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +19,15 @@ public interface EntryRepository {
     Optional<Entry> findById(Long id);
 
     Entry save(Entry entry);
+
+    boolean existsDuplicate(
+        Long accountId,
+        LocalDate movementDate,
+        LocalDate settlementDate,
+        String description,
+        Long categoryId,
+        BigDecimal amount
+    );
 
     boolean existsByCategoryId(Long categoryId);
 

@@ -2,6 +2,7 @@ package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -75,6 +76,25 @@ public class EntryRepositoryAdapter implements EntryRepository {
     @Override
     public Entry save(Entry entry) {
         return jpaEntryRepository.save(entry);
+    }
+
+    @Override
+    public boolean existsDuplicate(
+        Long accountId,
+        LocalDate movementDate,
+        LocalDate settlementDate,
+        String description,
+        Long categoryId,
+        BigDecimal amount
+    ) {
+        return jpaEntryRepository.existsByAccountIdAndMovementDateAndSettlementDateAndDescriptionAndCategoryIdAndAmount(
+            accountId,
+            movementDate,
+            settlementDate,
+            description,
+            categoryId,
+            amount
+        );
     }
 
     @Override

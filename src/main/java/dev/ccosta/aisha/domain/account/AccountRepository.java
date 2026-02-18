@@ -10,6 +10,8 @@ public interface AccountRepository {
 
     Optional<Account> findById(Long id);
 
+    Optional<Account> findByTitleIgnoreCase(String title);
+
     Account save(Account account);
 
     void deleteById(Long id);

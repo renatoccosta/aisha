@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class AccountService {
@@ -34,6 +35,24 @@ public class AccountService {
     @Transactional
     public Account create(Account account) {
         return accountRepository.save(account);
+    }
+
+    @Transactional
+    public Account findOrCreateByTitle(String rawTitle) {
+        String title = rawTitle == null ? "" : rawTitle.trim();
+        if (!StringUtils.hasText(title)) {
+            throw new IllegalArgumentException("Account title must not be blank");
+        }
+
+        return accountRepository.findByTitleIgnoreCase(title)
+            .orElseGet(() -> {
+                Account account = new Account();
+                account.setTitle(title);
+                account.setDescription(null);
+                account.setInitialBalance(null);
+                account.setInitialBalanceDate(null);
+                return accountRepository.save(account);
+            });
     }
 
     @Transactional
