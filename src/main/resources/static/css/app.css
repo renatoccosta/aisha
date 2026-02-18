@@ -495,6 +495,21 @@ th {
   margin-top: 1rem;
 }
 
+.field-checkbox {
+  margin-top: 1.25rem;
+}
+
+.label-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+
+.label-checkbox input[type="checkbox"] {
+  width: auto;
+}
+
 label {
   display: block;
   font-weight: 600;
@@ -553,6 +568,11 @@ textarea:focus {
   justify-content: center;
   gap: 0.42rem;
   cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-primary {

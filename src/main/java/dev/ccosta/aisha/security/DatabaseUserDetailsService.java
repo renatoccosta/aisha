@@ -20,7 +20,7 @@ public class DatabaseUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        LocalUserAccount account = userAccountRepository.findByUsername(username)
+        LocalUserAccount account = userAccountRepository.findByUsernameIgnoreCase(username)
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         return new User(

@@ -34,7 +34,7 @@ public class LocalUserAccountSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (userAccountRepository.findByUsername(seedUsername).isPresent()) {
+        if (userAccountRepository.findByUsernameIgnoreCase(seedUsername).isPresent()) {
             return;
         }
 
