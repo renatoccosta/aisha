@@ -87,3 +87,27 @@ A pipeline executa:
 4. Builda e publica imagem no GHCR com tags:
    - `ghcr.io/<owner>/<repo>:X.Y.Z`
    - `ghcr.io/<owner>/<repo>:latest`
+
+## 6) Fluxo de snapshot release (manual)
+
+Para gerar release de snapshot manualmente, execute o workflow:
+
+- `.github/workflows/release-snapshot-ghcr.yml`
+
+Entrada obrigatória:
+
+- `source_branch`: branch de origem usada no checkout (último commit da branch).
+
+Formato da git tag gerada:
+
+- `<nextVersion>-snapshot.<branch>.<shortsha>`
+
+Onde:
+
+- `nextVersion`: próximo `minor` calculado a partir da última tag estável `vX.Y.Z` do fluxo principal.
+- `branch`: nome da branch informada no dispatch.
+- `shortsha`: SHA curto do commit usado no snapshot.
+
+Publicação no GHCR:
+
+- A imagem é publicada com o mesmo formato, mas com branch sanitizada para compatibilidade com tag Docker.
