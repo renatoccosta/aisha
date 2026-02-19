@@ -23,6 +23,15 @@ server:
         http-only: true
         same-site: lax
         secure: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
 
 aisha:
   security:

@@ -25,7 +25,17 @@ public class SecurityConfig {
     ) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/login", "/css/**", "/js/**", "/img/**", "/webjars/**", "/error", "/favicon.ico").permitAll()
+                .requestMatchers(
+                    "/login",
+                    "/css/**",
+                    "/js/**",
+                    "/img/**",
+                    "/webjars/**",
+                    "/error",
+                    "/favicon.ico",
+                    "/actuator/health",
+                    "/actuator/health/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

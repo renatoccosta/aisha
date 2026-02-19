@@ -1,0 +1,27 @@
+- name: release:patch
+  color: "2E8B57"
+  description: "Patch release (bug fix); increments SemVer patch version."
+
+- name: release:minor
+  color: "1E90FF"
+  description: "Minor release (new feature); increments SemVer minor version."
+
+- name: release:major
+  color: "B22222"
+  description: "Major release (breaking change); increments SemVer major version."
+
+- name: no-release
+  color: "6B7280"
+  description: "Informational PR; blocks automatic version/tag generation."
+
+- name: infra
+  color: "0E7490"
+  description: "Infrastructure and operational changes only."
+
+- name: security
+  color: "C2410C"
+  description: "Security-related updates or hardening."
+
+- name: documentation
+  color: "7C3AED"
+  description: "Documentation-only changes."
