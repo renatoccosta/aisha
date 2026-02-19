@@ -118,3 +118,24 @@ Publicação de GitHub Release:
 - Convenções de nome:
   - release final: `aisha-X.Y.Z.jar`
   - snapshot: `aisha-<nextVersion>-snapshot.<branch>.<shortsha>.jar`
+
+## 7) Fluxo de release final manual
+
+Para gerar release final manualmente a partir do estado atual da `main`, execute:
+
+- `.github/workflows/release-manual-ghcr.yml`
+
+Entrada obrigatória:
+
+- `release_type`: `major`, `minor` ou `patch`.
+
+A pipeline executa o mesmo processo do release automático:
+
+1. Lê a última tag `vX.Y.Z`.
+2. Calcula a próxima versão SemVer com base no `release_type`.
+3. Cria e publica a nova tag Git `vX.Y.Z`.
+4. Builda e publica imagem multi-arch no GHCR (`linux/amd64`, `linux/arm64`):
+   - `ghcr.io/<owner>/<repo>:X.Y.Z`
+   - `ghcr.io/<owner>/<repo>:latest`
+5. Cria GitHub Release anexando o JAR renomeado:
+   - `aisha-X.Y.Z.jar`

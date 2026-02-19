@@ -1,0 +1,183 @@
+name: Release Docker Image Manual (GHCR)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Tipo de release"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Tag and Publish Image (Manual)
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-main
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: refs/heads/main
+
+      - name: Resolve release level
+        id: release-level
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case '${{ github.event.inputs.release_type }}' in
+            major|minor|patch)
+              echo "level=${{ github.event.inputs.release_type }}" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Invalid release_type: ${{ github.event.inputs.release_type }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Calculate next SemVer
+        id: semver
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+
+          latest_tag="$(git tag -l 'v*' --sort=-version:refname | head -n 1)"
+          if [ -z "$latest_tag" ]; then
+            latest_tag="v0.0.0"
+          fi
+
+          version="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+
+          case '${{ steps.release-level.outputs.level }}' in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+            *)
+              echo "Invalid release level"
+              exit 1
+              ;;
+          esac
+
+          next_version="${major}.${minor}.${patch}"
+          next_tag="v${next_version}"
+
+          if git rev-parse "$next_tag" >/dev/null 2>&1; then
+            echo "Tag $next_tag already exists."
+            exit 1
+          fi
+
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
+          echo "next_tag=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run tests
+        run: ./mvnw test
+
+      - name: Build application JAR
+        run: ./mvnw -DskipTests package
+
+      - name: Prepare release artifact
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          original_jar="$(find target -maxdepth 1 -type f -name '*.jar' ! -name '*.jar.original' | head -n 1)"
+          if [ -z "$original_jar" ]; then
+            echo "No JAR artifact found in target/."
+            exit 1
+          fi
+
+          release_jar="aisha-${{ steps.semver.outputs.next_version }}.jar"
+          cp "$original_jar" "target/$release_jar"
+
+          echo "release_jar=$release_jar" >> "$GITHUB_OUTPUT"
+          echo "release_jar_path=target/$release_jar" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push Git tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git tag '${{ steps.semver.outputs.next_tag }}'
+          git push origin '${{ steps.semver.outputs.next_tag }}'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.semver.outputs.next_version }}
+            ghcr.io/${{ github.repository }}:latest
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.semver.outputs.next_tag }}
+          name: Release ${{ steps.semver.outputs.next_tag }}
+          generate_release_notes: true
+          files: |
+            ${{ steps.artifact.outputs.release_jar_path }}
+
+      - name: Release summary
+        run: |
+          {
+            echo "### Manual release created"
+            echo ""
+            echo "- Source branch: \`main\`"
+            echo "- Release type: \`${{ steps.release-level.outputs.level }}\`"
+            echo "- Latest stable tag: \`${{ steps.semver.outputs.latest_tag }}\`"
+            echo "- New tag: \`${{ steps.semver.outputs.next_tag }}\`"
+            echo "- Docker image: \`ghcr.io/${{ github.repository }}:${{ steps.semver.outputs.next_version }}\`"
+            echo "- JAR artifact: \`${{ steps.artifact.outputs.release_jar }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
