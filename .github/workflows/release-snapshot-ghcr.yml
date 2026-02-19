@@ -1,0 +1,123 @@
+name: Release Snapshot Docker Image (GHCR)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Branch de origem para snapshot (ex.: feature/minha-feature)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  snapshot-release:
+    name: Tag and Publish Snapshot Image
+    runs-on: ubuntu-latest
+    concurrency:
+      group: snapshot-release-${{ github.event.inputs.source_branch }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.source_branch }}
+
+      - name: Resolve snapshot version and tag
+        id: snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin main --tags --force
+
+          latest_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -n 1)"
+          if [ -z "$latest_tag" ]; then
+            latest_tag="v0.0.0"
+          fi
+
+          version="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+
+          next_minor_version="${major}.$((minor + 1)).0"
+
+          raw_branch='${{ github.event.inputs.source_branch }}'
+          branch_for_tag="$(echo "$raw_branch" | sed 's#^refs/heads/##')"
+          safe_branch="$(echo "$branch_for_tag" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g; s#-\{2,\}#-#g; s#^-##; s#-$##')"
+          if [ -z "$safe_branch" ]; then
+            echo "Invalid source_branch after sanitization."
+            exit 1
+          fi
+
+          short_sha="$(git rev-parse --short HEAD)"
+          snapshot_tag="${next_minor_version}-snapshot.${branch_for_tag}.${short_sha}"
+          snapshot_image_tag="${next_minor_version}-snapshot.${safe_branch}.${short_sha}"
+
+          if git rev-parse "$snapshot_tag" >/dev/null 2>&1; then
+            echo "Tag $snapshot_tag already exists."
+            exit 1
+          fi
+
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+          echo "next_minor_version=$next_minor_version" >> "$GITHUB_OUTPUT"
+          echo "branch_for_tag=$branch_for_tag" >> "$GITHUB_OUTPUT"
+          echo "safe_branch=$safe_branch" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+          echo "snapshot_tag=$snapshot_tag" >> "$GITHUB_OUTPUT"
+          echo "snapshot_image_tag=$snapshot_image_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run tests
+        run: ./mvnw test
+
+      - name: Create and push snapshot tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git tag '${{ steps.snapshot.outputs.snapshot_tag }}'
+          git push origin '${{ steps.snapshot.outputs.snapshot_tag }}'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push snapshot image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.snapshot.outputs.snapshot_image_tag }}
+
+      - name: Release summary
+        run: |
+          {
+            echo "### Snapshot release created"
+            echo ""
+            echo "- Source branch: \`${{ github.event.inputs.source_branch }}\`"
+            echo "- Latest stable tag (main base): \`${{ steps.snapshot.outputs.latest_tag }}\`"
+            echo "- Next minor version: \`${{ steps.snapshot.outputs.next_minor_version }}\`"
+            echo "- Snapshot git tag: \`${{ steps.snapshot.outputs.snapshot_tag }}\`"
+            echo "- GHCR image tag (sanitized branch): \`ghcr.io/${{ github.repository }}:${{ steps.snapshot.outputs.snapshot_image_tag }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
