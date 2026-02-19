@@ -54,8 +54,8 @@ jobs:
           fi
 
           short_sha="$(git rev-parse --short HEAD)"
-          snapshot_tag="${next_minor_version}-snapshot.${branch_for_tag}.${short_sha}"
-          snapshot_image_tag="${next_minor_version}-snapshot.${safe_branch}.${short_sha}"
+          snapshot_tag="${next_minor_version}-snapshot.${safe_branch}.${short_sha}"
+          snapshot_image_tag="$snapshot_tag"
 
           if git rev-parse "$snapshot_tag" >/dev/null 2>&1; then
             echo "Tag $snapshot_tag already exists."
@@ -64,7 +64,6 @@ jobs:
 
           echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
           echo "next_minor_version=$next_minor_version" >> "$GITHUB_OUTPUT"
-          echo "branch_for_tag=$branch_for_tag" >> "$GITHUB_OUTPUT"
           echo "safe_branch=$safe_branch" >> "$GITHUB_OUTPUT"
           echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
           echo "snapshot_tag=$snapshot_tag" >> "$GITHUB_OUTPUT"
@@ -79,6 +78,27 @@ jobs:
 
       - name: Run tests
         run: ./mvnw test
+
+      - name: Build application JAR
+        run: ./mvnw -DskipTests package
+
+      - name: Prepare snapshot artifact
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          original_jar="$(find target -maxdepth 1 -type f -name '*.jar' ! -name '*.jar.original' | head -n 1)"
+          if [ -z "$original_jar" ]; then
+            echo "No JAR artifact found in target/."
+            exit 1
+          fi
+
+          release_jar="aisha-${{ steps.snapshot.outputs.snapshot_tag }}.jar"
+          cp "$original_jar" "target/$release_jar"
+
+          echo "release_jar=$release_jar" >> "$GITHUB_OUTPUT"
+          echo "release_jar_path=target/$release_jar" >> "$GITHUB_OUTPUT"
 
       - name: Create and push snapshot tag
         shell: bash
@@ -110,6 +130,16 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.snapshot.outputs.snapshot_image_tag }}
 
+      - name: Create GitHub Snapshot Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.snapshot.outputs.snapshot_tag }}
+          name: Snapshot ${{ steps.snapshot.outputs.snapshot_tag }}
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            ${{ steps.artifact.outputs.release_jar_path }}
+
       - name: Release summary
         run: |
           {
@@ -119,5 +149,6 @@ jobs:
             echo "- Latest stable tag (main base): \`${{ steps.snapshot.outputs.latest_tag }}\`"
             echo "- Next minor version: \`${{ steps.snapshot.outputs.next_minor_version }}\`"
             echo "- Snapshot git tag: \`${{ steps.snapshot.outputs.snapshot_tag }}\`"
-            echo "- GHCR image tag (sanitized branch): \`ghcr.io/${{ github.repository }}:${{ steps.snapshot.outputs.snapshot_image_tag }}\`"
+            echo "- GHCR image tag: \`ghcr.io/${{ github.repository }}:${{ steps.snapshot.outputs.snapshot_image_tag }}\`"
+            echo "- JAR artifact: \`${{ steps.artifact.outputs.release_jar }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
