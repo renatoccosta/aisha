@@ -10,6 +10,7 @@ public record EntryImportJobSnapshot(
     int processedRows,
     EntryImportSummary summary,
     Integer failedRow,
+    String failedColumn,
     EntryImportFailureCause failureCause,
     String failureMessage
 ) {

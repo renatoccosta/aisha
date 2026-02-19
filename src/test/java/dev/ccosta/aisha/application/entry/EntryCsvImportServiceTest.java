@@ -30,6 +30,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class EntryCsvImportServiceTest {
 
+    private static final String AMOUNT_PATTERN_PT_BR = "^-?(?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,\\d{1,2})?$";
+    private static final String AMOUNT_PATTERN_US = "^-?(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d{1,2})?$";
+
     @Mock
     private EntryRepository entryRepository;
 
@@ -56,7 +59,11 @@ class EntryCsvImportServiceTest {
             + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;1.234,56\n"
             + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;1.234,56\n";
 
-        EntryImportSummary summary = entryCsvImportService.importCsv(csv.getBytes(StandardCharsets.UTF_8), null);
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, true),
+            null
+        );
 
         assertThat(summary.importedCount()).isEqualTo(1);
         assertThat(summary.skippedDuplicateCount()).isEqualTo(1);
@@ -76,7 +83,11 @@ class EntryCsvImportServiceTest {
 
         String csv = "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00\n";
 
-        EntryImportSummary summary = entryCsvImportService.importCsv(csv.getBytes(StandardCharsets.UTF_8), null);
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, false),
+            null
+        );
 
         assertThat(summary.importedCount()).isZero();
         assertThat(summary.skippedDuplicateCount()).isEqualTo(1);
@@ -89,12 +100,17 @@ class EntryCsvImportServiceTest {
     void shouldFailWhenRequiredFieldIsMissing() {
         String csv = ";2026-02-01;2026-02-02;Compra;Mercado;10,00\n";
 
-        assertThatThrownBy(() -> entryCsvImportService.importCsv(csv.getBytes(StandardCharsets.UTF_8), null))
+        assertThatThrownBy(() -> entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, false),
+            null
+        ))
             .isInstanceOf(EntryImportValidationException.class)
             .satisfies(ex -> {
                 EntryImportValidationException validationException = (EntryImportValidationException) ex;
                 assertThat(validationException.getRowPosition()).isEqualTo(1);
                 assertThat(validationException.getCauseType()).isEqualTo(EntryImportFailureCause.MISSING_REQUIRED_FIELD);
+                assertThat(validationException.getColumnName()).isEqualTo("account");
             });
     }
 
@@ -109,7 +125,159 @@ class EntryCsvImportServiceTest {
         String csv = "Conta,Data de Movimentação,Data de Liquidação,Descrição,Categoria,Valor\n"
             + "Conta A,2026-02-01,2026-02-02,Compra,Mercado,\"1.234,56\"\n";
 
-        EntryImportSummary summary = entryCsvImportService.importCsv(csv.getBytes(StandardCharsets.UTF_8), null);
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(',', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, true),
+            null
+        );
+
+        assertThat(summary.importedCount()).isEqualTo(1);
+        assertThat(summary.skippedDuplicateCount()).isZero();
+    }
+
+    @Test
+    void shouldIgnoreExtraColumnsBeyondMappedFields() {
+        when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+            .thenReturn(false);
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String csv = "Conta;Data de Movimentação;Data de Liquidação;Descrição;Categoria;Valor;Observação extra\n"
+            + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00;IGNORAR\n";
+
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, true),
+            null
+        );
+
+        assertThat(summary.importedCount()).isEqualTo(1);
+        assertThat(summary.skippedDuplicateCount()).isZero();
+        verify(entryRepository).save(any(Entry.class));
+    }
+
+    @Test
+    void shouldParseCustomDatePattern() {
+        when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+            .thenReturn(false);
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String csv = "Conta A;01/02/2026;02/02/2026;Compra;Mercado;10,00\n";
+
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "dd/MM/uuuu", AMOUNT_PATTERN_PT_BR, false),
+            null
+        );
+
+        assertThat(summary.importedCount()).isEqualTo(1);
+        assertThat(summary.skippedDuplicateCount()).isZero();
+    }
+
+    @Test
+    void shouldFailWhenDatePatternIsInvalid() {
+        String csv = "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00\n";
+
+        assertThatThrownBy(() -> entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "dd/MM/'", AMOUNT_PATTERN_PT_BR, false),
+            null
+        ))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Invalid date format pattern");
+    }
+
+    @Test
+    void shouldParseUsAmountFormat() {
+        when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+            .thenReturn(false);
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String csv = "Conta A;2026-02-01;2026-02-02;Compra;Mercado;1,234.56\n";
+
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_US, false),
+            null
+        );
+
+        assertThat(summary.importedCount()).isEqualTo(1);
+        assertThat(summary.skippedDuplicateCount()).isZero();
+    }
+
+    @Test
+    void shouldParsePtBrAmountWithZeroOrOneDecimalPlaces() {
+        when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+            .thenReturn(false);
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String csv = "Conta A;2026-02-01;2026-02-02;Compra;Mercado;1.234\n"
+            + "Conta A;2026-02-01;2026-02-02;Compra 2;Mercado;10,5\n";
+
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, false),
+            null
+        );
+
+        assertThat(summary.importedCount()).isEqualTo(2);
+        assertThat(summary.skippedDuplicateCount()).isZero();
+    }
+
+    @Test
+    void shouldFailWhenAmountPatternIsInvalid() {
+        String csv = "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00\n";
+
+        assertThatThrownBy(() -> entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", "[", false),
+            null
+        ))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Invalid amount format pattern");
+    }
+
+    @Test
+    void shouldReportPhysicalFileLineWhenHeaderExistsAndAmountIsInvalid() {
+        String csv = "Conta;Data de Movimentação;Data de Liquidação;Descrição;Categoria;Valor\n"
+            + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;valor-invalido\n";
+
+        assertThatThrownBy(() -> entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, true),
+            null
+        ))
+            .isInstanceOf(EntryImportValidationException.class)
+            .satisfies(ex -> {
+                EntryImportValidationException validationException = (EntryImportValidationException) ex;
+                assertThat(validationException.getRowPosition()).isEqualTo(2);
+                assertThat(validationException.getColumnName()).isEqualTo("amount");
+            });
+    }
+
+    @Test
+    void shouldRespectHeaderOptionAndSkipFirstRow() {
+        when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+            .thenReturn(false);
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String csv = "IGNORAR;IGNORAR;IGNORAR;IGNORAR;IGNORAR;IGNORAR\n"
+            + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00\n";
+
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, true),
+            null
+        );
 
         assertThat(summary.importedCount()).isEqualTo(1);
         assertThat(summary.skippedDuplicateCount()).isZero();
@@ -137,5 +305,9 @@ class EntryCsvImportServiceTest {
         } catch (ReflectiveOperationException ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    private EntryCsvImportOptions options(char delimiter, String datePattern, String amountPattern, boolean hasHeader) {
+        return new EntryCsvImportOptions(delimiter, datePattern, amountPattern, hasHeader);
     }
 }

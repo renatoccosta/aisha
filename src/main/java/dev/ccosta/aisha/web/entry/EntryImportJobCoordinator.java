@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.web.entry;
 
 import dev.ccosta.aisha.application.entry.EntryCsvImportService;
+import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
 import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
 import dev.ccosta.aisha.application.entry.EntryImportProgressListener;
 import dev.ccosta.aisha.application.entry.EntryImportSummary;
@@ -29,7 +30,7 @@ public class EntryImportJobCoordinator {
         this.taskExecutor = taskExecutor;
     }
 
-    public String startJob(MultipartFile file) {
+    public String startJob(MultipartFile file, EntryCsvImportOptions options) {
         validateFile(file);
 
         byte[] fileContent;
@@ -43,7 +44,7 @@ public class EntryImportJobCoordinator {
         EntryImportJobState state = new EntryImportJobState(jobId);
         jobsById.put(jobId, state);
 
-        taskExecutor.execute(() -> runImport(jobId, fileContent));
+        taskExecutor.execute(() -> runImport(jobId, fileContent, options));
         return jobId;
     }
 
@@ -55,20 +56,20 @@ public class EntryImportJobCoordinator {
         return state.snapshot();
     }
 
-    private void runImport(String jobId, byte[] fileContent) {
+    private void runImport(String jobId, byte[] fileContent, EntryCsvImportOptions options) {
         EntryImportJobState state = jobsById.get(jobId);
         if (state == null) {
             return;
         }
 
         try {
-            EntryImportSummary summary = entryCsvImportService.importCsv(fileContent, new ProgressUpdater(state));
+            EntryImportSummary summary = entryCsvImportService.importCsv(fileContent, options, new ProgressUpdater(state));
             state.markSuccess(summary);
         } catch (EntryImportValidationException ex) {
-            state.markFailure(ex.getRowPosition(), ex.getCauseType(), ex.getMessage());
+            state.markFailure(ex.getRowPosition(), ex.getColumnName(), ex.getCauseType(), ex.getMessage());
         } catch (Exception ex) {
             log.error("Unknown error while importing entries CSV. jobId={}", jobId, ex);
-            state.markFailure(null, EntryImportFailureCause.UNKNOWN_ERROR, "Unknown import error");
+            state.markFailure(null, null, EntryImportFailureCause.UNKNOWN_ERROR, "Unknown import error");
         }
     }
 
@@ -110,6 +111,7 @@ public class EntryImportJobCoordinator {
         private volatile int processedRows = 0;
         private volatile EntryImportSummary summary;
         private volatile Integer failedRow;
+        private volatile String failedColumn;
         private volatile EntryImportFailureCause failureCause;
         private volatile String failureMessage;
 
@@ -130,15 +132,16 @@ public class EntryImportJobCoordinator {
             this.status = EntryImportJobStatus.SUCCESS;
         }
 
-        private void markFailure(Integer failedRow, EntryImportFailureCause failureCause, String failureMessage) {
+        private void markFailure(Integer failedRow, String failedColumn, EntryImportFailureCause failureCause, String failureMessage) {
             this.failedRow = failedRow;
+            this.failedColumn = failedColumn;
             this.failureCause = failureCause;
             this.failureMessage = failureMessage;
             this.status = EntryImportJobStatus.FAILED;
         }
 
         private EntryImportJobSnapshot snapshot() {
-            return new EntryImportJobSnapshot(jobId, status, totalRows, processedRows, summary, failedRow, failureCause, failureMessage);
+            return new EntryImportJobSnapshot(jobId, status, totalRows, processedRows, summary, failedRow, failedColumn, failureCause, failureMessage);
         }
     }
 }

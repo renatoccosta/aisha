@@ -32,6 +32,83 @@
                 <p class="helper" th:text="#{entries.import.form.file.help}"></p>
             </div>
 
+            <div class="field">
+                <label for="header-option" th:text="#{entries.import.form.header.required}"></label>
+                <select id="header-option" name="headerOption">
+                    <option value="WITH_HEADER" th:text="#{entries.import.form.header.option.withHeader}"></option>
+                    <option value="WITHOUT_HEADER" th:text="#{entries.import.form.header.option.withoutHeader}"></option>
+                </select>
+                <p class="helper" th:text="#{entries.import.form.header.help}"></p>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="separator-option" th:text="#{entries.import.form.separator.required}"></label>
+                    <select id="separator-option" name="separatorOption">
+                        <option value="COMMA" th:text="#{entries.import.form.separator.option.comma}"></option>
+                        <option value="SEMICOLON" th:text="#{entries.import.form.separator.option.semicolon}"></option>
+                        <option value="PIPE" th:text="#{entries.import.form.separator.option.pipe}"></option>
+                        <option value="TAB" th:text="#{entries.import.form.separator.option.tab}"></option>
+                        <option value="OTHER" th:text="#{entries.import.form.separator.option.other}"></option>
+                    </select>
+                    <input
+                        id="separator-other"
+                        type="text"
+                        name="separatorOther"
+                        maxlength="4"
+                        th:placeholder="#{entries.import.form.separator.other.placeholder}">
+                    <p class="helper" th:text="#{entries.import.form.separator.help}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="date-format-option" th:text="#{entries.import.form.dateFormat.required}"></label>
+                    <select id="date-format-option" name="dateFormatOption">
+                        <option value="ISO" th:text="#{entries.import.form.dateFormat.option.iso}"></option>
+                        <option value="BR" th:text="#{entries.import.form.dateFormat.option.br}"></option>
+                        <option value="US" th:text="#{entries.import.form.dateFormat.option.us}"></option>
+                        <option value="DMY_DASH" th:text="#{entries.import.form.dateFormat.option.dmyDash}"></option>
+                        <option value="OTHER" th:text="#{entries.import.form.dateFormat.option.other}"></option>
+                    </select>
+                    <input
+                        id="date-format-other"
+                        type="text"
+                        name="dateFormatOther"
+                        maxlength="60"
+                        th:placeholder="#{entries.import.form.dateFormat.other.placeholder}">
+                    <p class="helper" th:text="#{entries.import.form.dateFormat.help}"></p>
+                    <p class="helper">
+                        <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/time/format/DateTimeFormatter.html#patterns"
+                           target="_blank"
+                           rel="noopener"
+                           th:text="#{entries.import.form.dateFormat.docLink}">
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="amount-format-option" th:text="#{entries.import.form.amountFormat.required}"></label>
+                <select id="amount-format-option" name="amountFormatOption">
+                    <option value="PT_BR" th:text="#{entries.import.form.amountFormat.option.ptBr}"></option>
+                    <option value="US" th:text="#{entries.import.form.amountFormat.option.us}"></option>
+                    <option value="OTHER" th:text="#{entries.import.form.amountFormat.option.other}"></option>
+                </select>
+                <input
+                    id="amount-format-other"
+                    type="text"
+                    name="amountFormatOther"
+                    maxlength="120"
+                    th:placeholder="#{entries.import.form.amountFormat.other.placeholder}">
+                <p class="helper" th:text="#{entries.import.form.amountFormat.help}"></p>
+                <p class="helper">
+                    <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/regex/Pattern.html"
+                       target="_blank"
+                       rel="noopener"
+                       th:text="#{entries.import.form.amountFormat.docLink}">
+                    </a>
+                </p>
+            </div>
+
             <div class="actions-inline">
                 <button class="btn btn-primary" type="submit">
                     <i data-lucide="upload" aria-hidden="true"></i>
@@ -94,6 +171,12 @@
             <h3 th:text="#{entries.import.result.failure.title}"></h3>
             <p class="error" th:text="#{${failureCauseKey}}"></p>
             <p class="helper" th:if="${failedRow != null}" th:text="#{entries.import.result.failure.row(${failedRow})}"></p>
+            <p class="helper" th:if="${failedColumnKey != null}">
+                <span th:text="#{entries.import.result.failure.columnPrefix}"></span>
+                <strong th:text="#{${failedColumnKey}}"></strong>
+            </p>
+            <p class="helper" th:if="${failureDetailMessage != null and !#strings.isEmpty(failureDetailMessage)}"
+               th:text="#{entries.import.result.failure.message(${failureDetailMessage})}"></p>
             <p class="helper" th:text="#{entries.import.result.failure.rollback}"></p>
         </div>
     </section>
