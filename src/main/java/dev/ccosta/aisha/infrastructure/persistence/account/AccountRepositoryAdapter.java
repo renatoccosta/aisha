@@ -27,6 +27,11 @@ public class AccountRepositoryAdapter implements AccountRepository {
     }
 
     @Override
+    public Optional<Account> findByTitleIgnoreCase(String title) {
+        return jpaAccountRepository.findFirstByTitleIgnoreCaseOrderByIdAsc(title);
+    }
+
+    @Override
     public Account save(Account account) {
         return jpaAccountRepository.save(account);
     }

@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -38,6 +39,15 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
 
     @EntityGraph(attributePaths = {"account", "category"})
     List<Entry> findBySettlementDateLessThanEqualOrderBySettlementDateAscIdAsc(LocalDate endDate);
+
+    boolean existsByAccountIdAndMovementDateAndSettlementDateAndDescriptionAndCategoryIdAndAmount(
+        Long accountId,
+        LocalDate movementDate,
+        LocalDate settlementDate,
+        String description,
+        Long categoryId,
+        BigDecimal amount
+    );
 
     boolean existsByCategoryId(Long categoryId);
 

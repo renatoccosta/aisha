@@ -17,10 +17,16 @@
             <h2 th:text="#{entries.list.heading}"></h2>
             <p th:text="#{entries.list.subtitle}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/entries/new}">
-            <i data-lucide="plus" aria-hidden="true"></i>
-            <span th:text="#{entries.list.action.new}"></span>
-        </a>
+        <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="@{/entries/import}">
+                <i data-lucide="file-up" aria-hidden="true"></i>
+                <span th:text="#{entries.list.action.importCsv}"></span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/entries/new}">
+                <i data-lucide="plus" aria-hidden="true"></i>
+                <span th:text="#{entries.list.action.new}"></span>
+            </a>
+        </div>
     </section>
 
     <section id="table-container" th:fragment="table" class="card">
