@@ -105,9 +105,16 @@ Formato da git tag gerada:
 Onde:
 
 - `nextVersion`: próximo `minor` calculado a partir da última tag estável `vX.Y.Z` do fluxo principal.
-- `branch`: nome da branch informada no dispatch.
+- `branch`: nome da branch sanitizado (ex.: `feature/nova-tela` vira `feature-nova-tela`).
 - `shortsha`: SHA curto do commit usado no snapshot.
 
 Publicação no GHCR:
 
-- A imagem é publicada com o mesmo formato, mas com branch sanitizada para compatibilidade com tag Docker.
+- A imagem é publicada com o mesmo formato da git tag.
+
+Publicação de GitHub Release:
+
+- Cada execução publica um GitHub Release com artefato JAR do build Maven.
+- Convenções de nome:
+  - release final: `aisha-X.Y.Z.jar`
+  - snapshot: `aisha-<nextVersion>-snapshot.<branch>.<shortsha>.jar`
