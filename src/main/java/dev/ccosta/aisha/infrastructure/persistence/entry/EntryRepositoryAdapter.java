@@ -79,6 +79,11 @@ public class EntryRepositoryAdapter implements EntryRepository {
     }
 
     @Override
+    public BigDecimal sumAmountByAccountIdAndSettlementDateBetween(Long accountId, LocalDate startDate, LocalDate endDate) {
+        return jpaEntryRepository.sumAmountByAccountIdAndSettlementDateBetween(accountId, startDate, endDate);
+    }
+
+    @Override
     public boolean existsDuplicate(
         Long accountId,
         LocalDate movementDate,

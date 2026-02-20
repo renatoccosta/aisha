@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -357,6 +358,43 @@ class EntryCsvImportServiceTest {
         ))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Invalid amount format pattern");
+    }
+
+    @Test
+    void shouldAdjustInitialBalanceForExistingAccountAfterImportingBackdatedEntries() {
+        Account existingAccount = newAccount(11L, "Conta A");
+        existingAccount.setInitialBalance(new BigDecimal("100.00"));
+        existingAccount.setInitialBalanceDate(LocalDate.of(2025, 12, 31));
+
+        when(accountService.listAllOrdered()).thenReturn(List.of(existingAccount));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
+            .thenReturn(false);
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String csv = "Conta A;2025-12-15;2025-12-15;Compra 1;Mercado;10,00\n"
+            + "Conta A;2025-12-05;2025-12-05;Compra 2;Mercado;25,00\n";
+
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, false),
+            null
+        );
+
+        assertThat(summary.importedCount()).isEqualTo(2);
+        ArgumentCaptor<Map<Long, LocalDate>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(accountService).adjustInitialBalanceForBackdatedEntries(captor.capture());
+        assertThat(captor.getValue()).containsExactlyEntriesOf(Map.of(11L, LocalDate.of(2025, 12, 5)));
     }
 
     @Test

@@ -80,6 +80,7 @@ public class EntryCsvImportService {
         int processed = 0;
 
         Set<EntryFingerprint> fileFingerprints = new HashSet<>();
+        Map<Long, LocalDate> earliestSettlementDateByAffectedAccountId = new HashMap<>();
 
         for (int rowIndex = headerOffset; rowIndex < rows.size(); rowIndex++) {
             CsvRow row = rows.get(rowIndex);
@@ -133,9 +134,25 @@ public class EntryCsvImportService {
             entry.setNotes(record.notes());
             entry.setExternalId(record.externalId());
             entryRepository.save(entry);
+
+            if (
+                !resolvedAccount.created()
+                    && account.getInitialBalance() != null
+                    && account.getInitialBalanceDate() != null
+                    && !record.settlementDate().isAfter(account.getInitialBalanceDate())
+            ) {
+                earliestSettlementDateByAffectedAccountId.merge(
+                    account.getId(),
+                    record.settlementDate(),
+                    (currentEarliest, candidate) -> candidate.isBefore(currentEarliest) ? candidate : currentEarliest
+                );
+            }
+
             imported++;
             safeProgressListener.onRowProcessed(processed);
         }
+
+        accountService.adjustInitialBalanceForBackdatedEntries(earliestSettlementDateByAffectedAccountId);
 
         long durationMillis = (System.nanoTime() - startedAtNanos) / 1_000_000;
 

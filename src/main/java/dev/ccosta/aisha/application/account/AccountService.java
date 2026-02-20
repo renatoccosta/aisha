@@ -3,9 +3,12 @@ package dev.ccosta.aisha.application.account;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -87,9 +90,58 @@ public class AccountService {
         accountRepository.deleteByIds(uniqueIds);
     }
 
+    @Transactional
+    public void adjustInitialBalanceForBackdatedEntry(Long accountId, LocalDate settlementDate) {
+        if (accountId == null || settlementDate == null) {
+            return;
+        }
+
+        Account account = findById(accountId);
+        applyBackdatedBalanceAdjustment(accountId, account, settlementDate);
+    }
+
+    @Transactional
+    public void adjustInitialBalanceForBackdatedEntries(Map<Long, LocalDate> earliestSettlementDateByAccountId) {
+        if (earliestSettlementDateByAccountId == null || earliestSettlementDateByAccountId.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<Long, LocalDate> entry : earliestSettlementDateByAccountId.entrySet()) {
+            Long accountId = entry.getKey();
+            LocalDate earliestSettlementDate = entry.getValue();
+            if (accountId == null || earliestSettlementDate == null) {
+                continue;
+            }
+
+            Account account = findById(accountId);
+            applyBackdatedBalanceAdjustment(accountId, account, earliestSettlementDate);
+        }
+    }
+
     private void ensureAccountIsNotInUse(Long id) {
         if (entryRepository.existsByAccountId(id)) {
             throw new AccountInUseException(id);
         }
+    }
+
+    private void applyBackdatedBalanceAdjustment(Long accountId, Account account, LocalDate earliestSettlementDate) {
+        BigDecimal initialBalance = account.getInitialBalance();
+        LocalDate initialBalanceDate = account.getInitialBalanceDate();
+        if (initialBalance == null || initialBalanceDate == null) {
+            return;
+        }
+        if (earliestSettlementDate.isAfter(initialBalanceDate)) {
+            return;
+        }
+
+        BigDecimal amountToRollback = entryRepository.sumAmountByAccountIdAndSettlementDateBetween(
+            accountId,
+            earliestSettlementDate,
+            initialBalanceDate
+        );
+        LocalDate adjustedInitialBalanceDate = earliestSettlementDate.minusDays(1);
+        account.setInitialBalance(initialBalance.subtract(amountToRollback));
+        account.setInitialBalanceDate(adjustedInitialBalanceDate);
+        accountRepository.save(account);
     }
 }

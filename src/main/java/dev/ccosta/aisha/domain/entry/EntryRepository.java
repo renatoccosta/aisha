@@ -20,6 +20,8 @@ public interface EntryRepository {
 
     Entry save(Entry entry);
 
+    BigDecimal sumAmountByAccountIdAndSettlementDateBetween(Long accountId, LocalDate startDate, LocalDate endDate);
+
     boolean existsDuplicate(
         Long accountId,
         LocalDate movementDate,
