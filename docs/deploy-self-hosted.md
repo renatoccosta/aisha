@@ -57,7 +57,7 @@ A imagem já inicia com suporte aos perfis abaixo:
 - `postgres`: ativa datasource PostgreSQL
 - `prod`: ativa políticas de produção (ex.: cookie secure)
 
-O schema é criado automaticamente no startup (`ddl-auto: update`).
+O schema é aplicado automaticamente no startup via Flyway (`db/migration`).
 
 ## 4) Atualização de versão
 

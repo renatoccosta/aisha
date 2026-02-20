@@ -58,6 +58,7 @@ Important: change default credentials in non-development environments.
 - Spring Boot 4.0.2
 - Spring MVC + Thymeleaf
 - Spring Data JPA
+- Flyway
 - Bean Validation
 - HSQLDB (development)
 - PostgreSQL (production/persistent environments)
@@ -101,7 +102,8 @@ DB_PASSWORD=aisha \
 
 ## Database and Initialization
 
-- The schema is automatically created/updated at startup via Hibernate (`ddl-auto: update`).
+- Database schema is versioned and applied automatically at startup via Flyway migrations (`src/main/resources/db/migration`).
+- Hibernate runs in validation mode (`ddl-auto: validate`) to ensure mapping/schema consistency.
 - Initial seed data is loaded from `src/main/resources/data.sql` in embedded mode.
 
 ## Docker Distribution (GHCR)

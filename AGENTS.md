@@ -9,6 +9,8 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Dev DB: HSQLDB
 - Prod DB: PostgreSQL
 - DB schema must be created automatically on startup (keep this working).
+- Flyway is the mandatory database migration tool for schema evolution.
+- Do not use Hibernate `ddl-auto` for schema creation or updates in normal development flow; use versioned migrations.
 
 ## Security / Auth direction
 - Assume OAuth2 compatibility as a hard requirement.
