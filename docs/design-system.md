@@ -1,34 +1,40 @@
 # Design System - AI$HA
 
-## Objetivo
-Documentar o design system atualmente em uso e definir uma nova paleta de cores semântica baseada nas cores:
+## Goal
+
+Document the design system currently in use and define a new semantic color palette based on:
+
 - `#07004d`
-- `#19647e` (secundária)
+- `#19647e` (secondary)
 - `#42e2b8`
-- `#f0ec57` (principal)
+- `#f0ec57` (primary)
 - `#eb8a90`
 
-## Estado atual (já implementado)
+## Current State (Already Implemented)
 
-### Tecnologias e padrões de UI
-- Renderização server-side com Thymeleaf.
-- Interatividade orientada a HTMX para telas de listagem/formulário.
-- CSS centralizado em `src/main/resources/static/css/app.css`.
-- Fonte principal: `"Source Sans 3", "Segoe UI", sans-serif`.
-- Idioma da interface: pt-BR.
+### UI technologies and patterns
 
-### Estrutura visual atual
-- Fundo geral com gradiente claro (`body`) e cartões brancos.
-- Layout principal com `wrap` centralizado e largura máxima.
-- Componentes reutilizáveis:
-  - Topbar + navegação + filtro de período (`fragments/header.html`)
-  - Cartões (`.card`)
-  - Botões (`.btn-primary`, `.btn-secondary`, `.btn-danger`)
-  - Tabelas responsivas com fallback em cards no mobile (`.responsive-list`)
-  - Estados de loading/skeleton para dashboard.
+- Server-side rendering with Thymeleaf.
+- HTMX-driven interactivity for list/form screens.
+- Centralized CSS in `src/main/resources/static/css/app.css`.
+- Primary font: `"Source Sans 3", "Segoe UI", sans-serif`.
+- UI language: pt-BR.
 
-### Tokens de cor atuais (em uso)
-Definidos hoje no `:root` de `app.css`:
+### Current visual structure
+
+- Global light gradient background (`body`) and white cards.
+- Main layout with centered `wrap` and max width.
+- Reusable components:
+  - Topbar + navigation + period filter (`fragments/header.html`)
+  - Cards (`.card`)
+  - Buttons (`.btn-primary`, `.btn-secondary`, `.btn-danger`)
+  - Responsive tables with mobile card fallback (`.responsive-list`)
+  - Loading/skeleton states for dashboard.
+
+### Current color tokens (in use)
+
+Currently defined in `:root` in `app.css`:
+
 - `--bg: #f4f7f9`
 - `--card: #ffffff`
 - `--text: #12212f`
@@ -41,23 +47,26 @@ Definidos hoje no `:root` de `app.css`:
 - `--danger: #b22e39`
 - `--danger-hover: #8f1f29`
 
-### Cores de gráficos atuais (hardcoded no dashboard)
-- Linha de saldo: tons de azul (`#0b7fab`, `rgba(11,127,171,0.14)`).
-- Receitas vs despesas: verde (`#1b7e4b`) e vermelho (`#9e2f2b`).
-- Donut/stacked por categoria: paleta mista (`#0b7fab`, `#1f7346`, `#a75f00`, `#7a4c8e`, `#ba3f32`, `#64748b`, ...).
+### Current chart colors (hardcoded in dashboard)
 
-Observação: atualmente há mistura entre tokens CSS e cores literais em CSS/JS.
+- Balance line: blue tones (`#0b7fab`, `rgba(11,127,171,0.14)`).
+- Revenue vs expenses: green (`#1b7e4b`) and red (`#9e2f2b`).
+- Donut/stacked by category: mixed palette (`#0b7fab`, `#1f7346`, `#a75f00`, `#7a4c8e`, `#ba3f32`, `#64748b`, ...).
 
-## Nova paleta semântica (definida agora)
+Note: there is currently a mix of CSS tokens and literal colors in CSS/JS.
 
-## 1) Cores-base da marca
-- `brand-primary`: `#f0ec57` (amarelo principal)
-- `brand-secondary`: `#19647e` (azul petróleo secundário)
-- `brand-deep`: `#07004d` (azul profundo para contraste/identidade)
-- `brand-mint`: `#42e2b8` (realce positivo)
-- `brand-coral`: `#eb8a90` (realce de atenção)
+## New Semantic Palette (Defined Now)
 
-## 2) Escala de suporte (mesma linha cromática)
+## 1) Brand base colors
+
+- `brand-primary`: `#f0ec57` (main yellow)
+- `brand-secondary`: `#19647e` (secondary blue-teal)
+- `brand-deep`: `#07004d` (deep blue for contrast/identity)
+- `brand-mint`: `#42e2b8` (positive highlight)
+- `brand-coral`: `#eb8a90` (attention highlight)
+
+## 2) Support scale (same color family)
+
 - `brand-primary-100`: `#fffde1`
 - `brand-primary-200`: `#fbf89d`
 - `brand-primary-300`: `#f0ec57`
@@ -85,28 +94,31 @@ Observação: atualmente há mistura entre tokens CSS e cores literais em CSS/JS
 - `brand-coral-300`: `#eb8a90`
 - `brand-coral-400`: `#cf6770`
 
-## 3) Papéis semânticos de cor
+## 3) Semantic color roles
 
-### 3.1 Superfícies e bordas
-- `color-bg-app`: `#f7f9fc` (fundo global)
-- `color-bg-subtle`: `#eef3f7` (áreas secundárias)
-- `color-bg-card`: `#ffffff` (cartões)
-- `color-bg-elevated`: `#ffffff` (modais/dropdowns)
+### 3.1 Surfaces and borders
+
+- `color-bg-app`: `#f7f9fc` (global background)
+- `color-bg-subtle`: `#eef3f7` (secondary areas)
+- `color-bg-card`: `#ffffff` (cards)
+- `color-bg-elevated`: `#ffffff` (modals/dropdowns)
 - `color-border-default`: `#d7e0e8`
 - `color-border-strong`: `#b8c7d4`
 - `color-overlay`: `rgba(7, 0, 77, 0.45)`
 
-### 3.2 Tipografia
+### 3.2 Typography
+
 - `color-text-primary`: `#101f33`
 - `color-text-secondary`: `#35506a`
 - `color-text-muted`: `#5e7388`
-- `color-text-on-primary`: `#07004d` (sobre `#f0ec57`)
-- `color-text-on-secondary`: `#ffffff` (sobre `#19647e`)
+- `color-text-on-primary`: `#07004d` (on `#f0ec57`)
+- `color-text-on-secondary`: `#ffffff` (on `#19647e`)
 - `color-text-on-dark`: `#f7f9fc`
 - `color-link`: `#145267`
 - `color-link-hover`: `#07004d`
 
-### 3.3 Ações e componentes interativos
+### 3.3 Actions and interactive components
+
 - `color-action-primary-bg`: `#f0ec57`
 - `color-action-primary-hover`: `#d8d33b`
 - `color-action-primary-active`: `#b5b126`
@@ -126,7 +138,8 @@ Observação: atualmente há mistura entre tokens CSS e cores literais em CSS/JS
 - `color-disabled-bg`: `#e6ebf0`
 - `color-disabled-text`: `#8b99a6`
 
-### 3.4 Feedback e estados do domínio
+### 3.4 Feedback and domain states
+
 - `color-success`: `#22bf96`
 - `color-success-bg`: `#e6fcf6`
 - `color-success-text`: `#0d6b54`
@@ -143,43 +156,47 @@ Observação: atualmente há mistura entre tokens CSS e cores literais em CSS/JS
 - `color-info-bg`: `#e8f3f7`
 - `color-info-text`: `#103f50`
 
-## 4) Mapeamento por elemento da interface
-- Topbar: fundo translúcido claro (`color-bg-card` + blur), links em `color-link`.
-- Navegação ativa: texto em `color-text-on-secondary` com fundo `color-action-secondary-bg`.
-- Botão primário: fundo `color-action-primary-bg`, texto `color-action-primary-text`.
-- Botão secundário: fundo `color-action-secondary-bg`, texto branco.
-- Botão neutro/apoio: `color-action-tertiary-*`.
-- Ações destrutivas: `color-danger` e variações.
-- Inputs: fundo branco, borda `color-border-default`, foco com `color-focus-ring`.
-- Cards de resumo:
-  - Saldo: base `color-info-bg` + acento `color-info`
-  - Receitas: base `color-success-bg` + acento `color-success`
-  - Despesas: base `color-danger-bg` + acento `color-danger`
-- Tabelas: cabeçalho com texto `color-text-muted`, linhas com `color-border-default`.
-- Skeleton/loading: tons de `color-bg-subtle`.
+## 4) Mapping by interface element
 
-## 5) Paleta para gráficos
+- Topbar: translucent light background (`color-bg-card` + blur), links in `color-link`.
+- Active navigation: text in `color-text-on-secondary` with `color-action-secondary-bg` background.
+- Primary button: `color-action-primary-bg` background and `color-action-primary-text` text.
+- Secondary button: `color-action-secondary-bg` background and white text.
+- Neutral/support button: `color-action-tertiary-*`.
+- Destructive actions: `color-danger` and variants.
+- Inputs: white background, `color-border-default` border, focus with `color-focus-ring`.
+- Summary cards:
+  - Balance: `color-info-bg` base + `color-info` accent
+  - Revenue: `color-success-bg` base + `color-success` accent
+  - Expenses: `color-danger-bg` base + `color-danger` accent
+- Tables: header with `color-text-muted`, rows with `color-border-default`.
+- Skeleton/loading: `color-bg-subtle` tones.
 
-### 5.1 Séries principais (ordem sugerida)
-1. `#19647e` (principal comparativo)
-2. `#42e2b8` (positivo)
-3. `#eb8a90` (alerta/negativo)
-4. `#07004d` (apoio de contraste)
-5. `#f0ec57` (destaque)
+## 5) Chart palette
+
+### 5.1 Main series (suggested order)
+
+1. `#19647e` (primary comparison)
+2. `#42e2b8` (positive)
+3. `#eb8a90` (warning/negative)
+4. `#07004d` (contrast support)
+5. `#f0ec57` (highlight)
 6. `#8cb7c7`
 7. `#22bf96`
 8. `#cf6770`
 
-### 5.2 Convenções por tipo
-- Saldo acumulado (linha/área): linha `#19647e`, área `rgba(25,100,126,0.16)`.
-- Receitas vs despesas:
-  - Receitas: `#22bf96`
-  - Despesas: `#cf6770`
-- Donut por categoria: usar a sequência da seção 5.1.
-- Sem dados: `#d7e0e8`.
-- Grade/axis labels: `#5e7388`.
+### 5.2 Conventions by chart type
 
-## 6) Tokens CSS propostos (referência)
+- Cumulative balance (line/area): line `#19647e`, area `rgba(25,100,126,0.16)`.
+- Revenue vs expenses:
+  - Revenue: `#22bf96`
+  - Expenses: `#cf6770`
+- Donut by category: use the sequence from section 5.1.
+- No data: `#d7e0e8`.
+- Grid/axis labels: `#5e7388`.
+
+## 6) Proposed CSS tokens (reference)
+
 ```css
 :root {
   --color-bg-app: #f7f9fc;
@@ -203,15 +220,17 @@ Observação: atualmente há mistura entre tokens CSS e cores literais em CSS/JS
 }
 ```
 
-## 7) Diretrizes de adoção
-- Centralizar todas as cores em tokens CSS (eliminar hex hardcoded em templates/JS).
-- Sincronizar gráficos com constantes de paleta compartilhadas.
-- Garantir contraste mínimo WCAG AA para textos e botões.
-- Preservar os padrões responsivos já existentes (tabela para cards no mobile).
-- Em evolução futura: mover tokens para tema único e preparar variantes sazonais sem alterar semântica.
+## 7) Adoption guidelines
 
-## 8) Decisões registradas
-- Cor principal oficial: `#f0ec57`.
-- Cor secundária oficial: `#19647e`.
-- `#07004d` será a base de contraste forte para tipografia sobre superfícies claras e elementos de identidade.
-- `#42e2b8` e `#eb8a90` serão usados como acentos funcionais (positivo/atenção) e também em gráficos.
+- Centralize all colors in CSS tokens (remove hardcoded hex values in templates/JS).
+- Sync charts with shared palette constants.
+- Ensure minimum WCAG AA contrast for text and buttons.
+- Preserve current responsive patterns (table-to-card behavior on mobile).
+- Future evolution: move tokens to a single theme and prepare seasonal variants without changing semantics.
+
+## 8) Recorded decisions
+
+- Official primary color: `#f0ec57`.
+- Official secondary color: `#19647e`.
+- `#07004d` is the strong contrast base for typography on light surfaces and identity elements.
+- `#42e2b8` and `#eb8a90` are functional accents (positive/attention) and chart colors.
