@@ -1,141 +1,141 @@
-# Deploy Self-Hosted (Docker + GHCR)
+# Self-Hosted Deployment (Docker + GHCR)
 
-Este documento descreve como executar o AI$HA em ambiente self-hosted usando imagem Docker publicada no GitHub Container Registry (GHCR).
+This document describes how to run AI$HA in a self-hosted environment using the Docker image published on GitHub Container Registry (GHCR).
 
-## Pré-requisitos
+## Prerequisites
 
 - Docker Engine 24+
 - Docker Compose Plugin 2.20+
-- Conta GitHub com permissão para puxar a imagem (se o pacote for privado)
+- GitHub account with permission to pull the image (if the package is private)
 
-## 1) Obter imagem do GHCR
+## 1) Pull the image from GHCR
 
-Formato da imagem:
+Image format:
 
-- `ghcr.io/<owner>/<repo>:<versao-semver>`
+- `ghcr.io/<owner>/<repo>:<semver-version>`
 - `ghcr.io/<owner>/<repo>:latest`
 
-Exemplo:
+Example:
 
 ```bash
 docker pull ghcr.io/OWNER/REPOSITORY:1.2.3
 ```
 
-Se o pacote estiver privado, faça login antes:
+If the package is private, log in first:
 
 ```bash
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u GITHUB_USERNAME --password-stdin
 ```
 
-## 2) Subir stack com docker-compose
+## 2) Start the stack with Docker Compose
 
-Use o arquivo `compose.yml` do repositório.
+Use the repository `compose.yml` file.
 
-Ajuste ao menos:
+Adjust at least:
 
-- `image` da aplicação (owner/repo/tag corretos)
+- application `image` (correct owner/repo/tag)
 - `POSTGRES_PASSWORD`
 - `DB_PASSWORD`
 - `AISHA_SECURITY_SEED_PASSWORD`
-- `TZ` (default no Dockerfile: `UTC`)
-- `JAVA_OPTS` (default no Dockerfile com flags para execução em container)
+- `TZ` (default in Dockerfile: `UTC`)
+- `JAVA_OPTS` (default in Dockerfile includes container runtime flags)
 
-Inicie os serviços:
+Start services:
 
 ```bash
 docker compose up -d
 ```
 
-Aplicação disponível em:
+Application URL:
 
 - `http://localhost:8080`
 
-## 3) Perfis e banco
+## 3) Profiles and database
 
-A imagem já inicia com suporte aos perfis abaixo:
+The image starts with support for the profiles below:
 
-- `postgres`: ativa datasource PostgreSQL
-- `prod`: ativa políticas de produção (ex.: cookie secure)
+- `postgres`: enables PostgreSQL datasource
+- `prod`: enables production policies (for example, secure cookie)
 
-O schema é criado automaticamente no startup (`ddl-auto: update`).
+Schema is applied automatically at startup by Flyway (`db/migration`).
 
-## 4) Atualização de versão
+## 4) Version upgrade
 
-Para atualizar:
+To upgrade:
 
-1. Ajuste a tag da imagem no `compose.yml` para uma versão SemVer publicada (ex.: `1.3.0`).
-2. Execute:
+1. Update the image tag in `compose.yml` to a published SemVer version (for example, `1.3.0`).
+2. Run:
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-## 5) Fluxo de release automático (CI/CD)
+## 5) Automated release flow (CI/CD)
 
-O release é acionado quando um PR é mergeado em `main` contendo um dos labels:
+A release is triggered when a PR is merged into `main` with one of these labels:
 
 - `release:patch`
 - `release:minor`
 - `release:major`
 
-A pipeline executa:
+Pipeline steps:
 
-1. Lê a última tag `vX.Y.Z`.
-2. Calcula a próxima versão SemVer.
-3. Cria e publica nova tag Git `vX.Y.Z`.
-4. Builda e publica imagem no GHCR com tags:
+1. Read latest tag `vX.Y.Z`.
+2. Calculate next SemVer version.
+3. Create and publish new git tag `vX.Y.Z`.
+4. Build and publish GHCR image tags:
    - `ghcr.io/<owner>/<repo>:X.Y.Z`
    - `ghcr.io/<owner>/<repo>:latest`
 
-## 6) Fluxo de snapshot release (manual)
+## 6) Snapshot release flow (manual)
 
-Para gerar release de snapshot manualmente, execute o workflow:
+To generate a manual snapshot release, run workflow:
 
 - `.github/workflows/release-snapshot-ghcr.yml`
 
-Entrada obrigatória:
+Required input:
 
-- `source_branch`: branch de origem usada no checkout (último commit da branch).
+- `source_branch`: source branch used for checkout (latest commit from that branch).
 
-Formato da git tag gerada:
+Generated git tag format:
 
 - `<nextVersion>-snapshot.<branch>.<shortsha>`
 
-Onde:
+Where:
 
-- `nextVersion`: próximo `minor` calculado a partir da última tag estável `vX.Y.Z` do fluxo principal.
-- `branch`: nome da branch sanitizado (ex.: `feature/nova-tela` vira `feature-nova-tela`).
-- `shortsha`: SHA curto do commit usado no snapshot.
+- `nextVersion`: next `minor` computed from the latest stable tag `vX.Y.Z` in the main flow.
+- `branch`: sanitized branch name (for example, `feature/new-screen` becomes `feature-new-screen`).
+- `shortsha`: short SHA of the commit used for the snapshot.
 
-Publicação no GHCR:
+GHCR publication:
 
-- A imagem é publicada com o mesmo formato da git tag.
+- The image is published using the same tag format.
 
-Publicação de GitHub Release:
+GitHub Release publication:
 
-- Cada execução publica um GitHub Release com artefato JAR do build Maven.
-- Convenções de nome:
-  - release final: `aisha-X.Y.Z.jar`
+- Each run publishes a GitHub Release with the Maven build JAR artifact.
+- Naming conventions:
+  - final release: `aisha-X.Y.Z.jar`
   - snapshot: `aisha-<nextVersion>-snapshot.<branch>.<shortsha>.jar`
 
-## 7) Fluxo de release final manual
+## 7) Manual final release flow
 
-Para gerar release final manualmente a partir do estado atual da `main`, execute:
+To generate a manual final release from the current `main` state, run:
 
 - `.github/workflows/release-manual-ghcr.yml`
 
-Entrada obrigatória:
+Required input:
 
-- `release_type`: `major`, `minor` ou `patch`.
+- `release_type`: `major`, `minor`, or `patch`.
 
-A pipeline executa o mesmo processo do release automático:
+Pipeline runs the same process as automated release:
 
-1. Lê a última tag `vX.Y.Z`.
-2. Calcula a próxima versão SemVer com base no `release_type`.
-3. Cria e publica a nova tag Git `vX.Y.Z`.
-4. Builda e publica imagem multi-arch no GHCR (`linux/amd64`, `linux/arm64`):
+1. Read latest tag `vX.Y.Z`.
+2. Calculate next SemVer using `release_type`.
+3. Create and publish new git tag `vX.Y.Z`.
+4. Build and publish multi-arch GHCR images (`linux/amd64`, `linux/arm64`):
    - `ghcr.io/<owner>/<repo>:X.Y.Z`
    - `ghcr.io/<owner>/<repo>:latest`
-5. Cria GitHub Release anexando o JAR renomeado:
+5. Create GitHub Release attaching renamed JAR:
    - `aisha-X.Y.Z.jar`

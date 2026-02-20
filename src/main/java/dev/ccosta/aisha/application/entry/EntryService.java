@@ -62,7 +62,9 @@ public class EntryService {
     public Entry create(Entry entry, Long accountId, Long categoryId, String newCategoryTitle) {
         entry.setAccount(resolveAccount(accountId));
         entry.setCategory(resolveCategory(categoryId, newCategoryTitle));
-        return entryRepository.save(entry);
+        Entry createdEntry = entryRepository.save(entry);
+        accountService.adjustInitialBalanceForBackdatedEntry(accountId, createdEntry.getSettlementDate());
+        return createdEntry;
     }
 
     @Transactional

@@ -103,6 +103,7 @@ class EntryServiceTest {
         assertThat(created.getAccount().getTitle()).isEqualTo("Conta Corrente");
         assertThat(created.getCategory().getTitle()).isEqualTo("Categoria existente");
         verify(accountService).findById(2L);
+        verify(accountService).adjustInitialBalanceForBackdatedEntry(2L, LocalDate.of(2026, 2, 11));
         verify(categoryService).findById(3L);
         verify(entryRepository).save(input);
     }

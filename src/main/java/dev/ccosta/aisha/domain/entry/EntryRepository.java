@@ -20,13 +20,16 @@ public interface EntryRepository {
 
     Entry save(Entry entry);
 
+    BigDecimal sumAmountByAccountIdAndSettlementDateBetween(Long accountId, LocalDate startDate, LocalDate endDate);
+
     boolean existsDuplicate(
         Long accountId,
         LocalDate movementDate,
         LocalDate settlementDate,
         String description,
         Long categoryId,
-        BigDecimal amount
+        BigDecimal amount,
+        String externalId
     );
 
     boolean existsByCategoryId(Long categoryId);

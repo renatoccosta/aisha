@@ -9,6 +9,8 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Dev DB: HSQLDB
 - Prod DB: PostgreSQL
 - DB schema must be created automatically on startup (keep this working).
+- Flyway is the mandatory database migration tool for schema evolution.
+- Do not use Hibernate `ddl-auto` for schema creation or updates in normal development flow; use versioned migrations.
 
 ## Security / Auth direction
 - Assume OAuth2 compatibility as a hard requirement.
@@ -72,7 +74,7 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
   - Every button with visible text must show a representative icon on the left.
   - Ignore buttons that are icon-only by design.
   - Every listing table column header must show a representative icon on the left.
-  - Every main navigation functionality (Dashboard, Lançamentos, Categorias, Contas, and future items) must have a representative icon shown to the left of its name.
+  - Every main navigation functionality (Dashboard, Entries, Categories, Accounts, and future items) must have a representative icon shown to the left of its name.
   - This must be the default behavior for new implementations.
 
 ## Controller guidelines
@@ -109,6 +111,10 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - All user-facing text must be in Brazilian Portuguese (pt-BR), with correct accentuation.
 - UI labels, messages, buttons, validation messages and page titles must be in pt-BR.
 - Avoid hardcoded strings in templates when possible; prepare for future i18n support.
+
+### Documentation language
+- All project documentation must be written in English.
+- This includes `README.md`, files under `docs/`, ADRs, runbooks, and any newly created Markdown documentation.
 
 ### Formatting standards
 - Monetary values must follow Brazilian formatting in the UI:
