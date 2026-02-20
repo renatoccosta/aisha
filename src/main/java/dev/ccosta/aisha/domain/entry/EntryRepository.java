@@ -26,7 +26,8 @@ public interface EntryRepository {
         LocalDate settlementDate,
         String description,
         Long categoryId,
-        BigDecimal amount
+        BigDecimal amount,
+        String externalId
     );
 
     boolean existsByCategoryId(Long categoryId);

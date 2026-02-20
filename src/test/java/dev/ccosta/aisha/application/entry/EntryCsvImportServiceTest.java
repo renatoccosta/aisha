@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -23,6 +24,7 @@ import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -51,7 +53,17 @@ class EntryCsvImportServiceTest {
         when(categoryService.listAllOrdered()).thenReturn(List.of());
         when(accountService.create(any(Account.class))).thenReturn(newAccount(1L, "Conta A"));
         when(categoryService.create(any(Category.class), eq(null))).thenReturn(newCategory(2L, "Mercado"));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
             .thenReturn(false);
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -71,14 +83,24 @@ class EntryCsvImportServiceTest {
         assertThat(summary.createdCategoriesCount()).isEqualTo(1);
         verify(entryRepository, times(1)).save(any(Entry.class));
         verify(entryRepository, times(1))
-            .existsDuplicate(1L, LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 2), "Compra", 2L, new BigDecimal("1234.56"));
+            .existsDuplicate(1L, LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 2), "Compra", 2L, new BigDecimal("1234.56"), null);
     }
 
     @Test
     void shouldSkipDuplicateAlreadyPersisted() {
         when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
         when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
             .thenReturn(true);
 
         String csv = "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00\n";
@@ -94,6 +116,37 @@ class EntryCsvImportServiceTest {
         assertThat(summary.createdAccountsCount()).isZero();
         assertThat(summary.createdCategoriesCount()).isZero();
         verify(entryRepository, never()).save(any(Entry.class));
+    }
+
+    @Test
+    void shouldTreatDifferentExternalIdsAsDifferentEntries() {
+        when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                any(String.class)
+            )
+        )
+            .thenReturn(false);
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String csv = "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00;Obs 1;ext-1\n"
+            + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00;Obs 2;ext-2\n";
+
+        EntryImportSummary summary = entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, false),
+            null
+        );
+
+        assertThat(summary.importedCount()).isEqualTo(2);
+        assertThat(summary.skippedDuplicateCount()).isZero();
     }
 
     @Test
@@ -118,7 +171,17 @@ class EntryCsvImportServiceTest {
     void shouldParseCommaDelimitedCsvWhenAmountIsQuoted() {
         when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
         when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
             .thenReturn(false);
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -136,15 +199,25 @@ class EntryCsvImportServiceTest {
     }
 
     @Test
-    void shouldIgnoreExtraColumnsBeyondMappedFields() {
+    void shouldMapOptionalNotesAndExternalIdColumns() {
         when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
         when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                any(String.class)
+            )
+        )
             .thenReturn(false);
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String csv = "Conta;Data de Movimentação;Data de Liquidação;Descrição;Categoria;Valor;Observação extra\n"
-            + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00;IGNORAR\n";
+        String csv = "Conta;Data de Movimentação;Data de Liquidação;Descrição;Categoria;Valor;Observação;Id Externo\n"
+            + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;10,00;Compra semanal;ext-123\n";
 
         EntryImportSummary summary = entryCsvImportService.importCsv(
             csv.getBytes(StandardCharsets.UTF_8),
@@ -154,14 +227,36 @@ class EntryCsvImportServiceTest {
 
         assertThat(summary.importedCount()).isEqualTo(1);
         assertThat(summary.skippedDuplicateCount()).isZero();
-        verify(entryRepository).save(any(Entry.class));
+        verify(entryRepository).existsDuplicate(
+            11L,
+            LocalDate.of(2026, 2, 1),
+            LocalDate.of(2026, 2, 2),
+            "Compra",
+            21L,
+            new BigDecimal("10.00"),
+            "ext-123"
+        );
+        ArgumentCaptor<Entry> savedEntryCaptor = ArgumentCaptor.forClass(Entry.class);
+        verify(entryRepository).save(savedEntryCaptor.capture());
+        assertThat(savedEntryCaptor.getValue().getNotes()).isEqualTo("Compra semanal");
+        assertThat(savedEntryCaptor.getValue().getExternalId()).isEqualTo("ext-123");
     }
 
     @Test
     void shouldParseCustomDatePattern() {
         when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
         when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
             .thenReturn(false);
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -194,7 +289,17 @@ class EntryCsvImportServiceTest {
     void shouldParseUsAmountFormat() {
         when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
         when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
             .thenReturn(false);
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -214,7 +319,17 @@ class EntryCsvImportServiceTest {
     void shouldParsePtBrAmountWithZeroOrOneDecimalPlaces() {
         when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
         when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
             .thenReturn(false);
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -266,7 +381,17 @@ class EntryCsvImportServiceTest {
     void shouldRespectHeaderOptionAndSkipFirstRow() {
         when(accountService.listAllOrdered()).thenReturn(List.of(newAccount(11L, "Conta A")));
         when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
-        when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), anyLong(), any(BigDecimal.class)))
+        when(
+            entryRepository.existsDuplicate(
+                anyLong(),
+                any(LocalDate.class),
+                any(LocalDate.class),
+                any(String.class),
+                anyLong(),
+                any(BigDecimal.class),
+                isNull()
+            )
+        )
             .thenReturn(false);
         when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

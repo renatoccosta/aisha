@@ -85,15 +85,17 @@ public class EntryRepositoryAdapter implements EntryRepository {
         LocalDate settlementDate,
         String description,
         Long categoryId,
-        BigDecimal amount
+        BigDecimal amount,
+        String externalId
     ) {
-        return jpaEntryRepository.existsByAccountIdAndMovementDateAndSettlementDateAndDescriptionAndCategoryIdAndAmount(
+        return jpaEntryRepository.existsByAccountIdAndMovementDateAndSettlementDateAndDescriptionAndCategoryIdAndAmountAndExternalId(
             accountId,
             movementDate,
             settlementDate,
             description,
             categoryId,
-            amount
+            amount,
+            externalId
         );
     }
 

@@ -40,13 +40,14 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
     @EntityGraph(attributePaths = {"account", "category"})
     List<Entry> findBySettlementDateLessThanEqualOrderBySettlementDateAscIdAsc(LocalDate endDate);
 
-    boolean existsByAccountIdAndMovementDateAndSettlementDateAndDescriptionAndCategoryIdAndAmount(
+    boolean existsByAccountIdAndMovementDateAndSettlementDateAndDescriptionAndCategoryIdAndAmountAndExternalId(
         Long accountId,
         LocalDate movementDate,
         LocalDate settlementDate,
         String description,
         Long categoryId,
-        BigDecimal amount
+        BigDecimal amount,
+        String externalId
     );
 
     boolean existsByCategoryId(Long categoryId);

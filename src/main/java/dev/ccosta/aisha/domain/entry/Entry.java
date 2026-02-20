@@ -42,6 +42,9 @@ public class Entry {
     @Column(name = "notes", length = 1000)
     private String notes;
 
+    @Column(name = "external_id", length = 255)
+    private String externalId;
+
     @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
@@ -95,6 +98,14 @@ public class Entry {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public BigDecimal getAmount() {

@@ -29,9 +29,13 @@ import org.springframework.util.StringUtils;
 @Service
 public class EntryCsvImportService {
 
-    private static final int EXPECTED_COLUMN_COUNT = 6;
+    private static final int REQUIRED_COLUMN_COUNT = 6;
+    private static final int NOTES_COLUMN_INDEX = 6;
+    private static final int EXTERNAL_ID_COLUMN_INDEX = 7;
     private static final int MAX_TITLE_LENGTH = 120;
     private static final int MAX_DESCRIPTION_LENGTH = 200;
+    private static final int MAX_NOTES_LENGTH = 1000;
+    private static final int MAX_EXTERNAL_ID_LENGTH = 255;
     private static final Pattern GROUPED_DOT_INTEGER_PATTERN = Pattern.compile("^-?\\d{1,3}(?:\\.\\d{3})+$");
     private static final Pattern GROUPED_COMMA_INTEGER_PATTERN = Pattern.compile("^-?\\d{1,3}(?:,\\d{3})+$");
     private final EntryRepository entryRepository;
@@ -101,7 +105,8 @@ public class EntryCsvImportService {
                 record.settlementDate(),
                 record.description(),
                 category.getId(),
-                record.amount()
+                record.amount(),
+                record.externalId()
             );
 
             if (!fileFingerprints.add(fingerprint) || entryRepository.existsDuplicate(
@@ -110,7 +115,8 @@ public class EntryCsvImportService {
                 fingerprint.settlementDate(),
                 fingerprint.description(),
                 fingerprint.categoryId(),
-                fingerprint.amount()
+                fingerprint.amount(),
+                fingerprint.externalId()
             )) {
                 skippedDuplicates++;
                 safeProgressListener.onRowProcessed(processed);
@@ -124,7 +130,8 @@ public class EntryCsvImportService {
             entry.setDescription(record.description());
             entry.setCategory(category);
             entry.setAmount(record.amount());
-            entry.setNotes(null);
+            entry.setNotes(record.notes());
+            entry.setExternalId(record.externalId());
             entryRepository.save(entry);
             imported++;
             safeProgressListener.onRowProcessed(processed);
@@ -136,7 +143,7 @@ public class EntryCsvImportService {
     }
 
     private CsvRecord toRecord(CsvRow row, int rowPosition, DateTimeFormatter dateFormatter, Pattern amountPattern) {
-        if (row.columns().size() < EXPECTED_COLUMN_COUNT) {
+        if (row.columns().size() < REQUIRED_COLUMN_COUNT) {
             throw new EntryImportValidationException(
                 rowPosition,
                 EntryImportFailureCause.INVALID_FORMAT,
@@ -158,8 +165,12 @@ public class EntryCsvImportService {
         validateLength(categoryTitle, MAX_TITLE_LENGTH, rowPosition, "category");
 
         BigDecimal amount = parseAmount(row.columns().get(5), rowPosition, amountPattern);
+        String notes = optionalValue(row.columns(), NOTES_COLUMN_INDEX);
+        validateLength(notes, MAX_NOTES_LENGTH, rowPosition, "notes");
+        String externalId = optionalValue(row.columns(), EXTERNAL_ID_COLUMN_INDEX);
+        validateLength(externalId, MAX_EXTERNAL_ID_LENGTH, rowPosition, "externalId");
 
-        return new CsvRecord(accountTitle, movementDate, settlementDate, description, categoryTitle, amount);
+        return new CsvRecord(accountTitle, movementDate, settlementDate, description, categoryTitle, amount, notes, externalId);
     }
 
     private String requireValue(String value, int rowPosition, String fieldName) {
@@ -176,6 +187,9 @@ public class EntryCsvImportService {
     }
 
     private void validateLength(String value, int maxLength, int rowPosition, String fieldName) {
+        if (value == null) {
+            return;
+        }
         if (value.length() <= maxLength) {
             return;
         }
@@ -186,6 +200,17 @@ public class EntryCsvImportService {
             fieldName,
             "Invalid field size: " + fieldName
         );
+    }
+
+    private String optionalValue(List<String> columns, int index) {
+        if (index >= columns.size()) {
+            return null;
+        }
+        String value = columns.get(index);
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
     }
 
     private LocalDate parseDate(String rawValue, int rowPosition, String fieldName, DateTimeFormatter dateFormatter) {
@@ -413,7 +438,9 @@ public class EntryCsvImportService {
         LocalDate settlementDate,
         String description,
         String categoryTitle,
-        BigDecimal amount
+        BigDecimal amount,
+        String notes,
+        String externalId
     ) {
     }
 
@@ -423,7 +450,8 @@ public class EntryCsvImportService {
         LocalDate settlementDate,
         String description,
         Long categoryId,
-        BigDecimal amount
+        BigDecimal amount,
+        String externalId
     ) {
     }
 

@@ -415,6 +415,8 @@ public class EntryController {
             case "description" -> "entries.import.column.description";
             case "category" -> "entries.import.column.category";
             case "amount" -> "entries.import.column.amount";
+            case "notes" -> "entries.import.column.notes";
+            case "externalId" -> "entries.import.column.externalId";
             default -> null;
         };
     }
