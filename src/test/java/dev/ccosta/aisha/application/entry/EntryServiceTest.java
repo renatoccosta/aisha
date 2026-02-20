@@ -102,6 +102,7 @@ class EntryServiceTest {
 
         assertThat(created.getAccount().getTitle()).isEqualTo("Conta Corrente");
         assertThat(created.getCategory().getTitle()).isEqualTo("Categoria existente");
+        verify(accountService).validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
         verify(accountService).findById(2L);
         verify(accountService).adjustInitialBalanceForBackdatedEntry(2L, LocalDate.of(2026, 2, 11));
         verify(categoryService).findById(3L);
@@ -121,9 +122,25 @@ class EntryServiceTest {
         Entry created = entryService.create(input, 2L, null, "Nova categoria");
 
         assertThat(created.getCategory().getTitle()).isEqualTo("Nova categoria");
+        verify(accountService).validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
         verify(accountService).findById(2L);
         verify(categoryService).findOrCreateByTitle("Nova categoria");
         verify(entryRepository).save(input);
+    }
+
+    @Test
+    void shouldFailCreateWhenSettlementDateIsAfterAccountDeactivationDate() {
+        Entry input = newEntry("Descricao", new BigDecimal("15.00"));
+        org.mockito.Mockito.doThrow(
+            new EntrySettlementAfterAccountDeactivationException(LocalDate.of(2026, 2, 11), LocalDate.of(2026, 2, 10))
+        )
+            .when(accountService)
+            .validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
+
+        assertThatThrownBy(() -> entryService.create(input, 2L, 3L, null))
+            .isInstanceOf(EntrySettlementAfterAccountDeactivationException.class);
+
+        verify(entryRepository, never()).save(input);
     }
 
     @Test

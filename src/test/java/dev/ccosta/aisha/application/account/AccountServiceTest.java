@@ -52,8 +52,10 @@ class AccountServiceTest {
         Account existing = newAccount("Conta antiga", "10.00", LocalDate.of(2026, 1, 1));
         Account updatedData = newAccount("Conta nova", "250.75", LocalDate.of(2026, 2, 5));
         updatedData.setDescription("Descricao nova");
+        updatedData.setDeactivationDate(LocalDate.of(2026, 2, 10));
 
         when(accountRepository.findById(10L)).thenReturn(Optional.of(existing));
+        when(entryRepository.findLatestSettlementDateByAccountId(10L)).thenReturn(Optional.of(LocalDate.of(2026, 2, 10)));
         when(accountRepository.save(existing)).thenReturn(existing);
 
         Account updated = accountService.update(10L, updatedData);
@@ -62,6 +64,66 @@ class AccountServiceTest {
         assertThat(updated.getDescription()).isEqualTo("Descricao nova");
         assertThat(updated.getInitialBalance()).isEqualByComparingTo("250.75");
         assertThat(updated.getInitialBalanceDate()).isEqualTo(LocalDate.of(2026, 2, 5));
+        assertThat(updated.getDeactivationDate()).isEqualTo(LocalDate.of(2026, 2, 10));
+    }
+
+    @Test
+    void shouldRejectDeactivationDateBeforeLatestSettlementDate() {
+        Account existing = newAccount("Conta antiga", "10.00", LocalDate.of(2026, 1, 1));
+        Account updatedData = newAccount("Conta nova", "250.75", LocalDate.of(2026, 2, 5));
+        updatedData.setDeactivationDate(LocalDate.of(2026, 2, 9));
+
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(existing));
+        when(entryRepository.findLatestSettlementDateByAccountId(10L)).thenReturn(Optional.of(LocalDate.of(2026, 2, 10)));
+
+        assertThatThrownBy(() -> accountService.update(10L, updatedData))
+            .isInstanceOf(AccountInvalidDeactivationDateException.class);
+
+        verify(accountRepository, never()).save(existing);
+    }
+
+    @Test
+    void shouldRejectEntrySettlementDateAfterAccountDeactivationDate() {
+        Account account = newAccount("Conta antiga", "10.00", LocalDate.of(2026, 1, 1));
+        account.setDeactivationDate(LocalDate.of(2026, 2, 10));
+
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> accountService.validateEntrySettlementDateAgainstAccountDeactivation(10L, LocalDate.of(2026, 2, 11)))
+            .isInstanceOf(dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException.class);
+    }
+
+    @Test
+    void shouldListOnlyActiveAccountsForEntryFormWhenNoSelectedAccount() {
+        Account active = newAccount("Conta ativa", "10.00", LocalDate.of(2026, 1, 1));
+        setId(active, 1L);
+        Account deactivated = newAccount("Conta desativada", "10.00", LocalDate.of(2026, 1, 1));
+        deactivated.setDeactivationDate(LocalDate.of(2026, 2, 10));
+        setId(deactivated, 2L);
+
+        when(accountRepository.findAllOrdered()).thenReturn(List.of(active, deactivated));
+
+        List<Account> result = accountService.listAvailableForEntryForm(null);
+
+        assertThat(result).containsExactly(active);
+    }
+
+    @Test
+    void shouldHideAccountsDeactivatedBeforeGlobalStartDateFromEntryFilter() {
+        Account active = newAccount("Conta ativa", "10.00", LocalDate.of(2026, 1, 1));
+        setId(active, 1L);
+        Account visibleDeactivated = newAccount("Conta período", "10.00", LocalDate.of(2026, 1, 1));
+        visibleDeactivated.setDeactivationDate(LocalDate.of(2026, 2, 10));
+        setId(visibleDeactivated, 2L);
+        Account hiddenDeactivated = newAccount("Conta antiga", "10.00", LocalDate.of(2026, 1, 1));
+        hiddenDeactivated.setDeactivationDate(LocalDate.of(2026, 1, 31));
+        setId(hiddenDeactivated, 3L);
+
+        when(accountRepository.findAllOrdered()).thenReturn(List.of(active, visibleDeactivated, hiddenDeactivated));
+
+        List<Account> result = accountService.listVisibleForEntryFilter(LocalDate.of(2026, 2, 1));
+
+        assertThat(result).containsExactly(active, visibleDeactivated);
     }
 
     @Test
@@ -175,5 +237,15 @@ class AccountServiceTest {
         account.setInitialBalance(new BigDecimal(initialBalance));
         account.setInitialBalanceDate(initialBalanceDate);
         return account;
+    }
+
+    private void setId(Account account, Long id) {
+        try {
+            var idField = Account.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(account, id);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

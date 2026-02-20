@@ -84,6 +84,11 @@ public class EntryRepositoryAdapter implements EntryRepository {
     }
 
     @Override
+    public Optional<LocalDate> findLatestSettlementDateByAccountId(Long accountId) {
+        return Optional.ofNullable(jpaEntryRepository.findLatestSettlementDateByAccountId(accountId));
+    }
+
+    @Override
     public boolean existsDuplicate(
         Long accountId,
         LocalDate movementDate,

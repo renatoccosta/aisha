@@ -22,6 +22,8 @@ public interface EntryRepository {
 
     BigDecimal sumAmountByAccountIdAndSettlementDateBetween(Long accountId, LocalDate startDate, LocalDate endDate);
 
+    Optional<LocalDate> findLatestSettlementDateByAccountId(Long accountId);
+
     boolean existsDuplicate(
         Long accountId,
         LocalDate movementDate,

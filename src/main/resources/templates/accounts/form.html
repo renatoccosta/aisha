@@ -42,6 +42,12 @@
                 </div>
             </div>
 
+            <div class="field">
+                <label for="deactivationDate" th:text="#{accounts.form.field.deactivationDate}"></label>
+                <input id="deactivationDate" type="date" th:field="*{deactivationDate}">
+                <p class="error" th:if="${#fields.hasErrors('deactivationDate')}" th:errors="*{deactivationDate}"></p>
+            </div>
+
             <div class="actions-inline">
                 <button class="btn btn-primary" type="submit">
                     <i data-lucide="save" aria-hidden="true"></i>

@@ -67,4 +67,7 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );
+
+    @Query("select max(e.settlementDate) from Entry e where e.account.id = :accountId")
+    LocalDate findLatestSettlementDateByAccountId(@Param("accountId") Long accountId);
 }

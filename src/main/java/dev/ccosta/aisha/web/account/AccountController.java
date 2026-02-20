@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.web.account;
 
 import dev.ccosta.aisha.application.account.AccountInUseException;
+import dev.ccosta.aisha.application.account.AccountInvalidDeactivationDateException;
 import dev.ccosta.aisha.application.account.AccountNotFoundException;
 import dev.ccosta.aisha.application.account.AccountBalanceReportService;
 import dev.ccosta.aisha.application.account.AccountService;
@@ -59,7 +60,18 @@ public class AccountController {
             return "accounts/form";
         }
 
-        accountService.create(toDomain(form));
+        try {
+            accountService.create(toDomain(form));
+        } catch (AccountInvalidDeactivationDateException ex) {
+            bindingResult.rejectValue(
+                "deactivationDate",
+                "accountForm.deactivationDate.invalid",
+                new Object[] {ex.getLatestSettlementDate()},
+                null
+            );
+            model.addAttribute("mode", "create");
+            return "accounts/form";
+        }
         return "redirect:/accounts";
     }
 
@@ -85,7 +97,19 @@ public class AccountController {
             return "accounts/form";
         }
 
-        accountService.update(id, toDomain(form));
+        try {
+            accountService.update(id, toDomain(form));
+        } catch (AccountInvalidDeactivationDateException ex) {
+            bindingResult.rejectValue(
+                "deactivationDate",
+                "accountForm.deactivationDate.invalid",
+                new Object[] {ex.getLatestSettlementDate()},
+                null
+            );
+            model.addAttribute("accountId", id);
+            model.addAttribute("mode", "edit");
+            return "accounts/form";
+        }
         return "redirect:/accounts";
     }
 
@@ -161,6 +185,7 @@ public class AccountController {
         account.setDescription(form.getDescription());
         account.setInitialBalance(form.getInitialBalance());
         account.setInitialBalanceDate(form.getInitialBalanceDate());
+        account.setDeactivationDate(form.getDeactivationDate());
         return account;
     }
 
@@ -170,6 +195,7 @@ public class AccountController {
         form.setDescription(account.getDescription());
         form.setInitialBalance(account.getInitialBalance());
         form.setInitialBalanceDate(account.getInitialBalanceDate());
+        form.setDeactivationDate(account.getDeactivationDate());
         return form;
     }
 }

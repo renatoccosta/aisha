@@ -66,6 +66,12 @@
                         </th>
                         <th>
                             <span class="table-heading-label">
+                                <i data-lucide="calendar-x-2" aria-hidden="true"></i>
+                                <span th:text="#{accounts.list.table.deactivationDate}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
                                 <i data-lucide="settings" aria-hidden="true"></i>
                                 <span th:text="#{accounts.list.table.actions}"></span>
                             </span>
@@ -74,7 +80,7 @@
                     </thead>
                     <tbody>
                     <tr th:if="${#lists.isEmpty(accounts)}" class="empty-row">
-                        <td colspan="4" class="empty" th:text="#{accounts.list.empty}"></td>
+                        <td colspan="5" class="empty" th:text="#{accounts.list.empty}"></td>
                     </tr>
                     <tr th:each="account : ${accounts}">
                         <td class="cell-select" th:attr="data-label=#{accounts.list.table.select}">
@@ -82,6 +88,10 @@
                         </td>
                         <td th:attr="data-label=#{accounts.list.table.title}" th:text="${account.title}"></td>
                         <td th:attr="data-label=#{accounts.list.table.description}" th:text="${account.description}"></td>
+                        <td
+                            th:attr="data-label=#{accounts.list.table.deactivationDate}"
+                            th:text="${account.deactivationDate != null ? #temporals.format(account.deactivationDate, 'dd/MM/yyyy') : '-'}">
+                        </td>
                         <td class="cell-actions" th:attr="data-label=#{accounts.list.table.actions}">
                             <div class="actions-inline">
                                 <a class="btn btn-secondary" th:href="@{/accounts/{id}/edit(id=${account.id})}">

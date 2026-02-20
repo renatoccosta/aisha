@@ -60,6 +60,7 @@ public class EntryService {
 
     @Transactional
     public Entry create(Entry entry, Long accountId, Long categoryId, String newCategoryTitle) {
+        accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, entry.getSettlementDate());
         entry.setAccount(resolveAccount(accountId));
         entry.setCategory(resolveCategory(categoryId, newCategoryTitle));
         Entry createdEntry = entryRepository.save(entry);
@@ -69,6 +70,7 @@ public class EntryService {
 
     @Transactional
     public Entry update(Long id, Entry updatedData, Long accountId, Long categoryId, String newCategoryTitle) {
+        accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, updatedData.getSettlementDate());
         Entry existing = findById(id);
         existing.setAccount(resolveAccount(accountId));
         existing.setMovementDate(updatedData.getMovementDate());

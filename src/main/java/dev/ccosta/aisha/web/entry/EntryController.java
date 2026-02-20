@@ -7,6 +7,7 @@ import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
 import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
+import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
@@ -126,7 +127,7 @@ public class EntryController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("form", EntryForm.newWithCurrentDates());
-        fillAccountOptions(model);
+        fillEntryFormAccountOptions(model, null);
         fillCategoryOptions(model);
         model.addAttribute("mode", "create");
         return "entries/form";
@@ -136,7 +137,7 @@ public class EntryController {
     public String create(@Valid @ModelAttribute("form") EntryForm form, BindingResult bindingResult, Model model) {
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("mode", "create");
             return "entries/form";
@@ -146,20 +147,31 @@ public class EntryController {
             entryService.create(toDomain(form), form.getAccountId(), form.getCategoryId(), form.getNewCategoryTitle());
         } catch (AccountNotFoundException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("mode", "create");
             return "entries/form";
         } catch (CategoryNotFoundException ex) {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
+            fillCategoryOptions(model);
+            model.addAttribute("mode", "create");
+            return "entries/form";
+        } catch (EntrySettlementAfterAccountDeactivationException ex) {
+            bindingResult.rejectValue(
+                "settlementDate",
+                "entryForm.settlementDate.afterAccountDeactivation",
+                new Object[] {ex.getAccountDeactivationDate()},
+                null
+            );
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("mode", "create");
             return "entries/form";
         } catch (IllegalArgumentException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
             validateCategoryChoice(form, bindingResult);
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("mode", "create");
             return "entries/form";
@@ -171,7 +183,7 @@ public class EntryController {
     public String editForm(@PathVariable Long id, Model model) {
         Entry entry = entryService.findById(id);
         model.addAttribute("form", fromDomain(entry));
-        fillAccountOptions(model);
+        fillEntryFormAccountOptions(model, entry.getAccount().getId());
         fillCategoryOptions(model);
         model.addAttribute("entryId", id);
         model.addAttribute("mode", "edit");
@@ -187,7 +199,7 @@ public class EntryController {
     ) {
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
@@ -198,14 +210,26 @@ public class EntryController {
             entryService.update(id, toDomain(form), form.getAccountId(), form.getCategoryId(), form.getNewCategoryTitle());
         } catch (AccountNotFoundException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
             return "entries/form";
         } catch (CategoryNotFoundException ex) {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
+            fillCategoryOptions(model);
+            model.addAttribute("entryId", id);
+            model.addAttribute("mode", "edit");
+            return "entries/form";
+        } catch (EntrySettlementAfterAccountDeactivationException ex) {
+            bindingResult.rejectValue(
+                "settlementDate",
+                "entryForm.settlementDate.afterAccountDeactivation",
+                new Object[] {ex.getAccountDeactivationDate()},
+                null
+            );
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
@@ -213,7 +237,7 @@ public class EntryController {
         } catch (IllegalArgumentException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
             validateCategoryChoice(form, bindingResult);
-            fillAccountOptions(model);
+            fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
@@ -263,18 +287,25 @@ public class EntryController {
     }
 
     private void fillListing(Model model, DateFilterState globalDateFilter, Long accountId, Long categoryId) {
+        List<Account> accountOptions = accountService.listVisibleForEntryFilter(globalDateFilter.getStartDate());
+        Long effectiveAccountId = accountId;
+        Long requestedAccountId = accountId;
+        if (requestedAccountId != null && accountOptions.stream().noneMatch(account -> account.getId().equals(requestedAccountId))) {
+            effectiveAccountId = null;
+        }
+
         model.addAttribute(
             "entries",
             entryService.listTop100MostRecentBySettlementDateBetweenAndFilters(
                 globalDateFilter.getStartDate(),
                 globalDateFilter.getEndDate(),
-                accountId,
+                effectiveAccountId,
                 categoryId
             )
         );
-        model.addAttribute("selectedAccountId", accountId);
+        model.addAttribute("selectedAccountId", effectiveAccountId);
         model.addAttribute("selectedCategoryId", categoryId);
-        fillAccountOptions(model);
+        model.addAttribute("accountOptions", accountOptions);
         fillCategoryOptions(model);
     }
 
@@ -304,8 +335,8 @@ public class EntryController {
         return form;
     }
 
-    private void fillAccountOptions(Model model) {
-        List<Account> accounts = accountService.listAllOrdered();
+    private void fillEntryFormAccountOptions(Model model, Long selectedAccountId) {
+        List<Account> accounts = accountService.listAvailableForEntryForm(selectedAccountId);
         model.addAttribute("accountOptions", accounts);
     }
 
