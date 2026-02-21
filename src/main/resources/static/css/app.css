@@ -390,7 +390,8 @@ th {
 }
 
 .balances-block {
-  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.45rem;
 }
 
 .pagination-bar {

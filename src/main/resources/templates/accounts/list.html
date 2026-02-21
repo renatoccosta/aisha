@@ -174,55 +174,56 @@
             </div>
         </form>
 
-        <div class="balances-block" th:if="${accountBalanceReport != null}">
-            <h3 th:text="#{accounts.balance.heading}"></h3>
-            <p
-                th:text="#{accounts.balance.subtitle(${#temporals.format(accountBalanceReport.startDate, 'dd/MM/yyyy')}, ${#temporals.format(accountBalanceReport.endDate, 'dd/MM/yyyy')})}">
-            </p>
+    </section>
 
-            <div class="table-wrap">
-                <table class="balances-table">
-                    <thead>
-                    <tr>
-                        <th>
-                            <span class="table-heading-label">
-                                <i data-lucide="briefcase" aria-hidden="true"></i>
-                                <span th:text="#{accounts.balance.table.account}"></span>
+    <section class="card balances-block" th:if="${accountBalanceReport != null}">
+        <h3 th:text="#{accounts.balance.heading}"></h3>
+        <p
+            th:text="#{accounts.balance.subtitle(${#temporals.format(accountBalanceReport.startDate, 'dd/MM/yyyy')}, ${#temporals.format(accountBalanceReport.endDate, 'dd/MM/yyyy')})}">
+        </p>
+
+        <div class="table-wrap">
+            <table class="balances-table">
+                <thead>
+                <tr>
+                    <th>
+                        <span class="table-heading-label">
+                            <i data-lucide="briefcase" aria-hidden="true"></i>
+                            <span th:text="#{accounts.balance.table.account}"></span>
+                        </span>
+                    </th>
+                    <th class="amount-cell">
+                        <span class="table-heading-label">
+                            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                            <span th:text="#{accounts.balance.table.previousPeriod}"></span>
+                        </span>
+                    </th>
+                    <th class="amount-cell" th:each="bucket : ${accountBalanceReport.buckets}">
+                        <span class="table-heading-label">
+                            <i data-lucide="calendar" aria-hidden="true"></i>
+                            <span th:switch="${accountBalanceReport.granularity.name()}">
+                            <span th:case="'YEAR'" th:text="${#temporals.format(bucket.startDate, 'yyyy')}"></span>
+                            <span th:case="'MONTH'" th:text="${#temporals.format(bucket.startDate, 'MMM')}"></span>
+                            <span th:case="'DAY'" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
+                            <span th:case="*" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
                             </span>
-                        </th>
-                        <th class="amount-cell">
-                            <span class="table-heading-label">
-                                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
-                                <span th:text="#{accounts.balance.table.previousPeriod}"></span>
-                            </span>
-                        </th>
-                        <th class="amount-cell" th:each="bucket : ${accountBalanceReport.buckets}">
-                            <span class="table-heading-label">
-                                <i data-lucide="calendar" aria-hidden="true"></i>
-                                <span th:switch="${accountBalanceReport.granularity.name()}">
-                                <span th:case="'YEAR'" th:text="${#temporals.format(bucket.startDate, 'yyyy')}"></span>
-                                <span th:case="'MONTH'" th:text="${#temporals.format(bucket.startDate, 'MMM')}"></span>
-                                <span th:case="'DAY'" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
-                                <span th:case="*" th:text="${#temporals.format(bucket.startDate, 'd')}"></span>
-                                </span>
-                            </span>
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:if="${#lists.isEmpty(accountBalanceReport.rows)}">
-                        <td class="empty" th:colspan="${2 + #lists.size(accountBalanceReport.buckets)}" th:text="#{accounts.balance.empty}"></td>
-                    </tr>
-                    <tr th:each="row : ${accountBalanceReport.rows}">
-                        <td>
-                            <strong th:text="${row.accountTitle}"></strong>
-                        </td>
-                        <td class="amount-cell" th:text="${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
-                        <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                        </span>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(accountBalanceReport.rows)}">
+                    <td class="empty" th:colspan="${2 + #lists.size(accountBalanceReport.buckets)}" th:text="#{accounts.balance.empty}"></td>
+                </tr>
+                <tr th:each="row : ${accountBalanceReport.rows}">
+                    <td>
+                        <strong th:text="${row.accountTitle}"></strong>
+                    </td>
+                    <td class="amount-cell" th:text="${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </main>
