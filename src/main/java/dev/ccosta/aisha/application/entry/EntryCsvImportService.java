@@ -93,6 +93,7 @@ public class EntryCsvImportService {
                 createdAccounts++;
             }
             Account account = resolvedAccount.account();
+            validateAccountDeactivationDate(record, account, rowPosition);
 
             ResolvedCategory resolvedCategory = resolveCategory(record.categoryTitle(), categoryByTitleKey);
             if (resolvedCategory.created()) {
@@ -299,6 +300,20 @@ public class EntryCsvImportService {
         Category created = categoryService.create(newCategory, null);
         categoryByTitleKey.put(titleKey, created);
         return new ResolvedCategory(created, true);
+    }
+
+    private void validateAccountDeactivationDate(CsvRecord record, Account account, int rowPosition) {
+        LocalDate deactivationDate = account.getDeactivationDate();
+        if (deactivationDate == null || !record.settlementDate().isAfter(deactivationDate)) {
+            return;
+        }
+
+        throw new EntryImportValidationException(
+            rowPosition,
+            EntryImportFailureCause.INVALID_FORMAT,
+            "settlementDate",
+            "Settlement date must not be after account deactivation date"
+        );
     }
 
     private String normalizeKey(String value) {

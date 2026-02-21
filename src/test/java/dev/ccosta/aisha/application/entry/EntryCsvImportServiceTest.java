@@ -398,6 +398,28 @@ class EntryCsvImportServiceTest {
     }
 
     @Test
+    void shouldFailWhenSettlementDateIsAfterAccountDeactivationDate() {
+        Account deactivatedAccount = newAccount(11L, "Conta A");
+        deactivatedAccount.setDeactivationDate(LocalDate.of(2026, 2, 10));
+        when(accountService.listAllOrdered()).thenReturn(List.of(deactivatedAccount));
+        when(categoryService.listAllOrdered()).thenReturn(List.of(newCategory(21L, "Mercado")));
+
+        String csv = "Conta A;2026-02-11;2026-02-11;Compra;Mercado;10,00\n";
+
+        assertThatThrownBy(() -> entryCsvImportService.importCsv(
+            csv.getBytes(StandardCharsets.UTF_8),
+            options(';', "uuuu-MM-dd", AMOUNT_PATTERN_PT_BR, false),
+            null
+        ))
+            .isInstanceOf(EntryImportValidationException.class)
+            .satisfies(ex -> {
+                EntryImportValidationException validationException = (EntryImportValidationException) ex;
+                assertThat(validationException.getRowPosition()).isEqualTo(1);
+                assertThat(validationException.getColumnName()).isEqualTo("settlementDate");
+            });
+    }
+
+    @Test
     void shouldReportPhysicalFileLineWhenHeaderExistsAndAmountIsInvalid() {
         String csv = "Conta;Data de Movimentação;Data de Liquidação;Descrição;Categoria;Valor\n"
             + "Conta A;2026-02-01;2026-02-02;Compra;Mercado;valor-invalido\n";

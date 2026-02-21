@@ -4,7 +4,10 @@ import dev.ccosta.aisha.application.security.LocalUserAccountNotFoundException;
 import dev.ccosta.aisha.application.security.LocalUserAccountSelfDeletionException;
 import dev.ccosta.aisha.application.security.LocalUserAccountService;
 import dev.ccosta.aisha.application.security.LocalUserAccountUsernameAlreadyExistsException;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.infrastructure.persistence.security.LocalUserAccount;
+import dev.ccosta.aisha.web.pagination.PaginationSupport;
+import dev.ccosta.aisha.web.pagination.PaginationView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -33,14 +36,22 @@ public class LocalUserAccountController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        fillListing(model);
+    public String list(
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        Model model
+    ) {
+        fillListing(model, page, size);
         return "local-users/list";
     }
 
     @GetMapping("/fragments/table")
-    public String table(Model model) {
-        fillListing(model);
+    public String table(
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        Model model
+    ) {
+        fillListing(model, page, size);
         return "local-users/list :: table";
     }
 
@@ -90,10 +101,17 @@ public class LocalUserAccountController {
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, Principal principal, HttpServletRequest request, Model model) {
+    public String delete(
+        @PathVariable Long id,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        Principal principal,
+        HttpServletRequest request,
+        Model model
+    ) {
         localUserAccountService.deleteById(id, principal != null ? principal.getName() : null);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, page, size);
             return "local-users/list :: table";
         }
         return "redirect:/local-users";
@@ -102,13 +120,15 @@ public class LocalUserAccountController {
     @PostMapping("/bulk-delete")
     public String bulkDelete(
         @RequestParam(name = "ids", required = false) List<Long> ids,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
         Principal principal,
         HttpServletRequest request,
         Model model
     ) {
         localUserAccountService.bulkDelete(ids, principal != null ? principal.getName() : null);
         if (isHtmx(request)) {
-            fillListing(model);
+            fillListing(model, page, size);
             return "local-users/list :: table";
         }
         return "redirect:/local-users";
@@ -121,7 +141,7 @@ public class LocalUserAccountController {
         IllegalArgumentException.class
     })
     public String handleBadRequest(RuntimeException ex, HttpServletRequest request, Model model) {
-        fillListing(model);
+        fillListing(model, null, null);
         model.addAttribute("hasError", true);
 
         if (ex instanceof LocalUserAccountUsernameAlreadyExistsException) {
@@ -144,8 +164,19 @@ public class LocalUserAccountController {
         return "errors/404";
     }
 
-    private void fillListing(Model model) {
-        model.addAttribute("localUsers", localUserAccountService.listAllOrdered());
+    private void fillListing(Model model, Integer page, Integer size) {
+        int requestedPage = PaginationSupport.sanitizePage(page);
+        int pageSize = PaginationSupport.sanitizePageSize(size);
+        PagedResult<LocalUserAccount> pageResult = localUserAccountService.listPageOrdered(requestedPage, pageSize);
+        int effectivePage = PaginationSupport.clampPageIndex(requestedPage, pageResult.totalPages());
+        if (effectivePage != requestedPage) {
+            pageResult = localUserAccountService.listPageOrdered(effectivePage, pageSize);
+        }
+
+        PaginationView pagination = PaginationSupport.toView(pageResult);
+        model.addAttribute("localUsers", pageResult.items());
+        model.addAttribute("pagination", pagination);
+        model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
     }
 
     private LocalUserAccountForm fromDomain(LocalUserAccount account) {

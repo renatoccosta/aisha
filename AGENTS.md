@@ -61,6 +61,11 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 ## UI / UX standards (Web)
 - The UI must be fully responsive (mobile-first).
 - In listing screens (entries, categories, accounts, and future list pages), when columns do not fit viewport width, render rows as stacked cards (multi-line content) instead of requiring horizontal scrolling.
+- In listing screens (entries, categories, accounts, local users, and future CRUD list pages), pagination is mandatory by default:
+  - Server-side pagination only (database-driven with LIMIT/OFFSET or equivalent), never loading full datasets in the browser just to paginate.
+  - Default page size: 25; allowed sizes: 50 and 100.
+  - Required controls: first page, previous, next, and last.
+  - Required indicators: current page, total pages, current page record range, and total records.
 - Use a modern visual style:
   - consistent spacing scale
   - clear typography hierarchy (h1/h2/body)

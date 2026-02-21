@@ -29,6 +29,9 @@ public class Account {
     @Column(name = "initial_balance_date")
     private LocalDate initialBalanceDate;
 
+    @Column(name = "deactivation_date")
+    private LocalDate deactivationDate;
+
     public Long getId() {
         return id;
     }
@@ -63,5 +66,13 @@ public class Account {
 
     public void setInitialBalanceDate(LocalDate initialBalanceDate) {
         this.initialBalanceDate = initialBalanceDate;
+    }
+
+    public LocalDate getDeactivationDate() {
+        return deactivationDate;
+    }
+
+    public void setDeactivationDate(LocalDate deactivationDate) {
+        this.deactivationDate = deactivationDate;
     }
 }

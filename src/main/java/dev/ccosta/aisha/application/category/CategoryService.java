@@ -3,6 +3,7 @@ package dev.ccosta.aisha.application.category;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -24,6 +25,11 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<Category> listAllOrdered() {
         return categoryRepository.findAllOrdered();
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResult<Category> listPageOrdered(int page, int pageSize) {
+        return categoryRepository.findPageOrdered(page, pageSize);
     }
 
     @Transactional(readOnly = true)

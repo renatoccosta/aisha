@@ -2,10 +2,13 @@ package dev.ccosta.aisha.application.security;
 
 import dev.ccosta.aisha.infrastructure.persistence.security.JpaLocalUserAccountRepository;
 import dev.ccosta.aisha.infrastructure.persistence.security.LocalUserAccount;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +31,12 @@ public class LocalUserAccountService {
     @Transactional(readOnly = true)
     public List<LocalUserAccount> listAllOrdered() {
         return localUserAccountRepository.findAllByOrderByUsernameAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResult<LocalUserAccount> listPageOrdered(int page, int pageSize) {
+        Page<LocalUserAccount> result = localUserAccountRepository.findAllByOrderByUsernameAsc(PageRequest.of(page, pageSize));
+        return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
     @Transactional(readOnly = true)

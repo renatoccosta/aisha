@@ -6,6 +6,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -27,21 +28,13 @@ public class EntryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Entry> listTop100MostRecentBySettlementDate() {
-        return entryRepository.listTop100MostRecentBySettlementDate();
-    }
-
-    @Transactional(readOnly = true)
-    public List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate) {
-        return listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Entry> listTop100MostRecentBySettlementDateBetweenAndFilters(
+    public PagedResult<Entry> listMostRecentBySettlementDateBetweenAndFilters(
         LocalDate startDate,
         LocalDate endDate,
         Long accountId,
-        Long categoryId
+        Long categoryId,
+        int page,
+        int pageSize
     ) {
         if (startDate == null || endDate == null) {
             throw new IllegalArgumentException("Start and end dates are required");
@@ -49,7 +42,14 @@ public class EntryService {
         if (endDate.isBefore(startDate)) {
             throw new IllegalArgumentException("End date must be greater than or equal to start date");
         }
-        return entryRepository.listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId);
+        return entryRepository.listMostRecentBySettlementDateBetweenAndFilters(
+            startDate,
+            endDate,
+            accountId,
+            categoryId,
+            page,
+            pageSize
+        );
     }
 
     @Transactional(readOnly = true)
@@ -60,6 +60,7 @@ public class EntryService {
 
     @Transactional
     public Entry create(Entry entry, Long accountId, Long categoryId, String newCategoryTitle) {
+        accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, entry.getSettlementDate());
         entry.setAccount(resolveAccount(accountId));
         entry.setCategory(resolveCategory(categoryId, newCategoryTitle));
         Entry createdEntry = entryRepository.save(entry);
@@ -69,6 +70,7 @@ public class EntryService {
 
     @Transactional
     public Entry update(Long id, Entry updatedData, Long accountId, Long categoryId, String newCategoryTitle) {
+        accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, updatedData.getSettlementDate());
         Entry existing = findById(id);
         existing.setAccount(resolveAccount(accountId));
         existing.setMovementDate(updatedData.getMovementDate());

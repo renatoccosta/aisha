@@ -25,6 +25,9 @@ public class AccountForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate initialBalanceDate;
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate deactivationDate;
+
     public String getTitle() {
         return title;
     }
@@ -55,5 +58,13 @@ public class AccountForm {
 
     public void setInitialBalanceDate(LocalDate initialBalanceDate) {
         this.initialBalanceDate = initialBalanceDate;
+    }
+
+    public LocalDate getDeactivationDate() {
+        return deactivationDate;
+    }
+
+    public void setDeactivationDate(LocalDate deactivationDate) {
+        this.deactivationDate = deactivationDate;
     }
 }

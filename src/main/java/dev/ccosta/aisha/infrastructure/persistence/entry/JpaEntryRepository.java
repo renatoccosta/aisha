@@ -4,6 +4,8 @@ import dev.ccosta.aisha.domain.entry.Entry;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,31 +14,31 @@ import org.springframework.data.repository.query.Param;
 public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
 
     @EntityGraph(attributePaths = {"account", "category"})
-    List<Entry> findTop100ByOrderBySettlementDateDescIdDesc();
+    Page<Entry> findBySettlementDateBetweenOrderBySettlementDateDescIdDesc(LocalDate startDate, LocalDate endDate, Pageable pageable);
 
     @EntityGraph(attributePaths = {"account", "category"})
-    List<Entry> findTop100BySettlementDateBetweenOrderBySettlementDateDescIdDesc(LocalDate startDate, LocalDate endDate);
-
-    @EntityGraph(attributePaths = {"account", "category"})
-    List<Entry> findTop100BySettlementDateBetweenAndAccountIdOrderBySettlementDateDescIdDesc(
-        LocalDate startDate,
-        LocalDate endDate,
-        Long accountId
-    );
-
-    @EntityGraph(attributePaths = {"account", "category"})
-    List<Entry> findTop100BySettlementDateBetweenAndCategoryIdOrderBySettlementDateDescIdDesc(
-        LocalDate startDate,
-        LocalDate endDate,
-        Long categoryId
-    );
-
-    @EntityGraph(attributePaths = {"account", "category"})
-    List<Entry> findTop100BySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(
+    Page<Entry> findBySettlementDateBetweenAndAccountIdOrderBySettlementDateDescIdDesc(
         LocalDate startDate,
         LocalDate endDate,
         Long accountId,
-        Long categoryId
+        Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"account", "category"})
+    Page<Entry> findBySettlementDateBetweenAndCategoryIdOrderBySettlementDateDescIdDesc(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long categoryId,
+        Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"account", "category"})
+    Page<Entry> findBySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long accountId,
+        Long categoryId,
+        Pageable pageable
     );
 
     @EntityGraph(attributePaths = {"account", "category"})
@@ -67,4 +69,7 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );
+
+    @Query("select max(e.settlementDate) from Entry e where e.account.id = :accountId")
+    LocalDate findLatestSettlementDateByAccountId(@Param("accountId") Long accountId);
 }

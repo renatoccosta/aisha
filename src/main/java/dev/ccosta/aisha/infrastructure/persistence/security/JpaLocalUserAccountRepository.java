@@ -3,6 +3,8 @@ package dev.ccosta.aisha.infrastructure.persistence.security;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +16,8 @@ public interface JpaLocalUserAccountRepository extends JpaRepository<LocalUserAc
     boolean existsByUsernameIgnoreCase(String username);
 
     List<LocalUserAccount> findAllByOrderByUsernameAsc();
+
+    Page<LocalUserAccount> findAllByOrderByUsernameAsc(Pageable pageable);
 
     @Modifying
     @Query("delete from LocalUserAccount account where account.id in (:ids)")

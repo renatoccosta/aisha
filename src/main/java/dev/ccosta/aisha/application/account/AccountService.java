@@ -3,6 +3,8 @@ package dev.ccosta.aisha.application.account;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -30,6 +32,31 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
+    public PagedResult<Account> listPageOrdered(int page, int pageSize) {
+        return accountRepository.findPageOrdered(page, pageSize);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Account> listAvailableForEntryForm(Long selectedAccountId) {
+        return accountRepository.findAllOrdered()
+            .stream()
+            .filter(account -> account.getDeactivationDate() == null || (selectedAccountId != null && selectedAccountId.equals(account.getId())))
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Account> listVisibleForEntryFilter(LocalDate globalStartDate) {
+        if (globalStartDate == null) {
+            return listAllOrdered();
+        }
+
+        return accountRepository.findAllOrdered()
+            .stream()
+            .filter(account -> account.getDeactivationDate() == null || !account.getDeactivationDate().isBefore(globalStartDate))
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Account findById(Long id) {
         return accountRepository.findById(id)
             .orElseThrow(() -> new AccountNotFoundException(id));
@@ -37,6 +64,7 @@ public class AccountService {
 
     @Transactional
     public Account create(Account account) {
+        validateDeactivationDate(account.getDeactivationDate(), null);
         return accountRepository.save(account);
     }
 
@@ -54,6 +82,7 @@ public class AccountService {
                 account.setDescription(null);
                 account.setInitialBalance(null);
                 account.setInitialBalanceDate(null);
+                account.setDeactivationDate(null);
                 return accountRepository.save(account);
             });
     }
@@ -61,11 +90,28 @@ public class AccountService {
     @Transactional
     public Account update(Long id, Account updatedData) {
         Account existing = findById(id);
+        validateDeactivationDate(updatedData.getDeactivationDate(), id);
         existing.setTitle(updatedData.getTitle());
         existing.setDescription(updatedData.getDescription());
         existing.setInitialBalance(updatedData.getInitialBalance());
         existing.setInitialBalanceDate(updatedData.getInitialBalanceDate());
+        existing.setDeactivationDate(updatedData.getDeactivationDate());
         return accountRepository.save(existing);
+    }
+
+    @Transactional(readOnly = true)
+    public void validateEntrySettlementDateAgainstAccountDeactivation(Long accountId, LocalDate settlementDate) {
+        if (accountId == null || settlementDate == null) {
+            return;
+        }
+
+        Account account = findById(accountId);
+        LocalDate deactivationDate = account.getDeactivationDate();
+        if (deactivationDate == null || !settlementDate.isAfter(deactivationDate)) {
+            return;
+        }
+
+        throw new EntrySettlementAfterAccountDeactivationException(settlementDate, deactivationDate);
     }
 
     @Transactional
@@ -143,5 +189,18 @@ public class AccountService {
         account.setInitialBalance(initialBalance.subtract(amountToRollback));
         account.setInitialBalanceDate(adjustedInitialBalanceDate);
         accountRepository.save(account);
+    }
+
+    private void validateDeactivationDate(LocalDate deactivationDate, Long accountId) {
+        if (deactivationDate == null || accountId == null) {
+            return;
+        }
+
+        LocalDate latestSettlementDate = entryRepository.findLatestSettlementDateByAccountId(accountId).orElse(null);
+        if (latestSettlementDate == null || !deactivationDate.isBefore(latestSettlementDate)) {
+            return;
+        }
+
+        throw new AccountInvalidDeactivationDateException(deactivationDate, latestSettlementDate);
     }
 }

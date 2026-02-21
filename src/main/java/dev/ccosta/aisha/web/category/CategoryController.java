@@ -5,6 +5,9 @@ import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryBalanceReportService;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
+import dev.ccosta.aisha.domain.shared.PagedResult;
+import dev.ccosta.aisha.web.pagination.PaginationSupport;
+import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -34,14 +37,24 @@ public class CategoryController {
     }
 
     @GetMapping
-    public String list(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
-        fillListing(model, globalDateFilter);
+    public String list(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        Model model
+    ) {
+        fillListing(model, globalDateFilter, page, size);
         return "categories/list";
     }
 
     @GetMapping("/fragments/table")
-    public String table(@ModelAttribute("globalDateFilter") DateFilterState globalDateFilter, Model model) {
-        fillListing(model, globalDateFilter);
+    public String table(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        Model model
+    ) {
+        fillListing(model, globalDateFilter, page, size);
         return "categories/list :: table";
     }
 
@@ -94,10 +107,16 @@ public class CategoryController {
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, HttpServletRequest request, Model model) {
+    public String delete(
+        @PathVariable Long id,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        Model model
+    ) {
         categoryService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, null);
+            fillListing(model, null, page, size);
             return "categories/list :: table";
         }
         return "redirect:/categories";
@@ -106,12 +125,14 @@ public class CategoryController {
     @PostMapping("/bulk-delete")
     public String bulkDelete(
         @RequestParam(name = "ids", required = false) List<Long> ids,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
         HttpServletRequest request,
         Model model
     ) {
         categoryService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, null);
+            fillListing(model, null, page, size);
             return "categories/list :: table";
         }
         return "redirect:/categories";
@@ -120,7 +141,7 @@ public class CategoryController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @org.springframework.web.bind.annotation.ExceptionHandler({CategoryInUseException.class, IllegalArgumentException.class})
     public String handleInUse(HttpServletRequest request, Model model) {
-        fillListing(model, null);
+        fillListing(model, null, null, null);
         model.addAttribute("hasError", true);
         if (isHtmx(request)) {
             return "categories/list :: table";
@@ -134,9 +155,20 @@ public class CategoryController {
         return "errors/404";
     }
 
-    private void fillListing(Model model, DateFilterState globalDateFilter) {
-        List<Category> categories = categoryService.listAllOrdered();
+    private void fillListing(Model model, DateFilterState globalDateFilter, Integer page, Integer size) {
+        int requestedPage = PaginationSupport.sanitizePage(page);
+        int pageSize = PaginationSupport.sanitizePageSize(size);
+        PagedResult<Category> pageResult = categoryService.listPageOrdered(requestedPage, pageSize);
+        int effectivePage = PaginationSupport.clampPageIndex(requestedPage, pageResult.totalPages());
+        if (effectivePage != requestedPage) {
+            pageResult = categoryService.listPageOrdered(effectivePage, pageSize);
+        }
+
+        PaginationView pagination = PaginationSupport.toView(pageResult);
+        List<Category> categories = pageResult.items();
         model.addAttribute("categories", categories);
+        model.addAttribute("pagination", pagination);
+        model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
 
         DateFilterState effectiveFilter = globalDateFilter != null
             ? globalDateFilter

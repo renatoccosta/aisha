@@ -5,14 +5,18 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 
 public interface EntryRepository {
 
-    List<Entry> listTop100MostRecentBySettlementDate();
-
-    List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate);
-
-    List<Entry> listTop100MostRecentBySettlementDateBetweenAndFilters(LocalDate startDate, LocalDate endDate, Long accountId, Long categoryId);
+    PagedResult<Entry> listMostRecentBySettlementDateBetweenAndFilters(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long accountId,
+        Long categoryId,
+        int page,
+        int pageSize
+    );
 
     List<Entry> listAllBySettlementDateLessThanEqual(LocalDate endDate);
 
@@ -21,6 +25,8 @@ public interface EntryRepository {
     Entry save(Entry entry);
 
     BigDecimal sumAmountByAccountIdAndSettlementDateBetween(Long accountId, LocalDate startDate, LocalDate endDate);
+
+    Optional<LocalDate> findLatestSettlementDateByAccountId(Long accountId);
 
     boolean existsDuplicate(
         Long accountId,

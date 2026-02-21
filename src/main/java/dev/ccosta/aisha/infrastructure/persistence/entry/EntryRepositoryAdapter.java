@@ -2,11 +2,14 @@ package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -19,48 +22,74 @@ public class EntryRepositoryAdapter implements EntryRepository {
     }
 
     @Override
-    public List<Entry> listTop100MostRecentBySettlementDate() {
-        return jpaEntryRepository.findTop100ByOrderBySettlementDateDescIdDesc();
-    }
-
-    @Override
-    public List<Entry> listTop100MostRecentBySettlementDateBetween(LocalDate startDate, LocalDate endDate) {
-        return jpaEntryRepository.findTop100BySettlementDateBetweenOrderBySettlementDateDescIdDesc(startDate, endDate);
-    }
-
-    @Override
-    public List<Entry> listTop100MostRecentBySettlementDateBetweenAndFilters(
+    public PagedResult<Entry> listMostRecentBySettlementDateBetweenAndFilters(
         LocalDate startDate,
         LocalDate endDate,
         Long accountId,
-        Long categoryId
+        Long categoryId,
+        int page,
+        int pageSize
     ) {
+        PageRequest pageRequest = PageRequest.of(page, pageSize);
+        Page<Entry> result;
+
         if (accountId != null && categoryId != null) {
-            return jpaEntryRepository.findTop100BySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(
+            result = jpaEntryRepository.findBySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(
                 startDate,
                 endDate,
                 accountId,
-                categoryId
+                categoryId,
+                pageRequest
+            );
+            return new PagedResult<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
             );
         }
 
         if (accountId != null) {
-            return jpaEntryRepository.findTop100BySettlementDateBetweenAndAccountIdOrderBySettlementDateDescIdDesc(
+            result = jpaEntryRepository.findBySettlementDateBetweenAndAccountIdOrderBySettlementDateDescIdDesc(
                 startDate,
                 endDate,
-                accountId
+                accountId,
+                pageRequest
+            );
+            return new PagedResult<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
             );
         }
 
         if (categoryId != null) {
-            return jpaEntryRepository.findTop100BySettlementDateBetweenAndCategoryIdOrderBySettlementDateDescIdDesc(
+            result = jpaEntryRepository.findBySettlementDateBetweenAndCategoryIdOrderBySettlementDateDescIdDesc(
                 startDate,
                 endDate,
-                categoryId
+                categoryId,
+                pageRequest
+            );
+            return new PagedResult<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
             );
         }
 
-        return jpaEntryRepository.findTop100BySettlementDateBetweenOrderBySettlementDateDescIdDesc(startDate, endDate);
+        result = jpaEntryRepository.findBySettlementDateBetweenOrderBySettlementDateDescIdDesc(startDate, endDate, pageRequest);
+        return new PagedResult<>(
+            result.getContent(),
+            result.getNumber(),
+            result.getSize(),
+            result.getTotalElements(),
+            result.getTotalPages()
+        );
     }
 
     @Override
@@ -81,6 +110,11 @@ public class EntryRepositoryAdapter implements EntryRepository {
     @Override
     public BigDecimal sumAmountByAccountIdAndSettlementDateBetween(Long accountId, LocalDate startDate, LocalDate endDate) {
         return jpaEntryRepository.sumAmountByAccountIdAndSettlementDateBetween(accountId, startDate, endDate);
+    }
+
+    @Override
+    public Optional<LocalDate> findLatestSettlementDateByAccountId(Long accountId) {
+        return Optional.ofNullable(jpaEntryRepository.findLatestSettlementDateByAccountId(accountId));
     }
 
     @Override

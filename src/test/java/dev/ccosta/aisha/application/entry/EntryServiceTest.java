@@ -12,6 +12,7 @@ import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -102,6 +103,7 @@ class EntryServiceTest {
 
         assertThat(created.getAccount().getTitle()).isEqualTo("Conta Corrente");
         assertThat(created.getCategory().getTitle()).isEqualTo("Categoria existente");
+        verify(accountService).validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
         verify(accountService).findById(2L);
         verify(accountService).adjustInitialBalanceForBackdatedEntry(2L, LocalDate.of(2026, 2, 11));
         verify(categoryService).findById(3L);
@@ -121,23 +123,39 @@ class EntryServiceTest {
         Entry created = entryService.create(input, 2L, null, "Nova categoria");
 
         assertThat(created.getCategory().getTitle()).isEqualTo("Nova categoria");
+        verify(accountService).validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
         verify(accountService).findById(2L);
         verify(categoryService).findOrCreateByTitle("Nova categoria");
         verify(entryRepository).save(input);
     }
 
     @Test
+    void shouldFailCreateWhenSettlementDateIsAfterAccountDeactivationDate() {
+        Entry input = newEntry("Descricao", new BigDecimal("15.00"));
+        org.mockito.Mockito.doThrow(
+            new EntrySettlementAfterAccountDeactivationException(LocalDate.of(2026, 2, 11), LocalDate.of(2026, 2, 10))
+        )
+            .when(accountService)
+            .validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
+
+        assertThatThrownBy(() -> entryService.create(input, 2L, 3L, null))
+            .isInstanceOf(EntrySettlementAfterAccountDeactivationException.class);
+
+        verify(entryRepository, never()).save(input);
+    }
+
+    @Test
     void shouldListEntriesWithinSettlementDateRange() {
         LocalDate startDate = LocalDate.of(2026, 2, 1);
         LocalDate endDate = LocalDate.of(2026, 2, 28);
-        List<Entry> expected = List.of(newEntry("Descricao", new BigDecimal("1.00")));
+        PagedResult<Entry> expected = new PagedResult<>(List.of(newEntry("Descricao", new BigDecimal("1.00"))), 0, 25, 1, 1);
 
-        when(entryRepository.listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null)).thenReturn(expected);
+        when(entryRepository.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, 0, 25)).thenReturn(expected);
 
-        List<Entry> result = entryService.listTop100MostRecentBySettlementDateBetween(startDate, endDate);
+        PagedResult<Entry> result = entryService.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, 0, 25);
 
         assertThat(result).isEqualTo(expected);
-        verify(entryRepository).listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null);
+        verify(entryRepository).listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, 0, 25);
     }
 
     @Test
@@ -146,20 +164,22 @@ class EntryServiceTest {
         LocalDate endDate = LocalDate.of(2026, 2, 28);
         Long accountId = 10L;
         Long categoryId = 20L;
-        List<Entry> expected = List.of(newEntry("Descricao", new BigDecimal("1.00")));
+        PagedResult<Entry> expected = new PagedResult<>(List.of(newEntry("Descricao", new BigDecimal("1.00"))), 1, 50, 3, 2);
 
-        when(entryRepository.listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId))
+        when(entryRepository.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId, 1, 50))
             .thenReturn(expected);
 
-        List<Entry> result = entryService.listTop100MostRecentBySettlementDateBetweenAndFilters(
+        PagedResult<Entry> result = entryService.listMostRecentBySettlementDateBetweenAndFilters(
             startDate,
             endDate,
             accountId,
-            categoryId
+            categoryId,
+            1,
+            50
         );
 
         assertThat(result).isEqualTo(expected);
-        verify(entryRepository).listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId);
+        verify(entryRepository).listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId, 1, 50);
     }
 
     @Test
@@ -167,10 +187,10 @@ class EntryServiceTest {
         LocalDate startDate = LocalDate.of(2026, 3, 1);
         LocalDate endDate = LocalDate.of(2026, 2, 1);
 
-        assertThatThrownBy(() -> entryService.listTop100MostRecentBySettlementDateBetween(startDate, endDate))
+        assertThatThrownBy(() -> entryService.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, 0, 25))
             .isInstanceOf(IllegalArgumentException.class);
 
-        verify(entryRepository, never()).listTop100MostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null);
+        verify(entryRepository, never()).listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, 0, 25);
     }
 
     private Entry newEntry(String description, BigDecimal amount) {
