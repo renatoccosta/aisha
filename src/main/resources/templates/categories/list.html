@@ -34,6 +34,8 @@
             hx-swap="outerHTML"
             th:attr="hx-confirm=#{categories.list.confirm.bulkDelete}">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
+            <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
 
             <div class="table-actions">
                 <button class="btn btn-danger" type="submit">
@@ -78,7 +80,7 @@
                                 <button
                                     class="btn btn-danger"
                                     type="button"
-                                    th:attr="hx-post=@{/categories/{id}/delete(id=${category.id})},hx-confirm=#{categories.list.confirm.delete}"
+                                    th:attr="hx-post=@{/categories/{id}/delete(id=${category.id},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{categories.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <i data-lucide="trash-2" aria-hidden="true"></i>
@@ -91,6 +93,63 @@
                 </table>
             </div>
         </form>
+
+        <div class="pagination-bar" th:if="${pagination != null}">
+            <div class="pagination-summary">
+                <span th:text="#{pagination.summary.page(${pagination.currentPageDisplay()}, ${pagination.totalPages})}"></span>
+                <span th:text="#{pagination.summary.range(${pagination.rangeStart}, ${pagination.rangeEnd}, ${pagination.totalItems})}"></span>
+            </div>
+            <div class="pagination-controls">
+                <form
+                    class="pagination-size-form"
+                    method="get"
+                    th:action="@{/categories}"
+                    hx-get="/categories/fragments/table"
+                    hx-target="#table-container"
+                    hx-swap="outerHTML">
+                    <input type="hidden" name="page" value="0">
+                    <label for="categories-page-size" th:text="#{pagination.size.label}"></label>
+                    <select id="categories-page-size" name="size">
+                        <option
+                            th:each="allowedSize : ${allowedPageSizes}"
+                            th:value="${allowedSize}"
+                            th:selected="${allowedSize == pagination.pageSize}"
+                            th:text="${allowedSize}">
+                        </option>
+                    </select>
+                    <button class="btn btn-secondary" type="submit">
+                        <i data-lucide="check" aria-hidden="true"></i>
+                        <span th:text="#{pagination.size.apply}"></span>
+                    </button>
+                </form>
+
+                <form
+                    class="pagination-nav-form"
+                    method="get"
+                    th:action="@{/categories}"
+                    hx-get="/categories/fragments/table"
+                    hx-target="#table-container"
+                    hx-swap="outerHTML">
+                    <input type="hidden" name="size" th:value="${pagination.pageSize}">
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.firstPage()}" th:disabled="${!pagination.hasPrevious()}">
+                        <i data-lucide="chevrons-left" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.first}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.previousPage()}" th:disabled="${!pagination.hasPrevious()}">
+                        <i data-lucide="chevron-left" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.previous}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.nextPage()}" th:disabled="${!pagination.hasNext()}">
+                        <i data-lucide="chevron-right" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.next}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.lastPage()}" th:disabled="${!pagination.hasNext()}">
+                        <i data-lucide="chevrons-right" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.last}"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
 
         <div class="balances-block" th:if="${categoryBalanceReport != null}">
             <h3 th:text="#{categories.balance.heading}"></h3>

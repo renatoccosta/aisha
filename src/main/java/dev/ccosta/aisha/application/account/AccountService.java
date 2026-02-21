@@ -4,6 +4,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -28,6 +29,11 @@ public class AccountService {
     @Transactional(readOnly = true)
     public List<Account> listAllOrdered() {
         return accountRepository.findAllOrdered();
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResult<Account> listPageOrdered(int page, int pageSize) {
+        return accountRepository.findPageOrdered(page, pageSize);
     }
 
     @Transactional(readOnly = true)
