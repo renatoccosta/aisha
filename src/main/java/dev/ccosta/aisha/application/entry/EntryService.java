@@ -33,6 +33,7 @@ public class EntryService {
         LocalDate endDate,
         Long accountId,
         Long categoryId,
+        boolean onlyWithoutCategory,
         int page,
         int pageSize
     ) {
@@ -47,6 +48,7 @@ public class EntryService {
             endDate,
             accountId,
             categoryId,
+            onlyWithoutCategory,
             page,
             pageSize
         );

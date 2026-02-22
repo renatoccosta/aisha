@@ -14,6 +14,7 @@ public interface EntryRepository {
         LocalDate endDate,
         Long accountId,
         Long categoryId,
+        boolean onlyWithoutCategory,
         int page,
         int pageSize
     );

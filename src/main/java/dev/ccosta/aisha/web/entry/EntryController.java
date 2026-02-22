@@ -40,6 +40,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/entries")
 public class EntryController {
 
+    private static final long UNCATEGORIZED_FILTER_VALUE = -1L;
+
     private final EntryService entryService;
     private final AccountService accountService;
     private final CategoryService categoryService;
@@ -363,7 +365,8 @@ public class EntryController {
             globalDateFilter.getStartDate(),
             globalDateFilter.getEndDate(),
             effectiveAccountId,
-            categoryId,
+            toEffectiveCategoryId(categoryId),
+            isWithoutCategoryFilter(categoryId),
             requestedPage,
             pageSize
         );
@@ -373,7 +376,8 @@ public class EntryController {
                 globalDateFilter.getStartDate(),
                 globalDateFilter.getEndDate(),
                 effectiveAccountId,
-                categoryId,
+                toEffectiveCategoryId(categoryId),
+                isWithoutCategoryFilter(categoryId),
                 effectivePage,
                 pageSize
             );
@@ -391,6 +395,17 @@ public class EntryController {
 
     private boolean isHtmx(HttpServletRequest request) {
         return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
+    }
+
+    private boolean isWithoutCategoryFilter(Long categoryId) {
+        return categoryId != null && categoryId == UNCATEGORIZED_FILTER_VALUE;
+    }
+
+    private Long toEffectiveCategoryId(Long categoryId) {
+        if (isWithoutCategoryFilter(categoryId)) {
+            return null;
+        }
+        return categoryId;
     }
 
     private Entry toDomain(EntryForm form) {

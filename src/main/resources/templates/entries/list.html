@@ -59,6 +59,8 @@
                     <label for="filter-category" th:text="#{entries.list.filter.category}"></label>
                     <select id="filter-category" name="categoryId">
                         <option value="" th:text="#{entries.list.filter.allCategories}"></option>
+                        <option value="-1" th:selected="${selectedCategoryId != null and selectedCategoryId == -1}"
+                                th:text="#{entries.list.filter.withoutCategory}"></option>
                         <option
                             th:each="category : ${categoryOptions}"
                             th:value="${category.id}"

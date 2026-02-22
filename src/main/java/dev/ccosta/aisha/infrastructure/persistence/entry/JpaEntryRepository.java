@@ -33,11 +33,26 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
     );
 
     @EntityGraph(attributePaths = {"account", "category"})
+    Page<Entry> findBySettlementDateBetweenAndCategoryIsNullOrderBySettlementDateDescIdDesc(
+        LocalDate startDate,
+        LocalDate endDate,
+        Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"account", "category"})
     Page<Entry> findBySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(
         LocalDate startDate,
         LocalDate endDate,
         Long accountId,
         Long categoryId,
+        Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"account", "category"})
+    Page<Entry> findBySettlementDateBetweenAndAccountIdAndCategoryIsNullOrderBySettlementDateDescIdDesc(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long accountId,
         Pageable pageable
     );
 
