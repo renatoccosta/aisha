@@ -88,6 +88,28 @@ class CategoryBalanceReportServiceTest {
         );
     }
 
+    @Test
+    void shouldIgnoreEntriesWithoutCategory() {
+        Category housing = newCategory(1L, "Moradia");
+        Entry uncategorizedEntry = new Entry();
+        uncategorizedEntry.setSettlementDate(LocalDate.of(2026, 2, 10));
+        uncategorizedEntry.setAmount(new BigDecimal("-99.00"));
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 2, 10))).thenReturn(List.of(
+            uncategorizedEntry,
+            newEntry(1L, LocalDate.of(2026, 2, 10), "-50.00")
+        ));
+
+        CategoryBalanceReport report = categoryBalanceReportService.buildReport(
+            List.of(housing),
+            LocalDate.of(2026, 2, 10),
+            LocalDate.of(2026, 2, 10)
+        );
+
+        CategoryBalanceRow row = report.rows().getFirst();
+        assertThat(row.periodBalances()).containsExactly(new BigDecimal("-50.00"));
+    }
+
     private Category newCategory(Long id, String title) {
         Category category = new Category();
         category.setTitle(title);

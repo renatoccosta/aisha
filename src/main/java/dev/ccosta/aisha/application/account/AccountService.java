@@ -32,6 +32,14 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
+    public List<Account> listAllActiveOrdered() {
+        return accountRepository.findAllOrdered()
+            .stream()
+            .filter(account -> account.getDeactivationDate() == null)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
     public PagedResult<Account> listPageOrdered(int page, int pageSize) {
         return accountRepository.findPageOrdered(page, pageSize);
     }

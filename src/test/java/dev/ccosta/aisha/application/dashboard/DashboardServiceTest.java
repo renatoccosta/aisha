@@ -300,6 +300,32 @@ class DashboardServiceTest {
     }
 
     @Test
+    void shouldIgnoreUncategorizedEntriesInCategoryBreakdown() {
+        Category rootHouse = newCategory(10L, "Casa", null);
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootHouse));
+
+        Entry uncategorized = new Entry();
+        uncategorized.setAccount(newAccount());
+        uncategorized.setSettlementDate(LocalDate.of(2026, 1, 9));
+        uncategorized.setAmount(new BigDecimal("-999.00"));
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            uncategorized,
+            newEntry(LocalDate.of(2026, 1, 10), "-12.00", rootHouse)
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            null
+        );
+
+        assertThat(breakdown.items()).hasSize(1);
+        assertThat(breakdown.items().getFirst().categoryName()).isEqualTo("Casa");
+        assertThat(breakdown.items().getFirst().amount()).isEqualByComparingTo("12.00");
+    }
+
+    @Test
     void shouldDrillDownIntoSelectedRootCategory() {
         Category rootFood = newCategory(20L, "Alimentação", null);
         Category rootHealth = newCategory(21L, "Saúde", null);

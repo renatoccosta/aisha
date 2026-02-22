@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{entries.statementImport.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{entries.statementImport.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="#{entries.statementImport.heading}"></h2>
+        <p th:text="#{entries.statementImport.subtitle}"></p>
+
+        <form
+            class="import-form"
+            method="post"
+            enctype="multipart/form-data"
+            th:action="@{/entries/statement-import/jobs}"
+            hx-post="/entries/statement-import/jobs"
+            hx-target="#import-result"
+            hx-swap="outerHTML">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <div class="field">
+                <label for="statement-account" th:text="#{entries.statementImport.form.account.required}"></label>
+                <select id="statement-account" name="accountId" required>
+                    <option value="" th:text="#{entries.statementImport.form.account.placeholder}"></option>
+                    <option
+                        th:each="account : ${statementAccountOptions}"
+                        th:value="${account.id}"
+                        th:text="${account.title}">
+                    </option>
+                </select>
+                <p class="helper" th:text="#{entries.statementImport.form.account.help}"></p>
+            </div>
+
+            <div class="field">
+                <label for="statement-format" th:text="#{entries.statementImport.form.format.required}"></label>
+                <select id="statement-format" name="formatId" required>
+                    <option value="" th:text="#{entries.statementImport.form.format.placeholder}"></option>
+                    <option
+                        th:each="format : ${statementFormats}"
+                        th:value="${format.id}"
+                        th:text="${#messages.msg(format.labelMessageKey)}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="statement-file" th:text="#{entries.statementImport.form.file.required}"></label>
+                <input id="statement-file" type="file" name="file" required>
+                <p class="helper" th:text="#{entries.statementImport.form.file.help}"></p>
+                <ul class="helper-list">
+                    <li th:each="format : ${statementFormats}" th:text="${#messages.msg(format.fileHelpMessageKey)}"></li>
+                </ul>
+            </div>
+
+            <div class="actions-inline">
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="upload" aria-hidden="true"></i>
+                    <span th:text="#{entries.statementImport.form.action.start}"></span>
+                </button>
+                <a class="btn btn-secondary" th:href="@{/entries}">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <span th:text="#{entries.statementImport.form.action.back}"></span>
+                </a>
+            </div>
+        </form>
+    </section>
+
+    <section id="import-result" th:fragment="result" class="card import-result-card" th:classappend="${mode == 'processing'} ? ' loading' : ''"
+             th:attr="hx-get=${mode == 'processing'} ? @{/entries/statement-import/jobs/{jobId}(jobId=${jobId})} : null, hx-trigger=${mode == 'processing'} ? 'every 1s' : null, hx-target=${mode == 'processing'} ? '#import-result' : null, hx-swap=${mode == 'processing'} ? 'outerHTML' : null">
+
+        <div th:if="${mode == 'idle'}">
+            <h3 th:text="#{entries.statementImport.result.idle.title}"></h3>
+            <p th:text="#{entries.statementImport.result.idle.text}"></p>
+        </div>
+
+        <div th:if="${mode == 'processing'}">
+            <h3 th:text="#{entries.import.result.processing.title}"></h3>
+            <p th:text="#{entries.import.result.processing.text}"></p>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" th:attr="aria-valuenow=${progressPercent}">
+                <div class="progress-fill" th:style="|width: ${progressPercent}%;|"></div>
+            </div>
+            <p class="helper" th:text="#{entries.import.result.processing.count(${processedRows}, ${totalRows})}"></p>
+        </div>
+
+        <div th:if="${mode == 'success'}">
+            <h3 th:text="#{entries.import.result.success.title}"></h3>
+            <p th:text="#{entries.import.result.success.text}"></p>
+
+            <dl class="import-summary-grid">
+                <div>
+                    <dt th:text="#{entries.import.result.summary.imported}"></dt>
+                    <dd th:text="${summary.importedCount}"></dd>
+                </div>
+                <div>
+                    <dt th:text="#{entries.import.result.summary.skipped}"></dt>
+                    <dd th:text="${summary.skippedDuplicateCount}"></dd>
+                </div>
+                <div>
+                    <dt th:text="#{entries.import.result.summary.duration}"></dt>
+                    <dd th:text="#{entries.import.result.summary.durationValue(${summary.durationMillis})}"></dd>
+                </div>
+            </dl>
+        </div>
+
+        <div th:if="${mode == 'failed'}">
+            <h3 th:text="#{entries.import.result.failure.title}"></h3>
+            <p class="error" th:text="#{${failureCauseKey}}"></p>
+            <p class="helper" th:if="${failedRow != null}" th:text="#{entries.import.result.failure.row(${failedRow})}"></p>
+            <p class="helper" th:if="${failedColumnKey != null}">
+                <span th:text="#{entries.import.result.failure.columnPrefix}"></span>
+                <strong th:text="#{${failedColumnKey}}"></strong>
+            </p>
+            <p class="helper" th:if="${failureDetailMessage != null and !#strings.isEmpty(failureDetailMessage)}"
+               th:text="#{entries.import.result.failure.message(${failureDetailMessage})}"></p>
+            <p class="helper" th:text="#{entries.import.result.failure.rollback}"></p>
+        </div>
+    </section>
+</main>
+</body>
+</html>

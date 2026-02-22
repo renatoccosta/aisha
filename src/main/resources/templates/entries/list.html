@@ -20,7 +20,11 @@
         <div class="actions-inline">
             <a class="btn btn-secondary" th:href="@{/entries/import}">
                 <i data-lucide="file-up" aria-hidden="true"></i>
-                <span th:text="#{entries.list.action.importCsv}"></span>
+                <span th:text="#{entries.list.action.batchCreate}"></span>
+            </a>
+            <a class="btn btn-secondary" th:href="@{/entries/statement-import}">
+                <i data-lucide="file-input" aria-hidden="true"></i>
+                <span th:text="#{entries.list.action.importStatement}"></span>
             </a>
             <a class="btn btn-primary" th:href="@{/entries/new}">
                 <i data-lucide="plus" aria-hidden="true"></i>
@@ -180,7 +184,8 @@
                         <td th:attr="data-label=#{entries.list.table.movementDate}" th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></td>
                         <td th:attr="data-label=#{entries.list.table.settlementDate}" th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy')}"></td>
                         <td th:attr="data-label=#{entries.list.table.description}" th:text="${entry.description}"></td>
-                        <td th:attr="data-label=#{entries.list.table.category}" th:text="${entry.category.title}"></td>
+                        <td th:attr="data-label=#{entries.list.table.category}"
+                            th:text="${entry.category != null ? entry.category.title : #messages.msg('entries.list.table.category.empty')}"></td>
                         <td class="amount-cell" th:attr="data-label=#{entries.list.table.amount}" th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></td>
                         <td class="cell-actions" th:attr="data-label=#{entries.list.table.actions}">
                             <div class="actions-inline entry-actions-inline">
