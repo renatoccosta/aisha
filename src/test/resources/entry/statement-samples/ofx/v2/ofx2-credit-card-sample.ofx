@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?OFX OFXHEADER="200" VERSION="220" SECURITY="NONE" OLDFILEUID="NONE" NEWFILEUID="NONE"?>
+<OFX>
+  <SIGNONMSGSRSV1>
+    <SONRS>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+      </STATUS>
+      <DTSERVER>20260222123000[-3:BRT]</DTSERVER>
+      <LANGUAGE>POR</LANGUAGE>
+      <FI>
+        <ORG>BANCO EXEMPLO</ORG>
+        <FID>999</FID>
+      </FI>
+    </SONRS>
+  </SIGNONMSGSRSV1>
+  <CREDITCARDMSGSRSV1>
+    <CCSTMTTRNRS>
+      <TRNUID>20260222-CC-0001</TRNUID>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+      </STATUS>
+      <CCSTMTRS>
+        <CURDEF>BRL</CURDEF>
+        <CCACCTFROM>
+          <ACCTID>545454******1234</ACCTID>
+        </CCACCTFROM>
+        <BANKTRANLIST>
+          <DTSTART>20260201000000[-3:BRT]</DTSTART>
+          <DTEND>20260221120000[-3:BRT]</DTEND>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260201101500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-129.90</TRNAMT>
+            <FITID>CC-20260201-001</FITID>
+            <NAME>Streaming de video</NAME>
+            <MEMO>Assinatura mensal</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260203123000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-42.50</TRNAMT>
+            <FITID>CC-20260203-002</FITID>
+            <NAME>Cafeteria Centro</NAME>
+            <MEMO>Almoco rapido</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260204190500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-389.70</TRNAMT>
+            <FITID>CC-20260204-003</FITID>
+            <NAME>Supermercado Boa Compra</NAME>
+            <MEMO>Compras do mes</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260206110000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-79.90</TRNAMT>
+            <FITID>CC-20260206-004</FITID>
+            <NAME>Farmacia Sao Jose</NAME>
+            <MEMO>Medicamentos</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260207163000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-159.00</TRNAMT>
+            <FITID>CC-20260207-005</FITID>
+            <NAME>Posto Avenida</NAME>
+            <MEMO>Combustivel</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260210184500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-210.40</TRNAMT>
+            <FITID>CC-20260210-006</FITID>
+            <NAME>Restaurante Sabor</NAME>
+            <MEMO>Jantar familia</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260212095500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-999.00</TRNAMT>
+            <FITID>CC-20260212-007</FITID>
+            <NAME>Loja de Eletronicos</NAME>
+            <MEMO>Fone de ouvido</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260215142000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-58.90</TRNAMT>
+            <FITID>CC-20260215-008</FITID>
+            <NAME>App Transporte</NAME>
+            <MEMO>Corridas urbanas</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260218121500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-134.20</TRNAMT>
+            <FITID>CC-20260218-009</FITID>
+            <NAME>Livraria Cultura</NAME>
+            <MEMO>Livros tecnicos</MEMO>
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>CREDIT</TRNTYPE>
+            <DTPOSTED>20260221100000[-3:BRT]</DTPOSTED>
+            <TRNAMT>120.00</TRNAMT>
+            <FITID>CC-20260221-010</FITID>
+            <NAME>Estorno parcial</NAME>
+            <MEMO>Cancelamento de item</MEMO>
+          </STMTTRN>
+        </BANKTRANLIST>
+        <LEDGERBAL>
+          <BALAMT>-2463.50</BALAMT>
+          <DTASOF>20260221120000[-3:BRT]</DTASOF>
+        </LEDGERBAL>
+        <AVAILBAL>
+          <BALAMT>-2463.50</BALAMT>
+          <DTASOF>20260221120000[-3:BRT]</DTASOF>
+        </AVAILBAL>
+      </CCSTMTRS>
+    </CCSTMTTRNRS>
+  </CREDITCARDMSGSRSV1>
+</OFX>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?OFX OFXHEADER="200" VERSION="220" SECURITY="NONE" OLDFILEUID="NONE" NEWFILEUID="NONE"?>
+<OFX>
+  <SIGNONMSGSRSV1>
+    <SONRS>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+      </STATUS>
+      <DTSERVER>20260222120000[-3:BRT]</DTSERVER>
+      <LANGUAGE>POR</LANGUAGE>
+      <FI>
+        <ORG>BANCO EXEMPLO</ORG>
+        <FID>999</FID>
+      </FI>
+    </SONRS>
+  </SIGNONMSGSRSV1>
+  <BANKMSGSRSV1>
+    <STMTTRNRS>
+      <TRNUID>20260222-0001</TRNUID>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+      </STATUS>
+      <STMTRS>
+        <CURDEF>BRL</CURDEF>
+        <BANKACCTFROM>
+          <BANKID>00000000</BANKID>
+          <BRANCHID>1234</BRANCHID>
+          <ACCTID>12345678</ACCTID>
+          <ACCTTYPE>CHECKING</ACCTTYPE>
+        </BANKACCTFROM>
+        <BANKTRANLIST>
+          <DTSTART>20260201000000[-3:BRT]</DTSTART>
+          <DTEND>20260220180000[-3:BRT]</DTEND>
+
+          <STMTTRN>
+            <TRNTYPE>CREDIT</TRNTYPE>
+            <DTPOSTED>20260201090000[-3:BRT]</DTPOSTED>
+            <TRNAMT>5500.00</TRNAMT>
+            <FITID>20260201-001</FITID>
+            <MEMO>Salario mensal</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260202103000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-1800.00</TRNAMT>
+            <FITID>20260202-002</FITID>
+            <MEMO>Aluguel apartamento</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260203184500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-342.75</TRNAMT>
+            <FITID>20260203-003</FITID>
+            <MEMO>Supermercado semana 1</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260204111500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-89.90</TRNAMT>
+            <FITID>20260204-004</FITID>
+            <MEMO>Farmacia</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260205081500[-3:BRT]</DTPOSTED>
+            <TRNAMT>-245.30</TRNAMT>
+            <FITID>20260205-005</FITID>
+            <MEMO>Conta de energia</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>CREDIT</TRNTYPE>
+            <DTPOSTED>20260206140000[-3:BRT]</DTPOSTED>
+            <TRNAMT>1250.00</TRNAMT>
+            <FITID>20260206-006</FITID>
+            <MEMO>Transferencia recebida</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260207130000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-120.00</TRNAMT>
+            <FITID>20260207-007</FITID>
+            <MEMO>Internet fibra</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260210193000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-58.40</TRNAMT>
+            <FITID>20260210-008</FITID>
+            <MEMO>Aplicativo transporte</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260215124000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-210.50</TRNAMT>
+            <FITID>20260215-009</FITID>
+            <MEMO>Restaurante</MEMO>
+          </STMTTRN>
+
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20260220170000[-3:BRT]</DTPOSTED>
+            <TRNAMT>-399.99</TRNAMT>
+            <FITID>20260220-010</FITID>
+            <MEMO>Compra online</MEMO>
+          </STMTTRN>
+        </BANKTRANLIST>
+        <LEDGERBAL>
+          <BALAMT>3483.16</BALAMT>
+          <DTASOF>20260220180000[-3:BRT]</DTASOF>
+        </LEDGERBAL>
+        <AVAILBAL>
+          <BALAMT>3483.16</BALAMT>
+          <DTASOF>20260220180000[-3:BRT]</DTASOF>
+        </AVAILBAL>
+      </STMTRS>
+    </STMTTRNRS>
+  </BANKMSGSRSV1>
+</OFX>
