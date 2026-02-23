@@ -6,6 +6,7 @@ import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
 import dev.ccosta.aisha.application.entry.EntryImportProgressListener;
 import dev.ccosta.aisha.application.entry.EntryImportSummary;
 import dev.ccosta.aisha.application.entry.EntryImportValidationException;
+import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
@@ -23,29 +24,29 @@ public class EntryImportJobCoordinator {
 
     private final Map<String, EntryImportJobState> jobsById = new ConcurrentHashMap<>();
     private final EntryCsvImportService entryCsvImportService;
+    private final EntryStatementImportService entryStatementImportService;
     private final TaskExecutor taskExecutor;
 
-    public EntryImportJobCoordinator(EntryCsvImportService entryCsvImportService, TaskExecutor taskExecutor) {
+    public EntryImportJobCoordinator(
+        EntryCsvImportService entryCsvImportService,
+        EntryStatementImportService entryStatementImportService,
+        TaskExecutor taskExecutor
+    ) {
         this.entryCsvImportService = entryCsvImportService;
+        this.entryStatementImportService = entryStatementImportService;
         this.taskExecutor = taskExecutor;
     }
 
-    public String startJob(MultipartFile file, EntryCsvImportOptions options) {
-        validateFile(file);
+    public String startCsvJob(MultipartFile file, EntryCsvImportOptions options) {
+        validateCsvFile(file);
+        byte[] fileContent = readFileContent(file);
+        return startProcessingJob(listener -> entryCsvImportService.importCsv(fileContent, options, listener));
+    }
 
-        byte[] fileContent;
-        try {
-            fileContent = file.getBytes();
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Unable to read file", ex);
-        }
-
-        String jobId = UUID.randomUUID().toString();
-        EntryImportJobState state = new EntryImportJobState(jobId);
-        jobsById.put(jobId, state);
-
-        taskExecutor.execute(() -> runImport(jobId, fileContent, options));
-        return jobId;
+    public String startStatementJob(MultipartFile file, Long accountId, String formatId) {
+        validateNonEmptyFile(file);
+        byte[] fileContent = readFileContent(file);
+        return startProcessingJob(listener -> entryStatementImportService.importStatement(accountId, formatId, fileContent, listener));
     }
 
     public EntryImportJobSnapshot getSnapshot(String jobId) {
@@ -56,31 +57,50 @@ public class EntryImportJobCoordinator {
         return state.snapshot();
     }
 
-    private void runImport(String jobId, byte[] fileContent, EntryCsvImportOptions options) {
+    private String startProcessingJob(ImportJobRunner importJobRunner) {
+        String jobId = UUID.randomUUID().toString();
+        EntryImportJobState state = new EntryImportJobState(jobId);
+        jobsById.put(jobId, state);
+        taskExecutor.execute(() -> runImport(jobId, importJobRunner));
+        return jobId;
+    }
+
+    private byte[] readFileContent(MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to read file", ex);
+        }
+    }
+
+    private void runImport(String jobId, ImportJobRunner importJobRunner) {
         EntryImportJobState state = jobsById.get(jobId);
         if (state == null) {
             return;
         }
 
         try {
-            EntryImportSummary summary = entryCsvImportService.importCsv(fileContent, options, new ProgressUpdater(state));
+            EntryImportSummary summary = importJobRunner.run(new ProgressUpdater(state));
             state.markSuccess(summary);
         } catch (EntryImportValidationException ex) {
             state.markFailure(ex.getRowPosition(), ex.getColumnName(), ex.getCauseType(), ex.getMessage());
         } catch (Exception ex) {
-            log.error("Unknown error while importing entries CSV. jobId={}", jobId, ex);
+            log.error("Unknown error while importing entries. jobId={}", jobId, ex);
             state.markFailure(null, null, EntryImportFailureCause.UNKNOWN_ERROR, "Unknown import error");
         }
     }
 
-    private void validateFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File must not be empty");
-        }
-
+    private void validateCsvFile(MultipartFile file) {
+        validateNonEmptyFile(file);
         String filename = file.getOriginalFilename();
         if (filename == null || !filename.toLowerCase().endsWith(".csv")) {
             throw new IllegalArgumentException("Only CSV files are accepted");
+        }
+    }
+
+    private void validateNonEmptyFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File must not be empty");
         }
     }
 
@@ -143,5 +163,10 @@ public class EntryImportJobCoordinator {
         private EntryImportJobSnapshot snapshot() {
             return new EntryImportJobSnapshot(jobId, status, totalRows, processedRows, summary, failedRow, failedColumn, failureCause, failureMessage);
         }
+    }
+
+    @FunctionalInterface
+    private interface ImportJobRunner {
+        EntryImportSummary run(EntryImportProgressListener listener);
     }
 }

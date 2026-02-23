@@ -27,11 +27,43 @@ public class EntryRepositoryAdapter implements EntryRepository {
         LocalDate endDate,
         Long accountId,
         Long categoryId,
+        boolean onlyWithoutCategory,
         int page,
         int pageSize
     ) {
         PageRequest pageRequest = PageRequest.of(page, pageSize);
         Page<Entry> result;
+
+        if (onlyWithoutCategory) {
+            if (accountId != null) {
+                result = jpaEntryRepository.findBySettlementDateBetweenAndAccountIdAndCategoryIsNullOrderBySettlementDateDescIdDesc(
+                    startDate,
+                    endDate,
+                    accountId,
+                    pageRequest
+                );
+                return new PagedResult<>(
+                    result.getContent(),
+                    result.getNumber(),
+                    result.getSize(),
+                    result.getTotalElements(),
+                    result.getTotalPages()
+                );
+            }
+
+            result = jpaEntryRepository.findBySettlementDateBetweenAndCategoryIsNullOrderBySettlementDateDescIdDesc(
+                startDate,
+                endDate,
+                pageRequest
+            );
+            return new PagedResult<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+            );
+        }
 
         if (accountId != null && categoryId != null) {
             result = jpaEntryRepository.findBySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(

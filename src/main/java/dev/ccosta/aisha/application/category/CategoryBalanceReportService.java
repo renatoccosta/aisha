@@ -36,6 +36,9 @@ public class CategoryBalanceReportService {
         Map<Long, BigDecimal> previousBalancesByCategory = new HashMap<>();
         Map<Long, Map<LocalDate, BigDecimal>> periodBalancesByCategory = new HashMap<>();
         for (Entry entry : entryRepository.listAllBySettlementDateLessThanEqual(endDate)) {
+            if (entry.getCategory() == null) {
+                continue;
+            }
             Long categoryId = entry.getCategory().getId();
             BigDecimal amount = entry.getAmount();
             LocalDate settlementDate = entry.getSettlementDate();

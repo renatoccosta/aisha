@@ -211,6 +211,9 @@ public class DashboardService {
             if (!isInsideRange(settlementDate, startDate, endDate)) {
                 continue;
             }
+            if (entry.getCategory() == null) {
+                continue;
+            }
 
             BigDecimal amount = entry.getAmount();
             if (amount.signum() >= 0) {
@@ -272,6 +275,9 @@ public class DashboardService {
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
             if (!isInsideRange(settlementDate, startDate, endDate)) {
+                continue;
+            }
+            if (entry.getCategory() == null) {
                 continue;
             }
 

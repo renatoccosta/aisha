@@ -8,6 +8,8 @@ import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
 import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
+import dev.ccosta.aisha.application.entry.statement.EntryStatementFormat;
+import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
@@ -38,20 +40,25 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/entries")
 public class EntryController {
 
+    private static final long UNCATEGORIZED_FILTER_VALUE = -1L;
+
     private final EntryService entryService;
     private final AccountService accountService;
     private final CategoryService categoryService;
+    private final EntryStatementImportService entryStatementImportService;
     private final EntryImportJobCoordinator entryImportJobCoordinator;
 
     public EntryController(
         EntryService entryService,
         AccountService accountService,
         CategoryService categoryService,
+        EntryStatementImportService entryStatementImportService,
         EntryImportJobCoordinator entryImportJobCoordinator
     ) {
         this.entryService = entryService;
         this.accountService = accountService;
         this.categoryService = categoryService;
+        this.entryStatementImportService = entryStatementImportService;
         this.entryImportJobCoordinator = entryImportJobCoordinator;
     }
 
@@ -87,6 +94,13 @@ public class EntryController {
         return "entries/import";
     }
 
+    @GetMapping("/statement-import")
+    public String statementImportPage(Model model) {
+        fillStatementImportOptions(model);
+        model.addAttribute("mode", "idle");
+        return "entries/statement-import";
+    }
+
     @PostMapping("/import/jobs")
     public String startImport(
         @RequestParam(name = "file", required = false) MultipartFile file,
@@ -109,12 +123,29 @@ public class EntryController {
                 amountFormatOption,
                 amountFormatOther
             );
-            String jobId = entryImportJobCoordinator.startJob(file, options);
+            String jobId = entryImportJobCoordinator.startCsvJob(file, options);
             fillImportJobModel(model, entryImportJobCoordinator.getSnapshot(jobId));
         } catch (IllegalArgumentException ex) {
             fillImportErrorModel(model, ex.getMessage());
         }
         return "entries/import :: result";
+    }
+
+    @PostMapping("/statement-import/jobs")
+    public String startStatementImport(
+        @RequestParam(name = "file", required = false) MultipartFile file,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "formatId", required = false) String formatId,
+        Model model
+    ) {
+        fillStatementImportOptions(model);
+        try {
+            String jobId = entryImportJobCoordinator.startStatementJob(file, accountId, formatId);
+            fillImportJobModel(model, entryImportJobCoordinator.getSnapshot(jobId));
+        } catch (IllegalArgumentException ex) {
+            fillImportErrorModel(model, ex.getMessage());
+        }
+        return "entries/statement-import :: result";
     }
 
     @GetMapping("/import/jobs/{jobId}")
@@ -129,6 +160,21 @@ public class EntryController {
 
         fillImportJobModel(model, snapshot);
         return "entries/import :: result";
+    }
+
+    @GetMapping("/statement-import/jobs/{jobId}")
+    public String statementImportStatus(@PathVariable String jobId, Model model) {
+        fillStatementImportOptions(model);
+        EntryImportJobSnapshot snapshot = entryImportJobCoordinator.getSnapshot(jobId);
+        if (snapshot == null) {
+            model.addAttribute("mode", "failed");
+            model.addAttribute("failureCauseKey", "entries.import.result.failure.unknown");
+            model.addAttribute("failedRow", null);
+            return "entries/statement-import :: result";
+        }
+
+        fillImportJobModel(model, snapshot);
+        return "entries/statement-import :: result";
     }
 
     @GetMapping("/new")
@@ -319,7 +365,8 @@ public class EntryController {
             globalDateFilter.getStartDate(),
             globalDateFilter.getEndDate(),
             effectiveAccountId,
-            categoryId,
+            toEffectiveCategoryId(categoryId),
+            isWithoutCategoryFilter(categoryId),
             requestedPage,
             pageSize
         );
@@ -329,7 +376,8 @@ public class EntryController {
                 globalDateFilter.getStartDate(),
                 globalDateFilter.getEndDate(),
                 effectiveAccountId,
-                categoryId,
+                toEffectiveCategoryId(categoryId),
+                isWithoutCategoryFilter(categoryId),
                 effectivePage,
                 pageSize
             );
@@ -349,6 +397,17 @@ public class EntryController {
         return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
     }
 
+    private boolean isWithoutCategoryFilter(Long categoryId) {
+        return categoryId != null && categoryId == UNCATEGORIZED_FILTER_VALUE;
+    }
+
+    private Long toEffectiveCategoryId(Long categoryId) {
+        if (isWithoutCategoryFilter(categoryId)) {
+            return null;
+        }
+        return categoryId;
+    }
+
     private Entry toDomain(EntryForm form) {
         Entry entry = new Entry();
         entry.setMovementDate(form.getMovementDate());
@@ -365,10 +424,16 @@ public class EntryController {
         form.setMovementDate(entry.getMovementDate());
         form.setSettlementDate(entry.getSettlementDate());
         form.setDescription(entry.getDescription());
-        form.setCategoryId(entry.getCategory().getId());
+        form.setCategoryId(entry.getCategory() == null ? null : entry.getCategory().getId());
         form.setNotes(entry.getNotes());
         form.setAmount(entry.getAmount());
         return form;
+    }
+
+    private void fillStatementImportOptions(Model model) {
+        model.addAttribute("statementAccountOptions", accountService.listAllActiveOrdered());
+        List<EntryStatementFormat> formats = entryStatementImportService.listAvailableFormats();
+        model.addAttribute("statementFormats", formats);
     }
 
     private void fillEntryFormAccountOptions(Model model, Long selectedAccountId) {
@@ -459,6 +524,18 @@ public class EntryController {
             }
             if (normalizedMessage.contains("invalid amount format pattern")) {
                 return "entries.import.result.failure.invalidAmountFormatPattern";
+            }
+            if (normalizedMessage.contains("account must be informed")) {
+                return "entries.import.result.failure.missingAccount";
+            }
+            if (normalizedMessage.contains("selected account must be active")) {
+                return "entries.import.result.failure.inactiveAccount";
+            }
+            if (normalizedMessage.contains("statement format must be informed")) {
+                return "entries.import.result.failure.missingStatementFormat";
+            }
+            if (normalizedMessage.contains("statement format is not supported")) {
+                return "entries.import.result.failure.invalidStatementFormat";
             }
         }
 

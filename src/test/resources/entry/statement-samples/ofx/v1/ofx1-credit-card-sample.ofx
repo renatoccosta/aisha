@@ -1,0 +1,133 @@
+OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+  <SIGNONMSGSRSV1>
+    <SONRS>
+      <STATUS>
+        <CODE>0
+        <SEVERITY>INFO
+      </STATUS>
+      <DTSERVER>20260222123000[-3:BRT]
+      <LANGUAGE>POR
+      <FI>
+        <ORG>BANCO EXEMPLO
+        <FID>999
+      </FI>
+    </SONRS>
+  </SIGNONMSGSRSV1>
+  <CREDITCARDMSGSRSV1>
+    <CCSTMTTRNRS>
+      <TRNUID>20260222-CC-0001
+      <STATUS>
+        <CODE>0
+        <SEVERITY>INFO
+      </STATUS>
+      <CCSTMTRS>
+        <CURDEF>BRL
+        <CCACCTFROM>
+          <ACCTID>545454******1234
+        </CCACCTFROM>
+        <BANKTRANLIST>
+          <DTSTART>20260201000000[-3:BRT]
+          <DTEND>20260221120000[-3:BRT]
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260201101500[-3:BRT]
+            <TRNAMT>-129.90
+            <FITID>CC-20260201-001
+            <NAME>Streaming de video
+            <MEMO>Assinatura mensal
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260203123000[-3:BRT]
+            <TRNAMT>-42.50
+            <FITID>CC-20260203-002
+            <NAME>Cafeteria Centro
+            <MEMO>Almoco rapido
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260204190500[-3:BRT]
+            <TRNAMT>-389.70
+            <FITID>CC-20260204-003
+            <NAME>Supermercado Boa Compra
+            <MEMO>Compras do mes
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260206110000[-3:BRT]
+            <TRNAMT>-79.90
+            <FITID>CC-20260206-004
+            <NAME>Farmacia Sao Jose
+            <MEMO>Medicamentos
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260207163000[-3:BRT]
+            <TRNAMT>-159.00
+            <FITID>CC-20260207-005
+            <NAME>Posto Avenida
+            <MEMO>Combustivel
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260210184500[-3:BRT]
+            <TRNAMT>-210.40
+            <FITID>CC-20260210-006
+            <NAME>Restaurante Sabor
+            <MEMO>Jantar familia
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260212095500[-3:BRT]
+            <TRNAMT>-999.00
+            <FITID>CC-20260212-007
+            <NAME>Loja de Eletronicos
+            <MEMO>Fone de ouvido
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260215142000[-3:BRT]
+            <TRNAMT>-58.90
+            <FITID>CC-20260215-008
+            <NAME>App Transporte
+            <MEMO>Corridas urbanas
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>DEBIT
+            <DTPOSTED>20260218121500[-3:BRT]
+            <TRNAMT>-134.20
+            <FITID>CC-20260218-009
+            <NAME>Livraria Cultura
+            <MEMO>Livros tecnicos
+          </STMTTRN>
+          <STMTTRN>
+            <TRNTYPE>CREDIT
+            <DTPOSTED>20260221100000[-3:BRT]
+            <TRNAMT>120.00
+            <FITID>CC-20260221-010
+            <NAME>Estorno parcial
+            <MEMO>Cancelamento de item
+          </STMTTRN>
+        </BANKTRANLIST>
+        <LEDGERBAL>
+          <BALAMT>-2463.50
+          <DTASOF>20260221120000[-3:BRT]
+        </LEDGERBAL>
+        <AVAILBAL>
+          <BALAMT>-2463.50
+          <DTASOF>20260221120000[-3:BRT]
+        </AVAILBAL>
+      </CCSTMTRS>
+    </CCSTMTTRNRS>
+  </CREDITCARDMSGSRSV1>
+</OFX>
