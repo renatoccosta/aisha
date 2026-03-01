@@ -88,7 +88,7 @@ Main organization:
 
 For the full front-end architecture documentation, see:
 
-- `docs/frontend-architecture.md`
+- [docs/frontend-architecture.md](frontend-architecture.md)
 
 ## Main Web Endpoints
 

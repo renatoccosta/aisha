@@ -40,4 +40,4 @@ See workflow: `.github/workflows/release-ghcr.yml`
 ## Self-Hosted Deployment
 
 - Compose file: `compose.yml`
-- Full self-hosted guide: `docs/deploy-self-hosted.md`
+- Full self-hosted guide: [docs/deploy-self-hosted.md](deploy-self-hosted.md)
