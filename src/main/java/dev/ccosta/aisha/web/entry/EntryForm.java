@@ -30,6 +30,10 @@ public class EntryForm {
     @Size(max = 120, message = "{entryForm.newCategoryTitle.size}")
     private String newCategoryTitle;
 
+    private Long suggestedCategoryId;
+
+    private Double suggestedCategoryConfidence;
+
     @Size(max = 1000, message = "{entryForm.notes.size}")
     private String notes;
 
@@ -91,6 +95,22 @@ public class EntryForm {
 
     public void setNewCategoryTitle(String newCategoryTitle) {
         this.newCategoryTitle = newCategoryTitle;
+    }
+
+    public Long getSuggestedCategoryId() {
+        return suggestedCategoryId;
+    }
+
+    public void setSuggestedCategoryId(Long suggestedCategoryId) {
+        this.suggestedCategoryId = suggestedCategoryId;
+    }
+
+    public Double getSuggestedCategoryConfidence() {
+        return suggestedCategoryConfidence;
+    }
+
+    public void setSuggestedCategoryConfidence(Double suggestedCategoryConfidence) {
+        this.suggestedCategoryConfidence = suggestedCategoryConfidence;
     }
 
     public String getNotes() {

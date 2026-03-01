@@ -11,6 +11,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
@@ -52,7 +53,7 @@ class EntryServiceTest {
         when(categoryService.findById(7L)).thenReturn(category);
         when(entryRepository.save(existing)).thenReturn(existing);
 
-        Entry updated = entryService.update(1L, updatedData, 6L, 7L, null);
+        Entry updated = entryService.update(1L, updatedData, 6L, selection(7L, null, null, null));
 
         assertThat(updated.getAccount().getTitle()).isEqualTo("Conta nova");
         assertThat(updated.getDescription()).isEqualTo("Descricao nova");
@@ -66,7 +67,7 @@ class EntryServiceTest {
         Entry updatedData = newEntry("Descricao", new BigDecimal("99.90"));
         when(entryRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> entryService.update(999L, updatedData, 6L, 7L, null))
+        assertThatThrownBy(() -> entryService.update(999L, updatedData, 6L, selection(7L, null, null, null)))
             .isInstanceOf(EntryNotFoundException.class)
             .hasMessageContaining("999");
 
@@ -99,7 +100,7 @@ class EntryServiceTest {
         when(categoryService.findById(3L)).thenReturn(category);
         when(entryRepository.save(input)).thenReturn(input);
 
-        Entry created = entryService.create(input, 2L, 3L, null);
+        Entry created = entryService.create(input, 2L, selection(3L, null, null, null));
 
         assertThat(created.getAccount().getTitle()).isEqualTo("Conta Corrente");
         assertThat(created.getCategory().getTitle()).isEqualTo("Categoria existente");
@@ -120,7 +121,7 @@ class EntryServiceTest {
         when(categoryService.findOrCreateByTitle("Nova categoria")).thenReturn(createdCategory);
         when(entryRepository.save(input)).thenReturn(input);
 
-        Entry created = entryService.create(input, 2L, null, "Nova categoria");
+        Entry created = entryService.create(input, 2L, selection(null, "Nova categoria", null, null));
 
         assertThat(created.getCategory().getTitle()).isEqualTo("Nova categoria");
         verify(accountService).validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
@@ -138,7 +139,7 @@ class EntryServiceTest {
             .when(accountService)
             .validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
 
-        assertThatThrownBy(() -> entryService.create(input, 2L, 3L, null))
+        assertThatThrownBy(() -> entryService.create(input, 2L, selection(3L, null, null, null)))
             .isInstanceOf(EntrySettlementAfterAccountDeactivationException.class);
 
         verify(entryRepository, never()).save(input);
@@ -150,7 +151,7 @@ class EntryServiceTest {
         LocalDate endDate = LocalDate.of(2026, 2, 28);
         PagedResult<Entry> expected = new PagedResult<>(List.of(newEntry("Descricao", new BigDecimal("1.00"))), 0, 25, 1, 1);
 
-        when(entryRepository.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, false, 0, 25))
+        when(entryRepository.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, false, false, 0, 25))
             .thenReturn(expected);
 
         PagedResult<Entry> result = entryService.listMostRecentBySettlementDateBetweenAndFilters(
@@ -159,12 +160,13 @@ class EntryServiceTest {
             null,
             null,
             false,
+            false,
             0,
             25
         );
 
         assertThat(result).isEqualTo(expected);
-        verify(entryRepository).listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, false, 0, 25);
+        verify(entryRepository).listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, null, null, false, false, 0, 25);
     }
 
     @Test
@@ -175,7 +177,7 @@ class EntryServiceTest {
         Long categoryId = 20L;
         PagedResult<Entry> expected = new PagedResult<>(List.of(newEntry("Descricao", new BigDecimal("1.00"))), 1, 50, 3, 2);
 
-        when(entryRepository.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId, false, 1, 50))
+        when(entryRepository.listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId, false, false, 1, 50))
             .thenReturn(expected);
 
         PagedResult<Entry> result = entryService.listMostRecentBySettlementDateBetweenAndFilters(
@@ -184,12 +186,13 @@ class EntryServiceTest {
             accountId,
             categoryId,
             false,
+            false,
             1,
             50
         );
 
         assertThat(result).isEqualTo(expected);
-        verify(entryRepository).listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId, false, 1, 50);
+        verify(entryRepository).listMostRecentBySettlementDateBetweenAndFilters(startDate, endDate, accountId, categoryId, false, false, 1, 50);
     }
 
     @Test
@@ -203,6 +206,7 @@ class EntryServiceTest {
             null,
             null,
             false,
+            false,
             0,
             25
         ))
@@ -214,9 +218,62 @@ class EntryServiceTest {
             null,
             null,
             false,
+            false,
             0,
             25
         );
+    }
+
+    @Test
+    void shouldMarkAcceptedSuggestionWhenUserKeepsSuggestedCategory() {
+        Entry input = newEntry("Mercado", new BigDecimal("15.00"));
+        Account account = newAccount("Conta Corrente");
+        Category category = newCategory("Supermercado");
+
+        when(accountService.findById(2L)).thenReturn(account);
+        when(categoryService.findById(3L)).thenReturn(category);
+        when(entryRepository.save(input)).thenReturn(input);
+
+        Entry created = entryService.create(input, 2L, selection(3L, null, 3L, 0.91d));
+
+        assertThat(created.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.ACCEPTED);
+        assertThat(created.getSuggestedCategory()).isEqualTo(category);
+        assertThat(created.getCategorySuggestionConfidence()).isEqualTo(0.91d);
+    }
+
+    @Test
+    void shouldMarkRejectedSuggestionWhenUserChangesSuggestedCategory() {
+        Entry input = newEntry("Mercado", new BigDecimal("15.00"));
+        Account account = newAccount("Conta Corrente");
+        Category selectedCategory = newCategory("Lazer");
+        Category suggestedCategory = newCategory("Supermercado");
+
+        when(accountService.findById(2L)).thenReturn(account);
+        when(categoryService.findById(3L)).thenReturn(selectedCategory);
+        when(categoryService.findById(4L)).thenReturn(suggestedCategory);
+        when(entryRepository.save(input)).thenReturn(input);
+
+        Entry created = entryService.create(input, 2L, selection(3L, null, 4L, 0.52d));
+
+        assertThat(created.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.REJECTED);
+        assertThat(created.getSuggestedCategory()).isEqualTo(suggestedCategory);
+    }
+
+    @Test
+    void shouldConfirmPendingCategorySuggestion() {
+        Entry entry = newEntry("Mercado", new BigDecimal("15.00"));
+        Category category = newCategory("Supermercado");
+        entry.setCategory(category);
+        entry.setSuggestedCategory(category);
+        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
+
+        when(entryRepository.findById(1L)).thenReturn(Optional.of(entry));
+        when(entryRepository.save(entry)).thenReturn(entry);
+
+        Entry updated = entryService.confirmCategorySuggestion(1L);
+
+        assertThat(updated.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.ACCEPTED);
+        verify(entryRepository).save(entry);
     }
 
     private Entry newEntry(String description, BigDecimal amount) {
@@ -240,5 +297,9 @@ class EntryServiceTest {
         Account account = new Account();
         account.setTitle(title);
         return account;
+    }
+
+    private EntryCategorySelection selection(Long categoryId, String newCategoryTitle, Long suggestedCategoryId, Double confidence) {
+        return new EntryCategorySelection(categoryId, newCategoryTitle, suggestedCategoryId, confidence);
     }
 }

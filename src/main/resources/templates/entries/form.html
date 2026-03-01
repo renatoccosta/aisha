@@ -6,6 +6,7 @@
     <title th:text="${mode == 'create'} ? #{entries.form.title.create} : #{entries.form.title.edit}"></title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
 <header th:replace="~{fragments/header :: topbar(subtitle=#{entries.form.header.subtitle})}"></header>
@@ -19,7 +20,15 @@
             <div class="grid-2">
                 <div class="field">
                     <label for="account" th:text="#{entries.form.field.account.required}"></label>
-                    <select id="account" th:field="*{accountId}" required>
+                    <select
+                        id="account"
+                        th:field="*{accountId}"
+                        required
+                        hx-get="/entries/fragments/category-suggestion"
+                        hx-include="closest form"
+                        hx-target="#category-suggestion-container"
+                        hx-swap="outerHTML"
+                        hx-trigger="change">
                         <option value="" th:text="#{entries.form.field.account.placeholder}"></option>
                         <option
                             th:each="account : ${accountOptions}"
@@ -30,19 +39,7 @@
                     <p class="error" th:if="${#fields.hasErrors('accountId')}" th:errors="*{accountId}"></p>
                 </div>
 
-                <div class="field">
-                    <label for="categoryId" th:text="#{entries.form.field.category.required}"></label>
-                    <select id="categoryId" th:field="*{categoryId}">
-                        <option value="" th:text="#{entries.form.field.category.placeholder}"></option>
-                        <option
-                            th:each="option : ${categoryOptions}"
-                            th:value="${option.id()}"
-                            th:text="${option.label()}">
-                        </option>
-                    </select>
-                    <p class="error" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></p>
-                    <p class="helper" th:text="#{entries.form.field.category.help}"></p>
-                </div>
+                <div id="category-suggestion-container" th:replace="~{entries/form :: categorySection}"></div>
             </div>
 
             <div class="field">
@@ -73,13 +70,33 @@
 
             <div class="field">
                 <label for="description" th:text="#{entries.form.field.description.required}"></label>
-                <input id="description" type="text" th:field="*{description}" maxlength="200" required>
+                <input
+                    id="description"
+                    type="text"
+                    th:field="*{description}"
+                    maxlength="200"
+                    required
+                    hx-get="/entries/fragments/category-suggestion"
+                    hx-include="closest form"
+                    hx-target="#category-suggestion-container"
+                    hx-swap="outerHTML"
+                    hx-trigger="changed delay:400ms, blur">
                 <p class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
             </div>
 
             <div class="field">
                 <label for="amount" th:text="#{entries.form.field.amount.required}"></label>
-                <input id="amount" type="number" th:field="*{amount}" step="0.01" required>
+                <input
+                    id="amount"
+                    type="number"
+                    th:field="*{amount}"
+                    step="0.01"
+                    required
+                    hx-get="/entries/fragments/category-suggestion"
+                    hx-include="closest form"
+                    hx-target="#category-suggestion-container"
+                    hx-swap="outerHTML"
+                    hx-trigger="change, blur">
                 <p class="error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}"></p>
             </div>
 
@@ -102,5 +119,29 @@
         </form>
     </section>
 </main>
+
+<th:block th:fragment="categorySection">
+    <div class="field">
+        <input type="hidden" th:field="*{suggestedCategoryId}">
+        <input type="hidden" th:field="*{suggestedCategoryConfidence}">
+        <label for="categoryId" th:text="#{entries.form.field.category.required}"></label>
+        <select id="categoryId" th:field="*{categoryId}">
+            <option value="" th:text="#{entries.form.field.category.placeholder}"></option>
+            <option
+                th:each="option : ${categoryOptions}"
+                th:value="${option.id()}"
+                th:text="${option.label()}">
+            </option>
+        </select>
+        <p class="error" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></p>
+        <p class="helper" th:text="#{entries.form.field.category.help}"></p>
+        <p class="helper suggestion-helper" th:if="${suggestedCategory != null}">
+            <span th:text="#{entries.form.field.category.suggestion(${suggestedCategory.title}, ${#numbers.formatDecimal(form.suggestedCategoryConfidence * 100, 1, 'POINT', 0, 'COMMA')})}"></span>
+        </p>
+        <p class="helper suggestion-helper" th:if="${suggestedCategory != null and pendingCategorySuggestion}">
+            <span th:text="#{entries.form.field.category.pendingValidation}"></span>
+        </p>
+    </div>
+</th:block>
 </body>
 </html>

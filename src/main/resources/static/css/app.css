@@ -533,6 +533,12 @@ th {
   grid-template-columns: 1fr;
 }
 
+.grid-3 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
 .field {
   margin-top: 1rem;
 }
@@ -597,6 +603,28 @@ textarea:focus {
 .helper {
   margin-top: 0.25rem;
   font-size: 0.9rem;
+}
+
+.suggestion-helper {
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+.cell-stack {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-action-tertiary-bg);
+  color: var(--secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .btn {
@@ -925,6 +953,10 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
 @media (min-width: 780px) {
   .grid-2 {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .dashboard-card-grid {

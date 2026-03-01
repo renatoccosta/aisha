@@ -15,11 +15,14 @@ public interface EntryRepository {
         Long accountId,
         Long categoryId,
         boolean onlyWithoutCategory,
+        boolean onlyPendingCategorySuggestions,
         int page,
         int pageSize
     );
 
     List<Entry> listAllBySettlementDateLessThanEqual(LocalDate endDate);
+
+    List<EntryCategoryTrainingExample> listCategoryTrainingExamples();
 
     Optional<Entry> findById(Long id);
 
@@ -35,6 +38,15 @@ public interface EntryRepository {
         LocalDate settlementDate,
         String description,
         Long categoryId,
+        BigDecimal amount,
+        String externalId
+    );
+
+    boolean existsDuplicateIgnoringCategory(
+        Long accountId,
+        LocalDate movementDate,
+        LocalDate settlementDate,
+        String description,
         BigDecimal amount,
         String externalId
     );

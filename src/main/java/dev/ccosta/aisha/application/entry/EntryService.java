@@ -5,6 +5,7 @@ import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
@@ -34,6 +35,7 @@ public class EntryService {
         Long accountId,
         Long categoryId,
         boolean onlyWithoutCategory,
+        boolean onlyPendingCategorySuggestions,
         int page,
         int pageSize
     ) {
@@ -49,6 +51,7 @@ public class EntryService {
             accountId,
             categoryId,
             onlyWithoutCategory,
+            onlyPendingCategorySuggestions,
             page,
             pageSize
         );
@@ -61,27 +64,45 @@ public class EntryService {
     }
 
     @Transactional
-    public Entry create(Entry entry, Long accountId, Long categoryId, String newCategoryTitle) {
+    public Entry create(Entry entry, Long accountId, EntryCategorySelection categorySelection) {
         accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, entry.getSettlementDate());
         entry.setAccount(resolveAccount(accountId));
-        entry.setCategory(resolveCategory(categoryId, newCategoryTitle));
+        Category category = resolveCategory(categorySelection);
+        entry.setCategory(category);
+        applyCategorySuggestionFeedback(entry, category, categorySelection);
         Entry createdEntry = entryRepository.save(entry);
         accountService.adjustInitialBalanceForBackdatedEntry(accountId, createdEntry.getSettlementDate());
         return createdEntry;
     }
 
     @Transactional
-    public Entry update(Long id, Entry updatedData, Long accountId, Long categoryId, String newCategoryTitle) {
+    public Entry update(Long id, Entry updatedData, Long accountId, EntryCategorySelection categorySelection) {
         accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, updatedData.getSettlementDate());
         Entry existing = findById(id);
         existing.setAccount(resolveAccount(accountId));
         existing.setMovementDate(updatedData.getMovementDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
         existing.setDescription(updatedData.getDescription());
-        existing.setCategory(resolveCategory(categoryId, newCategoryTitle));
+        Category category = resolveCategory(categorySelection);
+        existing.setCategory(category);
+        applyCategorySuggestionFeedback(existing, category, categorySelection);
         existing.setNotes(updatedData.getNotes());
         existing.setAmount(updatedData.getAmount());
         return entryRepository.save(existing);
+    }
+
+    @Transactional
+    public Entry confirmCategorySuggestion(Long id) {
+        Entry entry = findById(id);
+        if (entry.getCategory() == null || entry.getSuggestedCategory() == null) {
+            throw new IllegalArgumentException("Entry does not have a suggested category to confirm");
+        }
+
+        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.ACCEPTED);
+        if (entry.getCategorySuggestionConfidence() == null) {
+            entry.setCategorySuggestionConfidence(1.0d);
+        }
+        return entryRepository.save(entry);
     }
 
     @Transactional
@@ -100,7 +121,9 @@ public class EntryService {
         entryRepository.deleteByIds(uniqueIds);
     }
 
-    private Category resolveCategory(Long categoryId, String newCategoryTitle) {
+    private Category resolveCategory(EntryCategorySelection categorySelection) {
+        Long categoryId = categorySelection == null ? null : categorySelection.categoryId();
+        String newCategoryTitle = categorySelection == null ? null : categorySelection.newCategoryTitle();
         String normalizedTitle = newCategoryTitle == null ? "" : newCategoryTitle.trim();
         if (!normalizedTitle.isBlank()) {
             return categoryService.findOrCreateByTitle(normalizedTitle);
@@ -119,5 +142,28 @@ public class EntryService {
         }
 
         return accountService.findById(accountId);
+    }
+
+    private void applyCategorySuggestionFeedback(Entry entry, Category category, EntryCategorySelection selection) {
+        if (selection == null || selection.suggestedCategoryId() == null) {
+            entry.setSuggestedCategory(null);
+            entry.setCategorySuggestionConfidence(null);
+            entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE);
+            return;
+        }
+
+        Category suggestedCategory = category.getId() != null && category.getId().equals(selection.suggestedCategoryId())
+            ? category
+            : categoryService.findById(selection.suggestedCategoryId());
+
+        entry.setSuggestedCategory(suggestedCategory);
+        entry.setCategorySuggestionConfidence(selection.suggestedCategoryConfidence());
+        boolean acceptedSuggestion = (selection.categoryId() != null && selection.categoryId().equals(selection.suggestedCategoryId()))
+            || (category.getId() != null && category.getId().equals(suggestedCategory.getId()));
+        entry.setCategorySuggestionStatus(
+            acceptedSuggestion
+                ? EntryCategorySuggestionStatus.ACCEPTED
+                : EntryCategorySuggestionStatus.REJECTED
+        );
     }
 }
