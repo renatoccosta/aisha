@@ -16,6 +16,18 @@ import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 import smile.classification.DiscreteNaiveBayes;
 
+/**
+ * {@link TextClassifier} implementation backed by Smile's discrete multinomial Naive Bayes.
+ *
+ * <p>This classifier builds a bag-of-words model on demand from the examples provided on each
+ * {@link #classify(TextClassificationRequest, List)} call. Documents and contextual tokens are
+ * normalized to lowercase, stripped of diacritics, and split into tokens before vectorization.
+ *
+ * <p>If the request cannot be represented in the training vocabulary, or if the provided examples
+ * do not contain enough valid data to train the model, the classifier returns {@link Optional#empty()}.
+ *
+ * @param <L> the label type associated with each classification example
+ */
 @Component
 public class SmileNaiveBayesTextClassifier<L> implements TextClassifier<L> {
 

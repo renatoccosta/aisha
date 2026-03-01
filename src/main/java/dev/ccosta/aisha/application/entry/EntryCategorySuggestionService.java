@@ -1,5 +1,15 @@
 package dev.ccosta.aisha.application.entry;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import dev.ccosta.aisha.application.ai.classification.ClassificationPrediction;
 import dev.ccosta.aisha.application.ai.classification.TextClassificationExample;
 import dev.ccosta.aisha.application.ai.classification.TextClassificationRequest;
@@ -8,15 +18,6 @@ import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.EntryCategoryTrainingExample;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EntryCategorySuggestionService {

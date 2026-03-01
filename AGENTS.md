@@ -91,6 +91,8 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Keep diffs small and reviewable.
 - Before changing multiple files: write a short plan and list files to touch.
 - Add tests for non-trivial logic (unit tests first, then integration when needed).
+- Every important new class must include a Javadoc that explains its responsibility.
+- The main methods of every important new class must also include Javadocs describing purpose, key inputs, and relevant return behavior.
 - After changes: run `mvn test` (or explain why it wasn’t possible).
 
 ## Architecture preferences
