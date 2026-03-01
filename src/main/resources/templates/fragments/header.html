@@ -76,9 +76,9 @@
     </div>
 
     <div class="wrap period-filter-wrap">
-        <form class="period-filter" method="post" th:action="@{/date-filter}">
+        <form class="period-filter" method="post" th:action="@{/date-filter}" id="period-filter-form">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <input type="hidden" name="redirectTo" th:value="${currentPath}">
+            <input type="hidden" name="redirectTo" th:value="${currentPath}" id="period-filter-redirect-to">
 
             <div class="period-filter-row">
                 <span class="period-filter-label" th:text="#{dateFilter.label}"></span>
@@ -145,45 +145,53 @@
         (function () {
             const key = "aisha-theme";
             const themeToggle = document.getElementById("theme-toggle");
-            if (!themeToggle) {
-                return;
-            }
+            const periodFilterForm = document.getElementById("period-filter-form");
+            const periodFilterRedirectInput = document.getElementById("period-filter-redirect-to");
 
-            const themeToggleLabel = themeToggle.querySelector('[data-role="label"]');
-            const themeIconDark = themeToggle.querySelector('[data-role="icon-dark"]');
-            const themeIconLight = themeToggle.querySelector('[data-role="icon-light"]');
+            if (themeToggle) {
+                const themeToggleLabel = themeToggle.querySelector('[data-role="label"]');
+                const themeIconDark = themeToggle.querySelector('[data-role="icon-dark"]');
+                const themeIconLight = themeToggle.querySelector('[data-role="icon-light"]');
 
-            function readCurrentTheme() {
-                return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-            }
-
-            function updateToggleLabel() {
-                const currentTheme = readCurrentTheme();
-                const nextTheme = currentTheme === "dark" ? "light" : "dark";
-                const label = nextTheme === "dark"
-                    ? themeToggle.dataset.labelDark
-                    : themeToggle.dataset.labelLight;
-
-                if (themeToggleLabel) {
-                    themeToggleLabel.textContent = label;
+                function readCurrentTheme() {
+                    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
                 }
-                if (themeIconDark && themeIconLight) {
-                    themeIconDark.hidden = nextTheme !== "dark";
-                    themeIconLight.hidden = nextTheme !== "light";
-                }
-                themeToggle.setAttribute("aria-pressed", String(currentTheme === "dark"));
-            }
 
-            themeToggle.addEventListener("click", () => {
-                const currentTheme = readCurrentTheme();
-                const nextTheme = currentTheme === "dark" ? "light" : "dark";
-                document.documentElement.setAttribute("data-theme", nextTheme);
-                localStorage.setItem(key, nextTheme);
-                window.dispatchEvent(new CustomEvent("aisha-theme-changed", { detail: { theme: nextTheme } }));
+                function updateToggleLabel() {
+                    const currentTheme = readCurrentTheme();
+                    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+                    const label = nextTheme === "dark"
+                        ? themeToggle.dataset.labelDark
+                        : themeToggle.dataset.labelLight;
+
+                    if (themeToggleLabel) {
+                        themeToggleLabel.textContent = label;
+                    }
+                    if (themeIconDark && themeIconLight) {
+                        themeIconDark.hidden = nextTheme !== "dark";
+                        themeIconLight.hidden = nextTheme !== "light";
+                    }
+                    themeToggle.setAttribute("aria-pressed", String(currentTheme === "dark"));
+                }
+
+                themeToggle.addEventListener("click", () => {
+                    const currentTheme = readCurrentTheme();
+                    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+                    document.documentElement.setAttribute("data-theme", nextTheme);
+                    localStorage.setItem(key, nextTheme);
+                    window.dispatchEvent(new CustomEvent("aisha-theme-changed", { detail: { theme: nextTheme } }));
+                    updateToggleLabel();
+                });
+
                 updateToggleLabel();
-            });
+            }
 
-            updateToggleLabel();
+            if (periodFilterForm && periodFilterRedirectInput) {
+                periodFilterForm.addEventListener("submit", () => {
+                    periodFilterRedirectInput.value = `${window.location.pathname}${window.location.search}`;
+                });
+            }
+
         }());
     </script>
 </header>
