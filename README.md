@@ -16,6 +16,7 @@ AI$HA is a personal finance manager with AI capabilities, focused on correctness
 - Global date-range filter for analysis
 - Dashboard with financial summaries and charts
 - Local authentication baseline with secure server-side sessions
+- Persisted AI-powered entry category suggestion with background retraining
 
 ## Architecture Overview
 

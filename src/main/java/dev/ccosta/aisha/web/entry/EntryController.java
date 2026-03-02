@@ -7,6 +7,9 @@ import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
 import dev.ccosta.aisha.application.entry.EntryCategorySuggestion;
+import dev.ccosta.aisha.application.entry.EntryCategoryModelManager;
+import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingCoordinator;
+import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingTrigger;
 import dev.ccosta.aisha.application.entry.EntryCategorySuggestionRequest;
 import dev.ccosta.aisha.application.entry.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
@@ -51,6 +54,8 @@ public class EntryController {
     private final AccountService accountService;
     private final CategoryService categoryService;
     private final EntryCategorySuggestionService entryCategorySuggestionService;
+    private final EntryCategoryModelManager entryCategoryModelManager;
+    private final EntryCategoryModelTrainingCoordinator entryCategoryModelTrainingCoordinator;
     private final EntryStatementImportService entryStatementImportService;
     private final EntryImportJobCoordinator entryImportJobCoordinator;
 
@@ -59,6 +64,8 @@ public class EntryController {
         AccountService accountService,
         CategoryService categoryService,
         EntryCategorySuggestionService entryCategorySuggestionService,
+        EntryCategoryModelManager entryCategoryModelManager,
+        EntryCategoryModelTrainingCoordinator entryCategoryModelTrainingCoordinator,
         EntryStatementImportService entryStatementImportService,
         EntryImportJobCoordinator entryImportJobCoordinator
     ) {
@@ -66,6 +73,8 @@ public class EntryController {
         this.accountService = accountService;
         this.categoryService = categoryService;
         this.entryCategorySuggestionService = entryCategorySuggestionService;
+        this.entryCategoryModelManager = entryCategoryModelManager;
+        this.entryCategoryModelTrainingCoordinator = entryCategoryModelTrainingCoordinator;
         this.entryStatementImportService = entryStatementImportService;
         this.entryImportJobCoordinator = entryImportJobCoordinator;
     }
@@ -100,6 +109,7 @@ public class EntryController {
 
     @GetMapping("/import")
     public String importPage(Model model) {
+        fillCategoryModelStatus(model, false);
         model.addAttribute("mode", "idle");
         return "entries/import";
     }
@@ -123,6 +133,7 @@ public class EntryController {
         @RequestParam(name = "amountFormatOther", required = false) String amountFormatOther,
         Model model
     ) {
+        fillCategoryModelStatus(model, false);
         try {
             EntryCsvImportOptions options = buildImportOptions(
                 headerOption,
@@ -139,6 +150,19 @@ public class EntryController {
             fillImportErrorModel(model, ex.getMessage());
         }
         return "entries/import :: result";
+    }
+
+    @GetMapping("/fragments/category-model-status")
+    public String categoryModelStatus(Model model) {
+        fillCategoryModelStatus(model, false);
+        return "entries/import :: categoryModelStatus";
+    }
+
+    @PostMapping("/category-model/retrain")
+    public String retrainCategoryModel(Model model) {
+        entryCategoryModelTrainingCoordinator.requestTraining(EntryCategoryModelTrainingTrigger.MANUAL);
+        fillCategoryModelStatus(model, true);
+        return "entries/import :: categoryModelStatus";
     }
 
     @PostMapping("/statement-import/jobs")
@@ -504,6 +528,11 @@ public class EntryController {
     private void fillCategoryOptions(Model model) {
         List<CategoryOption> categoryOptions = categoryService.listHierarchyOptions();
         model.addAttribute("categoryOptions", categoryOptions);
+    }
+
+    private void fillCategoryModelStatus(Model model, boolean manualTrainingRequested) {
+        model.addAttribute("categoryModelStatus", entryCategoryModelManager.status());
+        model.addAttribute("manualTrainingRequested", manualTrainingRequested);
     }
 
     private void fillCategorySuggestionState(Model model, EntryForm form) {

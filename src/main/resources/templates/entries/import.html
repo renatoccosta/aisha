@@ -122,6 +122,82 @@
         </form>
     </section>
 
+    <section
+        id="category-model-status"
+        th:fragment="categoryModelStatus"
+        class="card import-result-card"
+        hx-get="/entries/fragments/category-model-status"
+        hx-trigger="load, every 4s"
+        hx-target="#category-model-status"
+        hx-swap="outerHTML">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{entries.import.model.title}"></h3>
+                <p th:text="#{entries.import.model.subtitle}"></p>
+            </div>
+            <form
+                method="post"
+                th:action="@{/entries/category-model/retrain}"
+                hx-post="/entries/category-model/retrain"
+                hx-target="#category-model-status"
+                hx-swap="outerHTML">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button class="btn btn-secondary" type="submit">
+                    <i data-lucide="brain-circuit" aria-hidden="true"></i>
+                    <span th:text="#{entries.import.model.action.retrain}"></span>
+                </button>
+            </form>
+        </div>
+
+        <p class="helper" th:if="${manualTrainingRequested}" th:text="#{entries.import.model.manualRequested}"></p>
+
+        <div class="cell-stack">
+            <span class="status-chip" th:if="${categoryModelStatus.trainingInProgress}" th:text="#{entries.import.model.status.training}"></span>
+            <span class="status-chip" th:if="${!categoryModelStatus.trainingInProgress and categoryModelStatus.modelAvailable}" th:text="#{entries.import.model.status.ready}"></span>
+            <span class="status-chip" th:if="${!categoryModelStatus.trainingInProgress and !categoryModelStatus.modelAvailable}" th:text="#{entries.import.model.status.unavailable}"></span>
+            <span class="status-chip" th:if="${categoryModelStatus.retrainQueued}" th:text="#{entries.import.model.status.queued}"></span>
+        </div>
+
+        <dl class="import-summary-grid">
+            <div>
+                <dt th:text="#{entries.import.model.summary.version}"></dt>
+                <dd th:text="${categoryModelStatus.version != null ? categoryModelStatus.version : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{entries.import.model.summary.modelName}"></dt>
+                <dd th:text="${categoryModelStatus.modelName != null ? categoryModelStatus.modelName : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{entries.import.model.summary.pipeline}"></dt>
+                <dd th:text="${categoryModelStatus.pipelineVersion != null ? categoryModelStatus.pipelineVersion : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{entries.import.model.summary.examples}"></dt>
+                <dd th:text="${categoryModelStatus.trainingExampleCount != null ? categoryModelStatus.trainingExampleCount : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{entries.import.model.summary.labels}"></dt>
+                <dd th:text="${categoryModelStatus.labelCount != null ? categoryModelStatus.labelCount : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{entries.import.model.summary.vocabulary}"></dt>
+                <dd th:text="${categoryModelStatus.vocabularySize != null ? categoryModelStatus.vocabularySize : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{entries.import.model.summary.trigger}"></dt>
+                <dd th:text="${categoryModelStatus.trigger != null ? #messages.msg('entries.import.model.trigger.' + #strings.toLowerCase(categoryModelStatus.trigger)) : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{entries.import.model.summary.completedAt}"></dt>
+                <dd th:text="${categoryModelStatus.completedAt != null ? #temporals.format(categoryModelStatus.completedAt, 'dd/MM/yyyy HH:mm:ss') : '-'}"></dd>
+            </div>
+        </dl>
+
+        <p class="helper"
+           th:if="${categoryModelStatus.failureMessage != null and !#strings.isEmpty(categoryModelStatus.failureMessage)}"
+           th:text="#{entries.import.model.failure(${categoryModelStatus.failureMessage})}"></p>
+    </section>
+
     <section id="import-result" th:fragment="result" class="card import-result-card" th:classappend="${mode == 'processing'} ? ' loading' : ''"
         th:attr="hx-get=${mode == 'processing'} ? @{/entries/import/jobs/{jobId}(jobId=${jobId})} : null, hx-trigger=${mode == 'processing'} ? 'every 1s' : null, hx-target=${mode == 'processing'} ? '#import-result' : null, hx-swap=${mode == 'processing'} ? 'outerHTML' : null">
 

@@ -97,5 +97,7 @@ For the full front-end architecture documentation, see:
 - `/logout` (POST)
 - `/dashboard`
 - `/entries`
+- `/entries/import`
+- `/entries/category-model/retrain` (POST, manual background retraining command)
 - `/accounts`
 - `/categories`

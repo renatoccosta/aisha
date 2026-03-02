@@ -100,6 +100,8 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Constructor injection; minimize mutable state.
 - Prefer explicit, typed DTOs; validate inputs at boundaries.
 - Avoid premature frameworks/abstractions; keep it simple until requirements force complexity.
+- For AI and ML features, prefer algorithms provided by the SMILE library instead of implementing the algorithms directly in the project.
+- Keep SMILE usage encapsulated behind the project interfaces and adapters; application and domain layers must not depend directly on SMILE types.
 
 ## Language conventions
 
