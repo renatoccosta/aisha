@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{errors.internal.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{errors.internal.title})}"></header>
+<main class="wrap">
+    <section class="card form-card">
+        <h1 th:text="#{errors.internal.code}"></h1>
+        <p th:text="#{errors.internal.message}"></p>
+        <p>
+            <strong th:text="#{errors.internal.correlationId}"></strong>
+            <span th:text="${errorCorrelationId}"></span>
+        </p>
+        <a class="btn btn-primary" th:href="@{/entries}">
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+            <span th:text="#{errors.internal.backToEntries}"></span>
+        </a>
+    </section>
+</main>
+</body>
+</html>
