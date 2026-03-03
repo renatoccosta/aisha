@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Renders the first-level administration area and exposes operational actions for system configuration screens.
@@ -34,8 +35,11 @@ public class AdminController {
      * @return the administration page template
      */
     @GetMapping
-    public String index(Model model) {
-        fillCategoryModelStatus(model, false);
+    public String index(
+        @RequestParam(name = "manualTrainingRequested", defaultValue = "false") boolean manualTrainingRequested,
+        Model model
+    ) {
+        fillCategoryModelStatus(model, manualTrainingRequested);
         return "admin/index";
     }
 
@@ -58,10 +62,9 @@ public class AdminController {
      * @return the status fragment after scheduling retraining
      */
     @PostMapping("/category-model/retrain")
-    public String retrainCategoryModel(Model model) {
+    public String retrainCategoryModel() {
         entryCategoryModelTrainingCoordinator.requestTraining(EntryCategoryModelTrainingTrigger.MANUAL);
-        fillCategoryModelStatus(model, true);
-        return "admin/index :: categoryModelStatus";
+        return "redirect:/admin?manualTrainingRequested=true";
     }
 
     private void fillCategoryModelStatus(Model model, boolean manualTrainingRequested) {

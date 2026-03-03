@@ -84,8 +84,8 @@ class SecurityIntegrationTest {
         mockMvc.perform(post("/admin/category-model/retrain")
                 .session((MockHttpSession) session)
                 .with(csrf()))
-            .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Retreino solicitado")));
+            .andExpect(status().isFound())
+            .andExpect(redirectedUrl("/admin?manualTrainingRequested=true"));
     }
 
     @Test
