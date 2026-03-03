@@ -37,6 +37,7 @@
             hx-get="/entries/fragments/table"
             hx-target="#table-container"
             hx-swap="outerHTML"
+            hx-push-url="true"
             hx-trigger="change from:#filter-account, change from:#filter-category">
             <div class="grid-2">
                 <div class="field">
@@ -76,7 +77,8 @@
                     th:action="@{/entries}"
                     hx-get="/entries/fragments/table"
                     hx-target="#table-container"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
                     <input type="hidden" name="page" value="0">
@@ -101,7 +103,8 @@
                     th:action="@{/entries}"
                     hx-get="/entries/fragments/table"
                     hx-target="#table-container"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
                     <input type="hidden" name="size" th:value="${pagination.pageSize}">
