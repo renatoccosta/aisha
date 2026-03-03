@@ -52,8 +52,8 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 
 ## Logging standards
 - Use SLF4J as the logging API in application code.
-- Use Logback as the logging implementation via Spring Boot support (`logback-spring.xml`).
-- Keep logging configuration managed by Spring Boot conventions and profiles.
+- Use Logback as the logging implementation via Spring Boot support (prefer `application.yaml` logging properties).
+- Keep logging configuration managed by Spring Boot conventions and profiles; prefer `application.yaml` over custom `logback-spring.xml` when requirements are simple.
 - Log output must go to console only by default (do not add file appenders unless explicitly requested).
 - Use correlation IDs for request tracing:
   - Accept incoming `X-Correlation-Id` when present; otherwise generate one.

@@ -31,8 +31,8 @@ The current implementation uses local authentication with secure server-side ses
 ## Logging Architecture
 
 - Logging API for application code: SLF4J (`org.slf4j.Logger`).
-- Logging implementation: Logback via Spring Boot defaults (`logback-spring.xml`).
-- Configuration source: Spring-managed logging configuration (no direct Logback bootstrap code).
+- Logging implementation: Logback via Spring Boot defaults (configured through `application.yaml` logging properties).
+- Configuration source: Spring-managed logging properties in `application.yaml` (no custom Logback XML by default).
 - Output target: console only (no file appender configured).
 - Correlation ID:
   - Request filter accepts `X-Correlation-Id` when provided, or generates a UUID.
