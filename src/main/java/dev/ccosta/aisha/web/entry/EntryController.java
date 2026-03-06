@@ -25,6 +25,7 @@ import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.slf4j.Logger;
@@ -97,9 +98,12 @@ public class EntryController {
         @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        HttpServletResponse response,
         Model model
     ) {
         fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+        setCanonicalEntriesPushUrl(request, response);
         return "entries/list :: table";
     }
 
@@ -424,7 +428,8 @@ public class EntryController {
         Integer page,
         Integer size
     ) {
-        List<Account> accountOptions = accountService.listVisibleForEntryFilter(globalDateFilter.getStartDate());
+        DateFilterState effectiveDateFilter = resolveGlobalDateFilter(model, globalDateFilter);
+        List<Account> accountOptions = accountService.listVisibleForEntryFilter(effectiveDateFilter.getStartDate());
         Long effectiveAccountId = accountId;
         Long requestedAccountId = accountId;
         if (requestedAccountId != null && accountOptions.stream().noneMatch(account -> account.getId().equals(requestedAccountId))) {
@@ -435,8 +440,8 @@ public class EntryController {
         int pageSize = PaginationSupport.sanitizePageSize(size);
 
         PagedResult<Entry> pageResult = entryService.listMostRecentBySettlementDateBetweenAndFilters(
-            globalDateFilter.getStartDate(),
-            globalDateFilter.getEndDate(),
+            effectiveDateFilter.getStartDate(),
+            effectiveDateFilter.getEndDate(),
             effectiveAccountId,
             toEffectiveCategoryId(categoryId),
             isWithoutCategoryFilter(categoryId),
@@ -447,8 +452,8 @@ public class EntryController {
         int effectivePage = PaginationSupport.clampPageIndex(requestedPage, pageResult.totalPages());
         if (effectivePage != requestedPage) {
             pageResult = entryService.listMostRecentBySettlementDateBetweenAndFilters(
-                globalDateFilter.getStartDate(),
-                globalDateFilter.getEndDate(),
+                effectiveDateFilter.getStartDate(),
+                effectiveDateFilter.getEndDate(),
                 effectiveAccountId,
                 toEffectiveCategoryId(categoryId),
                 isWithoutCategoryFilter(categoryId),
@@ -469,8 +474,37 @@ public class EntryController {
         fillCategoryOptions(model);
     }
 
+    private DateFilterState resolveGlobalDateFilter(Model model, DateFilterState globalDateFilter) {
+        if (globalDateFilter != null) {
+            return globalDateFilter;
+        }
+
+        Object modelAttribute = model.getAttribute("globalDateFilter");
+        if (modelAttribute instanceof DateFilterState state) {
+            return state;
+        }
+
+        DateFilterState fallback = DateFilterState.defaultState(java.time.Clock.systemDefaultZone());
+        model.addAttribute("globalDateFilter", fallback);
+        log.warn("Global date filter was missing in entries listing flow. Falling back to default current-month range.");
+        return fallback;
+    }
+
     private boolean isHtmx(HttpServletRequest request) {
         return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
+    }
+
+    private void setCanonicalEntriesPushUrl(HttpServletRequest request, HttpServletResponse response) {
+        if (!isHtmx(request)) {
+            return;
+        }
+
+        String queryString = request.getQueryString();
+        String canonicalPath = "/entries";
+        if (StringUtils.hasText(queryString)) {
+            canonicalPath += "?" + queryString;
+        }
+        response.setHeader("HX-Push-Url", canonicalPath);
     }
 
     private boolean isWithoutCategoryFilter(Long categoryId) {

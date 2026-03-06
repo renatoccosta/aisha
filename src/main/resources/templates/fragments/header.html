@@ -92,7 +92,7 @@
                         type="submit"
                         name="action"
                         value="SET_WEEK"
-                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'WEEK'} ? ' btn-active' : ''">
+                        th:classappend="${globalDateFilter != null and !globalDateFilter.custom and globalDateFilter.preset != null and globalDateFilter.preset.name() == 'WEEK'} ? ' btn-active' : ''">
                         <i data-lucide="calendar" aria-hidden="true"></i>
                         <span th:text="#{dateFilter.preset.week}"></span>
                     </button>
@@ -101,7 +101,7 @@
                         type="submit"
                         name="action"
                         value="SET_MONTH"
-                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'MONTH'} ? ' btn-active' : ''">
+                        th:classappend="${globalDateFilter != null and !globalDateFilter.custom and globalDateFilter.preset != null and globalDateFilter.preset.name() == 'MONTH'} ? ' btn-active' : ''">
                         <i data-lucide="calendar" aria-hidden="true"></i>
                         <span th:text="#{dateFilter.preset.month}"></span>
                     </button>
@@ -110,7 +110,7 @@
                         type="submit"
                         name="action"
                         value="SET_YEAR"
-                        th:classappend="${!globalDateFilter.custom and globalDateFilter.preset.name() == 'YEAR'} ? ' btn-active' : ''">
+                        th:classappend="${globalDateFilter != null and !globalDateFilter.custom and globalDateFilter.preset != null and globalDateFilter.preset.name() == 'YEAR'} ? ' btn-active' : ''">
                         <i data-lucide="calendar" aria-hidden="true"></i>
                         <span th:text="#{dateFilter.preset.year}"></span>
                     </button>
@@ -131,11 +131,11 @@
                 <div class="period-filter-inputs-wrap">
                     <div class="period-filter-inputs">
                         <label for="date-filter-start" th:text="#{dateFilter.field.start}"></label>
-                        <input id="date-filter-start" type="date" name="startDate" th:value="${globalDateFilter.startDate}">
+                        <input id="date-filter-start" type="date" name="startDate" th:value="${globalDateFilter != null ? globalDateFilter.startDate : null}">
                     </div>
                     <div class="period-filter-inputs">
                         <label for="date-filter-end" th:text="#{dateFilter.field.end}"></label>
-                        <input id="date-filter-end" type="date" name="endDate" th:value="${globalDateFilter.endDate}">
+                        <input id="date-filter-end" type="date" name="endDate" th:value="${globalDateFilter != null ? globalDateFilter.endDate : null}">
                     </div>
                 </div>
                 <button class="btn btn-primary period-filter-apply" type="submit" name="action" value="APPLY_CUSTOM">
