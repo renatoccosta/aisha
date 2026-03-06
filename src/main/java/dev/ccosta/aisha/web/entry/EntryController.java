@@ -20,12 +20,15 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -44,6 +47,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Controller
 @RequestMapping("/entries")
 public class EntryController {
+
+    private static final Logger log = LoggerFactory.getLogger(EntryController.class);
 
     private static final long UNCATEGORIZED_FILTER_VALUE = -1L;
 
@@ -124,6 +129,7 @@ public class EntryController {
         Model model
     ) {
         try {
+            log.info("Starting entries CSV import. filename={}", file != null ? file.getOriginalFilename() : null);
             EntryCsvImportOptions options = buildImportOptions(
                 headerOption,
                 separatorOption,
@@ -159,9 +165,11 @@ public class EntryController {
     }
 
     @GetMapping("/import/jobs/{jobId}")
-    public String importStatus(@PathVariable String jobId, Model model) {
+    public String importStatus(@PathVariable String jobId, HttpServletRequest request, Model model) {
         EntryImportJobSnapshot snapshot = entryImportJobCoordinator.getSnapshot(jobId);
         if (snapshot == null) {
+            String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
+            log.warn("Import job snapshot not found. correlationId={}, jobId={}", correlationId, jobId);
             model.addAttribute("mode", "failed");
             model.addAttribute("failureCauseKey", "entries.import.result.failure.unknown");
             model.addAttribute("failedRow", null);
@@ -393,7 +401,17 @@ public class EntryController {
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @org.springframework.web.bind.annotation.ExceptionHandler(EntryNotFoundException.class)
-    public String handleNotFound() {
+    public String handleNotFound(EntryNotFoundException ex, HttpServletRequest request) {
+        String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
+        log.warn(
+            "Resource not found returned to user. correlationId={}, type={}, method={}, path={}, message={}",
+            correlationId,
+            ex.getClass().getSimpleName(),
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage(),
+            ex
+        );
         return "errors/404";
     }
 

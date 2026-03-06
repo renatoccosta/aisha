@@ -7,6 +7,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,6 +76,21 @@ class SecurityIntegrationTest {
                 .param("redirectTo", "/dashboard"))
             .andExpect(status().isFound())
             .andExpect(redirectedUrl("/dashboard"));
+    }
+
+
+    @Test
+    void shouldGenerateCorrelationIdHeaderWhenMissing() throws Exception {
+        mockMvc.perform(get("/login"))
+            .andExpect(status().isOk())
+            .andExpect(header().exists("X-Correlation-Id"));
+    }
+
+    @Test
+    void shouldPropagateProvidedCorrelationIdHeader() throws Exception {
+        mockMvc.perform(get("/login").header("X-Correlation-Id", "test-correlation-id"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Correlation-Id", "test-correlation-id"));
     }
 
     @Test

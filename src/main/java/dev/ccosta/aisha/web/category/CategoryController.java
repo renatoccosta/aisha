@@ -6,12 +6,15 @@ import dev.ccosta.aisha.application.category.CategoryBalanceReportService;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,6 +30,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @Controller
 @RequestMapping("/categories")
 public class CategoryController {
+
+    private static final Logger log = LoggerFactory.getLogger(CategoryController.class);
 
     private final CategoryService categoryService;
     private final CategoryBalanceReportService categoryBalanceReportService;
@@ -140,7 +145,17 @@ public class CategoryController {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @org.springframework.web.bind.annotation.ExceptionHandler({CategoryInUseException.class, IllegalArgumentException.class})
-    public String handleInUse(HttpServletRequest request, Model model) {
+    public String handleInUse(RuntimeException ex, HttpServletRequest request, Model model) {
+        String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
+        log.warn(
+            "Business error returned to user. correlationId={}, type={}, method={}, path={}, message={}",
+            correlationId,
+            ex.getClass().getSimpleName(),
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage(),
+            ex
+        );
         fillListing(model, null, null, null);
         model.addAttribute("hasError", true);
         if (isHtmx(request)) {
@@ -151,7 +166,17 @@ public class CategoryController {
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @org.springframework.web.bind.annotation.ExceptionHandler(CategoryNotFoundException.class)
-    public String handleNotFound() {
+    public String handleNotFound(CategoryNotFoundException ex, HttpServletRequest request) {
+        String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
+        log.warn(
+            "Resource not found returned to user. correlationId={}, type={}, method={}, path={}, message={}",
+            correlationId,
+            ex.getClass().getSimpleName(),
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage(),
+            ex
+        );
         return "errors/404";
     }
 

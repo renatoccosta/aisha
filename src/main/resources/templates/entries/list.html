@@ -41,6 +41,7 @@
             hx-get="/entries/fragments/table"
             hx-target="#table-container"
             hx-swap="outerHTML"
+            hx-push-url="true"
             hx-trigger="change from:#filter-account, change from:#filter-category, change from:#filter-pending-suggestions">
             <div class="grid-3">
                 <div class="field">
@@ -89,7 +90,8 @@
                     th:action="@{/entries}"
                     hx-get="/entries/fragments/table"
                     hx-target="#table-container"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
                     <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
@@ -115,7 +117,8 @@
                     th:action="@{/entries}"
                     hx-get="/entries/fragments/table"
                     hx-target="#table-container"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
                     <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
