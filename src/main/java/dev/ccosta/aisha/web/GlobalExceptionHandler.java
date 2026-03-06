@@ -2,6 +2,8 @@ package dev.ccosta.aisha.web;
 
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,44 @@ public class GlobalExceptionHandler {
             ex
         );
         model.addAttribute("errorCorrelationId", correlationId);
+        model.addAttribute("errorBackUrl", resolveSafeBackUrl(request));
         return "errors/500";
+    }
+
+    private String resolveSafeBackUrl(HttpServletRequest request) {
+        String referer = request.getHeader("Referer");
+        if (referer == null || referer.isBlank()) {
+            return "/dashboard";
+        }
+
+        try {
+            URI refererUri = new URI(referer);
+            String candidate = extractPathAndQuery(refererUri);
+            if (candidate == null || candidate.equals(request.getRequestURI()) || candidate.startsWith("/error")) {
+                return "/dashboard";
+            }
+
+            if (!refererUri.isAbsolute()) {
+                return candidate;
+            }
+
+            String refererHost = refererUri.getHost();
+            if (refererHost != null && refererHost.equalsIgnoreCase(request.getServerName())) {
+                return candidate;
+            }
+        } catch (URISyntaxException ex) {
+            log.debug("Ignoring invalid Referer header while resolving error back URL. referer={}", referer);
+        }
+        return "/dashboard";
+    }
+
+    private String extractPathAndQuery(URI uri) {
+        if (uri.getPath() == null || uri.getPath().isBlank() || !uri.getPath().startsWith("/")) {
+            return null;
+        }
+        if (uri.getRawQuery() == null || uri.getRawQuery().isBlank()) {
+            return uri.getPath();
+        }
+        return uri.getPath() + "?" + uri.getRawQuery();
     }
 }

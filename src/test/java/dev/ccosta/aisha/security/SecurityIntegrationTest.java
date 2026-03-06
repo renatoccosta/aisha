@@ -105,6 +105,40 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void shouldRenderInternalErrorPageWhenDebugErrorEndpointIsCalledAnonymously() throws Exception {
+        mockMvc.perform(get("/debug/force-error"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().string(containsString("Erro interno")))
+            .andExpect(content().string(containsString("ID de correlação:")));
+    }
+
+    @Test
+    void shouldRenderInternalErrorPageWhenDebugErrorEndpointIsCalled() throws Exception {
+        HttpSession session = loginAndGetSession();
+
+        mockMvc.perform(get("/debug/force-error").session((MockHttpSession) session))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().string(containsString("Erro interno")))
+            .andExpect(content().string(containsString("ID de correlação:")));
+    }
+
+    @Test
+    void shouldRenderNotFoundPageWhenDebugNotFoundEndpointIsCalledAnonymously() throws Exception {
+        mockMvc.perform(get("/debug/force-not-found"))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string(containsString("Recurso não encontrado")));
+    }
+
+    @Test
+    void shouldRenderNotFoundPageWhenDebugNotFoundEndpointIsCalled() throws Exception {
+        HttpSession session = loginAndGetSession();
+
+        mockMvc.perform(get("/debug/force-not-found").session((MockHttpSession) session))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string(containsString("Recurso não encontrado")));
+    }
+
+    @Test
     void shouldRegenerateSessionIdAfterLogin() throws Exception {
         MockHttpSession unauthenticatedSession = new MockHttpSession();
         String previousSessionId = unauthenticatedSession.getId();

@@ -286,6 +286,19 @@ main {
   margin: 0 auto;
 }
 
+.error-main {
+  min-height: 100vh;
+  align-content: center;
+}
+
+.error-card {
+  text-align: left;
+}
+
+.error-actions {
+  margin-top: 1.5rem;
+}
+
 .auth-brand {
   text-align: center;
 }

@@ -34,6 +34,8 @@ public class SecurityConfig {
                     "/img/**",
                     "/webjars/**",
                     "/error",
+                    "/error/**",
+                    "/debug/**",
                     "/favicon.ico",
                     "/actuator/health",
                     "/actuator/health/**"
