@@ -315,6 +315,13 @@ main {
   margin-top: 1rem;
 }
 
+.auth-divider {
+  margin: 1rem 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--line);

@@ -19,6 +19,7 @@
         </div>
 
         <p class="error" th:if="${param.error}" th:text="#{auth.login.error}"></p>
+        <p class="error" th:if="${param.linkError}" th:text="#{auth.login.link.error}"></p>
         <p class="helper" th:if="${param.logout}" th:text="#{auth.login.logout.success}"></p>
         <p class="helper" th:if="${param.expired}" th:text="#{auth.login.expired}"></p>
 
@@ -39,6 +40,31 @@
                 <button class="btn btn-primary" type="submit">
                     <i data-lucide="lock" aria-hidden="true"></i>
                     <span th:text="#{auth.login.action.submit}"></span>
+                </button>
+            </div>
+        </form>
+
+        <div class="auth-divider" role="separator" th:text="#{auth.login.divider}"></div>
+
+        <a class="btn btn-secondary" th:href="@{/oauth2/authorization/google}">
+            <i data-lucide="circle-user-round" aria-hidden="true"></i>
+            <span th:text="#{auth.login.action.google}"></span>
+        </a>
+
+        <form method="post" th:if="${pendingFederatedLink != null}" th:action="@{/auth/federated/link}" th:object="${federatedLinkForm}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <p class="helper" th:text="#{auth.login.link.info(${pendingFederatedLink.email})}"></p>
+
+            <div class="field">
+                <label for="linkPassword" th:text="#{auth.login.link.password}"></label>
+                <input id="linkPassword" type="password" th:field="*{password}" autocomplete="current-password" required>
+            </div>
+
+            <div class="actions-inline auth-actions">
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="link" aria-hidden="true"></i>
+                    <span th:text="#{auth.login.link.confirm}"></span>
                 </button>
             </div>
         </form>

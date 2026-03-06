@@ -21,6 +21,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
         HttpSecurity http,
         AuditAuthenticationHandlers auditAuthenticationHandlers,
+        FederatedAuthenticationFailureHandler federatedAuthenticationFailureHandler,
+        AishaOidcUserService aishaOidcUserService,
         AbsoluteSessionTimeoutFilter absoluteSessionTimeoutFilter,
         CorrelationIdFilter correlationIdFilter,
         SessionRegistry sessionRegistry
@@ -29,6 +31,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
                     "/login",
+                    "/oauth2/**",
+                    "/login/oauth2/**",
+                    "/auth/federated/link",
                     "/css/**",
                     "/js/**",
                     "/img/**",
@@ -55,6 +60,12 @@ public class SecurityConfig {
                 .successHandler(auditAuthenticationHandlers)
                 .failureHandler(auditAuthenticationHandlers)
                 .permitAll()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .loginPage("/login")
+                .userInfoEndpoint(userInfo -> userInfo.oidcUserService(aishaOidcUserService))
+                .successHandler(auditAuthenticationHandlers)
+                .failureHandler(federatedAuthenticationFailureHandler)
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
