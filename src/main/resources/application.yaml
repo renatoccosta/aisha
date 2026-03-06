@@ -1,6 +1,9 @@
 spring:
   application:
     name: aisha
+  output:
+    ansi:
+      enabled: always
   datasource:
     url: jdbc:hsqldb:mem:aisha
     username: sa
@@ -36,7 +39,7 @@ logging:
   level:
     root: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{correlationId:-n/a}] %logger{36} - %msg%n%ex"
+    correlation: "[%X{correlationId:-n/a}] "
 
 aisha:
   debug:
