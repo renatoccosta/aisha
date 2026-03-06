@@ -46,6 +46,14 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void shouldRenderGoogleLoginOptionOnLoginPage() throws Exception {
+        mockMvc.perform(get("/login"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Entrar com o Google")))
+            .andExpect(content().string(containsString("/oauth2/authorization/google")));
+    }
+
+    @Test
     void shouldRenderAdminPageWhenAuthenticated() throws Exception {
         HttpSession session = loginAndGetSession();
 
