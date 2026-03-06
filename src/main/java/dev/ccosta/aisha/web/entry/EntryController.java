@@ -5,22 +5,31 @@ import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
+import dev.ccosta.aisha.application.entry.EntryCategorySelection;
+import dev.ccosta.aisha.application.entry.EntryCategorySuggestion;
+import dev.ccosta.aisha.application.entry.EntryCategorySuggestionRequest;
+import dev.ccosta.aisha.application.entry.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
 import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementFormat;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
-import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
+import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -40,11 +49,14 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/entries")
 public class EntryController {
 
+    private static final Logger log = LoggerFactory.getLogger(EntryController.class);
+
     private static final long UNCATEGORIZED_FILTER_VALUE = -1L;
 
     private final EntryService entryService;
     private final AccountService accountService;
     private final CategoryService categoryService;
+    private final EntryCategorySuggestionService entryCategorySuggestionService;
     private final EntryStatementImportService entryStatementImportService;
     private final EntryImportJobCoordinator entryImportJobCoordinator;
 
@@ -52,12 +64,14 @@ public class EntryController {
         EntryService entryService,
         AccountService accountService,
         CategoryService categoryService,
+        EntryCategorySuggestionService entryCategorySuggestionService,
         EntryStatementImportService entryStatementImportService,
         EntryImportJobCoordinator entryImportJobCoordinator
     ) {
         this.entryService = entryService;
         this.accountService = accountService;
         this.categoryService = categoryService;
+        this.entryCategorySuggestionService = entryCategorySuggestionService;
         this.entryStatementImportService = entryStatementImportService;
         this.entryImportJobCoordinator = entryImportJobCoordinator;
     }
@@ -67,11 +81,12 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, globalDateFilter, accountId, categoryId, page, size);
+        fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
         return "entries/list";
     }
 
@@ -80,11 +95,15 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        HttpServletResponse response,
         Model model
     ) {
-        fillListing(model, globalDateFilter, accountId, categoryId, page, size);
+        fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+        setCanonicalEntriesPushUrl(request, response);
         return "entries/list :: table";
     }
 
@@ -114,6 +133,7 @@ public class EntryController {
         Model model
     ) {
         try {
+            log.info("Starting entries CSV import. filename={}", file != null ? file.getOriginalFilename() : null);
             EntryCsvImportOptions options = buildImportOptions(
                 headerOption,
                 separatorOption,
@@ -149,9 +169,11 @@ public class EntryController {
     }
 
     @GetMapping("/import/jobs/{jobId}")
-    public String importStatus(@PathVariable String jobId, Model model) {
+    public String importStatus(@PathVariable String jobId, HttpServletRequest request, Model model) {
         EntryImportJobSnapshot snapshot = entryImportJobCoordinator.getSnapshot(jobId);
         if (snapshot == null) {
+            String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
+            log.warn("Import job snapshot not found. correlationId={}, jobId={}", correlationId, jobId);
             model.addAttribute("mode", "failed");
             model.addAttribute("failureCauseKey", "entries.import.result.failure.unknown");
             model.addAttribute("failedRow", null);
@@ -179,11 +201,21 @@ public class EntryController {
 
     @GetMapping("/new")
     public String createForm(Model model) {
-        model.addAttribute("form", EntryForm.newWithCurrentDates());
+        EntryForm form = EntryForm.newWithCurrentDates();
+        model.addAttribute("form", form);
         fillEntryFormAccountOptions(model, null);
         fillCategoryOptions(model);
+        fillCategorySuggestionState(model, form);
         model.addAttribute("mode", "create");
         return "entries/form";
+    }
+
+    @GetMapping("/fragments/category-suggestion")
+    public String categorySuggestion(@ModelAttribute("form") EntryForm form, Model model) {
+        fillCategoryOptions(model);
+        applySuggestedCategory(form);
+        fillCategorySuggestionState(model, form);
+        return "entries/form :: categorySection";
     }
 
     @PostMapping
@@ -192,22 +224,25 @@ public class EntryController {
         if (bindingResult.hasErrors()) {
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
             return "entries/form";
         }
 
         try {
-            entryService.create(toDomain(form), form.getAccountId(), form.getCategoryId(), form.getNewCategoryTitle());
+            entryService.create(toDomain(form), form.getAccountId(), toCategorySelection(form));
         } catch (AccountNotFoundException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
             return "entries/form";
         } catch (CategoryNotFoundException ex) {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
             return "entries/form";
         } catch (EntrySettlementAfterAccountDeactivationException ex) {
@@ -219,6 +254,7 @@ public class EntryController {
             );
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
             return "entries/form";
         } catch (IllegalArgumentException ex) {
@@ -226,6 +262,7 @@ public class EntryController {
             validateCategoryChoice(form, bindingResult);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
             return "entries/form";
         }
@@ -235,9 +272,11 @@ public class EntryController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         Entry entry = entryService.findById(id);
-        model.addAttribute("form", fromDomain(entry));
+        EntryForm form = fromDomain(entry);
+        model.addAttribute("form", form);
         fillEntryFormAccountOptions(model, entry.getAccount().getId());
         fillCategoryOptions(model);
+        fillCategorySuggestionState(model, form);
         model.addAttribute("entryId", id);
         model.addAttribute("mode", "edit");
         return "entries/form";
@@ -254,17 +293,19 @@ public class EntryController {
         if (bindingResult.hasErrors()) {
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
             return "entries/form";
         }
 
         try {
-            entryService.update(id, toDomain(form), form.getAccountId(), form.getCategoryId(), form.getNewCategoryTitle());
+            entryService.update(id, toDomain(form), form.getAccountId(), toCategorySelection(form));
         } catch (AccountNotFoundException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
             return "entries/form";
@@ -272,6 +313,7 @@ public class EntryController {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
             return "entries/form";
@@ -284,6 +326,7 @@ public class EntryController {
             );
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
             return "entries/form";
@@ -292,6 +335,7 @@ public class EntryController {
             validateCategoryChoice(form, bindingResult);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
+            fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
             return "entries/form";
@@ -305,6 +349,7 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         HttpServletRequest request,
@@ -312,7 +357,27 @@ public class EntryController {
     ) {
         entryService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, page, size);
+            fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+            return "entries/list :: table";
+        }
+        return "redirect:/entries";
+    }
+
+    @PostMapping("/{id}/confirm-category-suggestion")
+    public String confirmCategorySuggestion(
+        @PathVariable Long id,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        Model model
+    ) {
+        entryService.confirmCategorySuggestion(id);
+        if (isHtmx(request)) {
+            fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -324,6 +389,7 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         HttpServletRequest request,
@@ -331,7 +397,7 @@ public class EntryController {
     ) {
         entryService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, page, size);
+            fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -339,7 +405,17 @@ public class EntryController {
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @org.springframework.web.bind.annotation.ExceptionHandler(EntryNotFoundException.class)
-    public String handleNotFound() {
+    public String handleNotFound(EntryNotFoundException ex, HttpServletRequest request) {
+        String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
+        log.warn(
+            "Resource not found returned to user. correlationId={}, type={}, method={}, path={}, message={}",
+            correlationId,
+            ex.getClass().getSimpleName(),
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage(),
+            ex
+        );
         return "errors/404";
     }
 
@@ -348,10 +424,12 @@ public class EntryController {
         DateFilterState globalDateFilter,
         Long accountId,
         Long categoryId,
+        boolean pendingSuggestions,
         Integer page,
         Integer size
     ) {
-        List<Account> accountOptions = accountService.listVisibleForEntryFilter(globalDateFilter.getStartDate());
+        DateFilterState effectiveDateFilter = resolveGlobalDateFilter(model, globalDateFilter);
+        List<Account> accountOptions = accountService.listVisibleForEntryFilter(effectiveDateFilter.getStartDate());
         Long effectiveAccountId = accountId;
         Long requestedAccountId = accountId;
         if (requestedAccountId != null && accountOptions.stream().noneMatch(account -> account.getId().equals(requestedAccountId))) {
@@ -362,22 +440,24 @@ public class EntryController {
         int pageSize = PaginationSupport.sanitizePageSize(size);
 
         PagedResult<Entry> pageResult = entryService.listMostRecentBySettlementDateBetweenAndFilters(
-            globalDateFilter.getStartDate(),
-            globalDateFilter.getEndDate(),
+            effectiveDateFilter.getStartDate(),
+            effectiveDateFilter.getEndDate(),
             effectiveAccountId,
             toEffectiveCategoryId(categoryId),
             isWithoutCategoryFilter(categoryId),
+            pendingSuggestions,
             requestedPage,
             pageSize
         );
         int effectivePage = PaginationSupport.clampPageIndex(requestedPage, pageResult.totalPages());
         if (effectivePage != requestedPage) {
             pageResult = entryService.listMostRecentBySettlementDateBetweenAndFilters(
-                globalDateFilter.getStartDate(),
-                globalDateFilter.getEndDate(),
+                effectiveDateFilter.getStartDate(),
+                effectiveDateFilter.getEndDate(),
                 effectiveAccountId,
                 toEffectiveCategoryId(categoryId),
                 isWithoutCategoryFilter(categoryId),
+                pendingSuggestions,
                 effectivePage,
                 pageSize
             );
@@ -387,14 +467,44 @@ public class EntryController {
         model.addAttribute("entries", pageResult.items());
         model.addAttribute("selectedAccountId", effectiveAccountId);
         model.addAttribute("selectedCategoryId", categoryId);
+        model.addAttribute("selectedPendingSuggestions", pendingSuggestions);
         model.addAttribute("accountOptions", accountOptions);
         model.addAttribute("pagination", pagination);
         model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
         fillCategoryOptions(model);
     }
 
+    private DateFilterState resolveGlobalDateFilter(Model model, DateFilterState globalDateFilter) {
+        if (globalDateFilter != null) {
+            return globalDateFilter;
+        }
+
+        Object modelAttribute = model.getAttribute("globalDateFilter");
+        if (modelAttribute instanceof DateFilterState state) {
+            return state;
+        }
+
+        DateFilterState fallback = DateFilterState.defaultState(java.time.Clock.systemDefaultZone());
+        model.addAttribute("globalDateFilter", fallback);
+        log.warn("Global date filter was missing in entries listing flow. Falling back to default current-month range.");
+        return fallback;
+    }
+
     private boolean isHtmx(HttpServletRequest request) {
         return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
+    }
+
+    private void setCanonicalEntriesPushUrl(HttpServletRequest request, HttpServletResponse response) {
+        if (!isHtmx(request)) {
+            return;
+        }
+
+        String queryString = request.getQueryString();
+        String canonicalPath = "/entries";
+        if (StringUtils.hasText(queryString)) {
+            canonicalPath += "?" + queryString;
+        }
+        response.setHeader("HX-Push-Url", canonicalPath);
     }
 
     private boolean isWithoutCategoryFilter(Long categoryId) {
@@ -425,6 +535,8 @@ public class EntryController {
         form.setSettlementDate(entry.getSettlementDate());
         form.setDescription(entry.getDescription());
         form.setCategoryId(entry.getCategory() == null ? null : entry.getCategory().getId());
+        form.setSuggestedCategoryId(entry.getSuggestedCategory() == null ? null : entry.getSuggestedCategory().getId());
+        form.setSuggestedCategoryConfidence(entry.getCategorySuggestionConfidence());
         form.setNotes(entry.getNotes());
         form.setAmount(entry.getAmount());
         return form;
@@ -446,6 +558,21 @@ public class EntryController {
         model.addAttribute("categoryOptions", categoryOptions);
     }
 
+    private void fillCategorySuggestionState(Model model, EntryForm form) {
+        if (form == null || form.getSuggestedCategoryId() == null) {
+            model.addAttribute("suggestedCategory", null);
+            model.addAttribute("pendingCategorySuggestion", false);
+            return;
+        }
+
+        Category suggestedCategory = categoryService.findById(form.getSuggestedCategoryId());
+        model.addAttribute("suggestedCategory", suggestedCategory);
+        model.addAttribute(
+            "pendingCategorySuggestion",
+            form.getCategoryId() != null && form.getCategoryId().equals(form.getSuggestedCategoryId())
+        );
+    }
+
     private void validateCategoryChoice(EntryForm form, BindingResult bindingResult) {
         boolean hasCategoryId = form.getCategoryId() != null;
         boolean hasNewCategoryTitle = StringUtils.hasText(form.getNewCategoryTitle());
@@ -456,6 +583,49 @@ public class EntryController {
         bindingResult.addError(
             new FieldError("form", "categoryId", form.getCategoryId(), false, new String[] {"entryForm.categoryId.notNull"}, null, null)
         );
+    }
+
+    private EntryCategorySelection toCategorySelection(EntryForm form) {
+        return new EntryCategorySelection(
+            form.getCategoryId(),
+            form.getNewCategoryTitle(),
+            form.getSuggestedCategoryId(),
+            form.getSuggestedCategoryConfidence()
+        );
+    }
+
+    private void applySuggestedCategory(EntryForm form) {
+        if (!shouldSuggestCategory(form)) {
+            if (form.getCategoryId() == null && !StringUtils.hasText(form.getNewCategoryTitle())) {
+                form.setSuggestedCategoryId(null);
+                form.setSuggestedCategoryConfidence(null);
+            }
+            return;
+        }
+
+        entryCategorySuggestionService.suggest(
+            new EntryCategorySuggestionRequest(form.getAccountId(), form.getDescription(), form.getAmount())
+        ).ifPresentOrElse(
+            suggestion -> applySuggestionToForm(form, suggestion),
+            () -> {
+                form.setSuggestedCategoryId(null);
+                form.setSuggestedCategoryConfidence(null);
+            }
+        );
+    }
+
+    private boolean shouldSuggestCategory(EntryForm form) {
+        return form.getCategoryId() == null
+            && !StringUtils.hasText(form.getNewCategoryTitle())
+            && form.getAccountId() != null
+            && form.getAmount() != null
+            && StringUtils.hasText(form.getDescription());
+    }
+
+    private void applySuggestionToForm(EntryForm form, EntryCategorySuggestion suggestion) {
+        form.setCategoryId(suggestion.category().getId());
+        form.setSuggestedCategoryId(suggestion.category().getId());
+        form.setSuggestedCategoryConfidence(suggestion.confidence());
     }
 
     private void fillImportErrorModel(Model model, String rawMessage) {

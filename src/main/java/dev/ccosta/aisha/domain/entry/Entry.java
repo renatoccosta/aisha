@@ -2,6 +2,8 @@ package dev.ccosta.aisha.domain.entry;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,11 +41,22 @@ public class Entry {
     @JoinColumn(name = "category_id", nullable = true)
     private Category category;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "suggested_category_id")
+    private Category suggestedCategory;
+
     @Column(name = "notes", length = 1000)
     private String notes;
 
     @Column(name = "external_id", length = 255)
     private String externalId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category_suggestion_status", nullable = false, length = 20)
+    private EntryCategorySuggestionStatus categorySuggestionStatus = EntryCategorySuggestionStatus.NONE;
+
+    @Column(name = "category_suggestion_confidence")
+    private Double categorySuggestionConfidence;
 
     @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
@@ -92,6 +105,14 @@ public class Entry {
         this.category = category;
     }
 
+    public Category getSuggestedCategory() {
+        return suggestedCategory;
+    }
+
+    public void setSuggestedCategory(Category suggestedCategory) {
+        this.suggestedCategory = suggestedCategory;
+    }
+
     public String getNotes() {
         return notes;
     }
@@ -108,11 +129,31 @@ public class Entry {
         this.externalId = externalId;
     }
 
+    public EntryCategorySuggestionStatus getCategorySuggestionStatus() {
+        return categorySuggestionStatus;
+    }
+
+    public void setCategorySuggestionStatus(EntryCategorySuggestionStatus categorySuggestionStatus) {
+        this.categorySuggestionStatus = categorySuggestionStatus == null ? EntryCategorySuggestionStatus.NONE : categorySuggestionStatus;
+    }
+
+    public Double getCategorySuggestionConfidence() {
+        return categorySuggestionConfidence;
+    }
+
+    public void setCategorySuggestionConfidence(Double categorySuggestionConfidence) {
+        this.categorySuggestionConfidence = categorySuggestionConfidence;
+    }
+
     public BigDecimal getAmount() {
         return amount;
     }
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public boolean hasPendingCategorySuggestion() {
+        return categorySuggestionStatus == EntryCategorySuggestionStatus.PENDING;
     }
 }

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{errors.internal.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script th:inline="javascript">
+        (function () {
+            const key = "aisha-theme";
+            const savedTheme = localStorage.getItem(key);
+            const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            const theme = savedTheme === "dark" || savedTheme === "light"
+                ? savedTheme
+                : (prefersDark ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", theme);
+        }());
+    </script>
+</head>
+<body>
+<main class="wrap auth-main error-main">
+    <section class="card form-card auth-card error-card">
+        <h1 th:text="#{errors.internal.title}"></h1>
+        <p th:text="#{errors.internal.message}"></p>
+        <p th:if="${errorFriendlyMessage != null and !#strings.isEmpty(errorFriendlyMessage)}" th:text="${errorFriendlyMessage}"></p>
+        <p>
+            <strong th:text="#{errors.internal.correlationId}"></strong>
+            <span th:text="${errorCorrelationId}"></span>
+        </p>
+        <a class="btn btn-primary error-actions" th:href="${errorBackUrl != null ? errorBackUrl : '/dashboard'}">
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+            <span th:text="#{errors.internal.back}"></span>
+        </a>
+    </section>
+</main>
+<script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script defer th:src="@{/js/lucide-init.js}"></script>
+</body>
+</html>

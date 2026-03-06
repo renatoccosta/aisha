@@ -32,7 +32,15 @@ management:
       probes:
         enabled: true
 
+logging:
+  level:
+    root: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{correlationId:-n/a}] %logger{36} - %msg%n%ex"
+
 aisha:
+  debug:
+    force-error-endpoint-enabled: true
   security:
     seed:
       username: admin
@@ -59,6 +67,9 @@ spring:
   config:
     activate:
       on-profile: prod
+aisha:
+  debug:
+    force-error-endpoint-enabled: false
 server:
   servlet:
     session:

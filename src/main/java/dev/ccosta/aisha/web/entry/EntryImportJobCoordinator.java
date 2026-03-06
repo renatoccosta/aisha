@@ -1,5 +1,7 @@
 package dev.ccosta.aisha.web.entry;
 
+import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingCoordinator;
+import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingTrigger;
 import dev.ccosta.aisha.application.entry.EntryCsvImportService;
 import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
 import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
@@ -25,28 +27,34 @@ public class EntryImportJobCoordinator {
     private final Map<String, EntryImportJobState> jobsById = new ConcurrentHashMap<>();
     private final EntryCsvImportService entryCsvImportService;
     private final EntryStatementImportService entryStatementImportService;
+    private final EntryCategoryModelTrainingCoordinator modelTrainingCoordinator;
     private final TaskExecutor taskExecutor;
 
     public EntryImportJobCoordinator(
         EntryCsvImportService entryCsvImportService,
         EntryStatementImportService entryStatementImportService,
+        EntryCategoryModelTrainingCoordinator modelTrainingCoordinator,
         TaskExecutor taskExecutor
     ) {
         this.entryCsvImportService = entryCsvImportService;
         this.entryStatementImportService = entryStatementImportService;
+        this.modelTrainingCoordinator = modelTrainingCoordinator;
         this.taskExecutor = taskExecutor;
     }
 
     public String startCsvJob(MultipartFile file, EntryCsvImportOptions options) {
         validateCsvFile(file);
         byte[] fileContent = readFileContent(file);
-        return startProcessingJob(listener -> entryCsvImportService.importCsv(fileContent, options, listener));
+        return startProcessingJob(
+            listener -> entryCsvImportService.importCsv(fileContent, options, listener),
+            () -> modelTrainingCoordinator.requestTraining(EntryCategoryModelTrainingTrigger.CSV_IMPORT)
+        );
     }
 
     public String startStatementJob(MultipartFile file, Long accountId, String formatId) {
         validateNonEmptyFile(file);
         byte[] fileContent = readFileContent(file);
-        return startProcessingJob(listener -> entryStatementImportService.importStatement(accountId, formatId, fileContent, listener));
+        return startProcessingJob(listener -> entryStatementImportService.importStatement(accountId, formatId, fileContent, listener), null);
     }
 
     public EntryImportJobSnapshot getSnapshot(String jobId) {
@@ -57,11 +65,11 @@ public class EntryImportJobCoordinator {
         return state.snapshot();
     }
 
-    private String startProcessingJob(ImportJobRunner importJobRunner) {
+    private String startProcessingJob(ImportJobRunner importJobRunner, Runnable onSuccess) {
         String jobId = UUID.randomUUID().toString();
         EntryImportJobState state = new EntryImportJobState(jobId);
         jobsById.put(jobId, state);
-        taskExecutor.execute(() -> runImport(jobId, importJobRunner));
+        taskExecutor.execute(() -> runImport(jobId, importJobRunner, onSuccess));
         return jobId;
     }
 
@@ -73,7 +81,7 @@ public class EntryImportJobCoordinator {
         }
     }
 
-    private void runImport(String jobId, ImportJobRunner importJobRunner) {
+    private void runImport(String jobId, ImportJobRunner importJobRunner, Runnable onSuccess) {
         EntryImportJobState state = jobsById.get(jobId);
         if (state == null) {
             return;
@@ -82,6 +90,9 @@ public class EntryImportJobCoordinator {
         try {
             EntryImportSummary summary = importJobRunner.run(new ProgressUpdater(state));
             state.markSuccess(summary);
+            if (onSuccess != null) {
+                onSuccess.run();
+            }
         } catch (EntryImportValidationException ex) {
             state.markFailure(ex.getRowPosition(), ex.getColumnName(), ex.getCauseType(), ex.getMessage());
         } catch (Exception ex) {

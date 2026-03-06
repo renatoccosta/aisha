@@ -49,6 +49,21 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
   - logout success
   - never log passwords
 
+
+## Logging standards
+- Use SLF4J as the logging API in application code.
+- Use Logback as the logging implementation via Spring Boot support (prefer `application.yaml` logging properties).
+- Keep logging configuration managed by Spring Boot conventions and profiles; prefer `application.yaml` over custom `logback-spring.xml` when requirements are simple.
+- Log output must go to console only by default (do not add file appenders unless explicitly requested).
+- Use correlation IDs for request tracing:
+  - Accept incoming `X-Correlation-Id` when present; otherwise generate one.
+  - Propagate correlation ID to MDC key `correlationId` and response header `X-Correlation-Id`.
+- Any error returned to users must generate a technical log entry including:
+  - exception type and stack trace
+  - request metadata (method/path)
+  - correlation ID
+- Add informative logs at key execution points that improve operability, while avoiding sensitive data (passwords, tokens, secrets).
+
 ## Front-end architecture
 - Server-side rendered HTML using Spring MVC.
 - Use HTMX for interactivity (partial page updates, forms, tables).
@@ -91,6 +106,8 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Keep diffs small and reviewable.
 - Before changing multiple files: write a short plan and list files to touch.
 - Add tests for non-trivial logic (unit tests first, then integration when needed).
+- Every important new class must include a Javadoc that explains its responsibility.
+- The main methods of every important new class must also include Javadocs describing purpose, key inputs, and relevant return behavior.
 - After changes: run `mvn test` (or explain why it wasn’t possible).
 
 ## Architecture preferences
@@ -98,6 +115,8 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
 - Constructor injection; minimize mutable state.
 - Prefer explicit, typed DTOs; validate inputs at boundaries.
 - Avoid premature frameworks/abstractions; keep it simple until requirements force complexity.
+- For AI and ML features, prefer algorithms provided by the SMILE library instead of implementing the algorithms directly in the project.
+- Keep SMILE usage encapsulated behind the project interfaces and adapters; application and domain layers must not depend directly on SMILE types.
 
 ## Language conventions
 

@@ -1,10 +1,13 @@
 package dev.ccosta.aisha.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,6 +46,15 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void shouldRenderAdminPageWhenAuthenticated() throws Exception {
+        HttpSession session = loginAndGetSession();
+
+        mockMvc.perform(get("/admin").session((MockHttpSession) session))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Administração de Modelos")));
+    }
+
+    @Test
     void shouldRejectProtectedPostWithoutCsrf() throws Exception {
         HttpSession session = loginAndGetSession();
 
@@ -64,6 +76,66 @@ class SecurityIntegrationTest {
                 .param("redirectTo", "/dashboard"))
             .andExpect(status().isFound())
             .andExpect(redirectedUrl("/dashboard"));
+    }
+
+
+    @Test
+    void shouldGenerateCorrelationIdHeaderWhenMissing() throws Exception {
+        mockMvc.perform(get("/login"))
+            .andExpect(status().isOk())
+            .andExpect(header().exists("X-Correlation-Id"));
+    }
+
+    @Test
+    void shouldPropagateProvidedCorrelationIdHeader() throws Exception {
+        mockMvc.perform(get("/login").header("X-Correlation-Id", "test-correlation-id"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Correlation-Id", "test-correlation-id"));
+    }
+
+    @Test
+    void shouldAllowRetrainRequestFromAdminPageWithCsrf() throws Exception {
+        HttpSession session = loginAndGetSession();
+
+        mockMvc.perform(post("/admin/category-model/retrain")
+                .session((MockHttpSession) session)
+                .with(csrf()))
+            .andExpect(status().isFound())
+            .andExpect(redirectedUrl("/admin?manualTrainingRequested=true"));
+    }
+
+    @Test
+    void shouldRenderInternalErrorPageWhenDebugErrorEndpointIsCalledAnonymously() throws Exception {
+        mockMvc.perform(get("/debug/force-error"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().string(containsString("Erro interno")))
+            .andExpect(content().string(containsString("ID de correlação:")));
+    }
+
+    @Test
+    void shouldRenderInternalErrorPageWhenDebugErrorEndpointIsCalled() throws Exception {
+        HttpSession session = loginAndGetSession();
+
+        mockMvc.perform(get("/debug/force-error").session((MockHttpSession) session))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().string(containsString("Erro interno")))
+            .andExpect(content().string(containsString("ID de correlação:")));
+    }
+
+    @Test
+    void shouldRenderNotFoundPageWhenDebugNotFoundEndpointIsCalledAnonymously() throws Exception {
+        mockMvc.perform(get("/debug/force-not-found"))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string(containsString("Recurso não encontrado")));
+    }
+
+    @Test
+    void shouldRenderNotFoundPageWhenDebugNotFoundEndpointIsCalled() throws Exception {
+        HttpSession session = loginAndGetSession();
+
+        mockMvc.perform(get("/debug/force-not-found").session((MockHttpSession) session))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string(containsString("Recurso não encontrado")));
     }
 
     @Test

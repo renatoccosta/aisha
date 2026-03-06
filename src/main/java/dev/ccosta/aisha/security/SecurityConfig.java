@@ -1,5 +1,6 @@
 package dev.ccosta.aisha.security;
 
+import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -21,6 +22,7 @@ public class SecurityConfig {
         HttpSecurity http,
         AuditAuthenticationHandlers auditAuthenticationHandlers,
         AbsoluteSessionTimeoutFilter absoluteSessionTimeoutFilter,
+        CorrelationIdFilter correlationIdFilter,
         SessionRegistry sessionRegistry
     ) throws Exception {
         http
@@ -32,6 +34,8 @@ public class SecurityConfig {
                     "/img/**",
                     "/webjars/**",
                     "/error",
+                    "/error/**",
+                    "/debug/**",
                     "/favicon.ico",
                     "/actuator/health",
                     "/actuator/health/**"
@@ -60,6 +64,7 @@ public class SecurityConfig {
                 .logoutSuccessHandler(auditAuthenticationHandlers)
             )
             .csrf(Customizer.withDefaults())
+            .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(absoluteSessionTimeoutFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

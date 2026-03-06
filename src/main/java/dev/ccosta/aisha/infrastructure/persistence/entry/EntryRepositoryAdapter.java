@@ -1,6 +1,8 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
+import dev.ccosta.aisha.domain.entry.EntryCategoryTrainingExample;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
@@ -28,93 +30,21 @@ public class EntryRepositoryAdapter implements EntryRepository {
         Long accountId,
         Long categoryId,
         boolean onlyWithoutCategory,
+        boolean onlyPendingCategorySuggestions,
         int page,
         int pageSize
     ) {
         PageRequest pageRequest = PageRequest.of(page, pageSize);
-        Page<Entry> result;
-
-        if (onlyWithoutCategory) {
-            if (accountId != null) {
-                result = jpaEntryRepository.findBySettlementDateBetweenAndAccountIdAndCategoryIsNullOrderBySettlementDateDescIdDesc(
-                    startDate,
-                    endDate,
-                    accountId,
-                    pageRequest
-                );
-                return new PagedResult<>(
-                    result.getContent(),
-                    result.getNumber(),
-                    result.getSize(),
-                    result.getTotalElements(),
-                    result.getTotalPages()
-                );
-            }
-
-            result = jpaEntryRepository.findBySettlementDateBetweenAndCategoryIsNullOrderBySettlementDateDescIdDesc(
-                startDate,
-                endDate,
-                pageRequest
-            );
-            return new PagedResult<>(
-                result.getContent(),
-                result.getNumber(),
-                result.getSize(),
-                result.getTotalElements(),
-                result.getTotalPages()
-            );
-        }
-
-        if (accountId != null && categoryId != null) {
-            result = jpaEntryRepository.findBySettlementDateBetweenAndAccountIdAndCategoryIdOrderBySettlementDateDescIdDesc(
-                startDate,
-                endDate,
-                accountId,
-                categoryId,
-                pageRequest
-            );
-            return new PagedResult<>(
-                result.getContent(),
-                result.getNumber(),
-                result.getSize(),
-                result.getTotalElements(),
-                result.getTotalPages()
-            );
-        }
-
-        if (accountId != null) {
-            result = jpaEntryRepository.findBySettlementDateBetweenAndAccountIdOrderBySettlementDateDescIdDesc(
-                startDate,
-                endDate,
-                accountId,
-                pageRequest
-            );
-            return new PagedResult<>(
-                result.getContent(),
-                result.getNumber(),
-                result.getSize(),
-                result.getTotalElements(),
-                result.getTotalPages()
-            );
-        }
-
-        if (categoryId != null) {
-            result = jpaEntryRepository.findBySettlementDateBetweenAndCategoryIdOrderBySettlementDateDescIdDesc(
-                startDate,
-                endDate,
-                categoryId,
-                pageRequest
-            );
-            return new PagedResult<>(
-                result.getContent(),
-                result.getNumber(),
-                result.getSize(),
-                result.getTotalElements(),
-                result.getTotalPages()
-            );
-        }
-
-        result = jpaEntryRepository.findBySettlementDateBetweenOrderBySettlementDateDescIdDesc(startDate, endDate, pageRequest);
+        Page<Entry> result = jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
+            startDate,
+            endDate,
+            accountId,
+            categoryId,
+            onlyWithoutCategory,
+            onlyPendingCategorySuggestions,
+            EntryCategorySuggestionStatus.PENDING,
+            pageRequest
+        );
         return new PagedResult<>(
             result.getContent(),
             result.getNumber(),
@@ -127,6 +57,11 @@ public class EntryRepositoryAdapter implements EntryRepository {
     @Override
     public List<Entry> listAllBySettlementDateLessThanEqual(LocalDate endDate) {
         return jpaEntryRepository.findBySettlementDateLessThanEqualOrderBySettlementDateAscIdAsc(endDate);
+    }
+
+    @Override
+    public List<EntryCategoryTrainingExample> listCategoryTrainingExamples() {
+        return jpaEntryRepository.findCategoryTrainingExamples();
     }
 
     @Override
@@ -165,6 +100,25 @@ public class EntryRepositoryAdapter implements EntryRepository {
             settlementDate,
             description,
             categoryId,
+            amount,
+            externalId
+        );
+    }
+
+    @Override
+    public boolean existsDuplicateIgnoringCategory(
+        Long accountId,
+        LocalDate movementDate,
+        LocalDate settlementDate,
+        String description,
+        BigDecimal amount,
+        String externalId
+    ) {
+        return jpaEntryRepository.existsDuplicateIgnoringCategory(
+            accountId,
+            movementDate,
+            settlementDate,
+            description,
             amount,
             externalId
         );

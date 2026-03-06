@@ -1,11 +1,15 @@
 package dev.ccosta.aisha.application.entry.statement;
 
 import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.application.entry.EntryCategorySuggestion;
+import dev.ccosta.aisha.application.entry.EntryCategorySuggestionRequest;
+import dev.ccosta.aisha.application.entry.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryImportProgressListener;
 import dev.ccosta.aisha.application.entry.EntryImportSummary;
 import dev.ccosta.aisha.application.entry.EntryImportValidationException;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -21,15 +25,18 @@ public class EntryStatementImportService {
     private final EntryRepository entryRepository;
     private final AccountService accountService;
     private final EntryStatementParserRegistry parserRegistry;
+    private final EntryCategorySuggestionService entryCategorySuggestionService;
 
     public EntryStatementImportService(
         EntryRepository entryRepository,
         AccountService accountService,
-        EntryStatementParserRegistry parserRegistry
+        EntryStatementParserRegistry parserRegistry,
+        EntryCategorySuggestionService entryCategorySuggestionService
     ) {
         this.entryRepository = entryRepository;
         this.accountService = accountService;
         this.parserRegistry = parserRegistry;
+        this.entryCategorySuggestionService = entryCategorySuggestionService;
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +89,14 @@ public class EntryStatementImportService {
                         fingerprint.amount(),
                         fingerprint.externalId()
                     )
+                    || entryRepository.existsDuplicateIgnoringCategory(
+                        fingerprint.accountId(),
+                        fingerprint.movementDate(),
+                        fingerprint.settlementDate(),
+                        fingerprint.description(),
+                        fingerprint.amount(),
+                        fingerprint.externalId()
+                    )
             ) {
                 skippedDuplicates++;
                 safeProgressListener.onRowProcessed(processed);
@@ -93,10 +108,10 @@ public class EntryStatementImportService {
             entry.setMovementDate(record.movementDate());
             entry.setSettlementDate(record.settlementDate());
             entry.setDescription(record.description());
-            entry.setCategory(null);
             entry.setAmount(record.amount());
             entry.setNotes(record.notes());
             entry.setExternalId(record.externalId());
+            applyCategorySuggestion(entry, account, record);
             entryRepository.save(entry);
             imported++;
 
@@ -146,6 +161,21 @@ public class EntryStatementImportService {
             "settlementDate",
             "Settlement date must not be after account deactivation date"
         );
+    }
+
+    private void applyCategorySuggestion(Entry entry, Account account, EntryStatementImportRecord record) {
+        entryCategorySuggestionService.suggest(new EntryCategorySuggestionRequest(account.getId(), record.description(), record.amount()))
+            .ifPresentOrElse(
+                suggestion -> applySuggestedCategory(entry, suggestion),
+                () -> entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE)
+            );
+    }
+
+    private void applySuggestedCategory(Entry entry, EntryCategorySuggestion suggestion) {
+        entry.setCategory(suggestion.category());
+        entry.setSuggestedCategory(suggestion.category());
+        entry.setCategorySuggestionConfidence(suggestion.confidence());
+        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
     }
 
     private record EntryFingerprint(

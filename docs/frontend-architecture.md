@@ -78,7 +78,7 @@ Key patterns:
 - Consistent button/input/table styles.
 - Table-to-card responsive behavior via `.responsive-list` on narrower viewports.
 
-For color tokens and visual language details, see `docs/design-system.md`.
+For color tokens and visual language details, see [docs/design-system.md](design-system.md).
 
 ## Responsiveness Strategy
 

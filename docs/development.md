@@ -27,6 +27,21 @@ The current implementation uses local authentication with secure server-side ses
   - logout
   - no password logging
 
+
+## Logging Architecture
+
+- Logging API for application code: SLF4J (`org.slf4j.Logger`).
+- Logging implementation: Logback via Spring Boot defaults (configured through `application.yaml` logging properties).
+- Configuration source: Spring-managed logging properties in `application.yaml` (no custom Logback XML by default).
+- Output target: console only (no file appender configured).
+- Correlation ID:
+  - Request filter accepts `X-Correlation-Id` when provided, or generates a UUID.
+  - Correlation ID is stored in MDC (`correlationId`) and returned in `X-Correlation-Id` response header.
+  - Log pattern includes the correlation ID for request traceability.
+- Error handling and observability:
+  - All unexpected errors returned to users are logged with technical details and correlation ID.
+  - Controller-level handled errors (e.g., 400/404 business flows) are also logged with correlation ID and request metadata.
+
 ## Default Local User (Development Bootstrap)
 
 At startup, the application seeds a local user if missing:
@@ -88,7 +103,7 @@ Main organization:
 
 For the full front-end architecture documentation, see:
 
-- `docs/frontend-architecture.md`
+- [docs/frontend-architecture.md](frontend-architecture.md)
 
 ## Main Web Endpoints
 
@@ -97,5 +112,7 @@ For the full front-end architecture documentation, see:
 - `/logout` (POST)
 - `/dashboard`
 - `/entries`
+- `/entries/import`
+- `/entries/category-model/retrain` (POST, manual background retraining command)
 - `/accounts`
 - `/categories`

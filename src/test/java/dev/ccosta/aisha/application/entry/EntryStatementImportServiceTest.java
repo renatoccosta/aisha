@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.application.entry.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementFormat;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementImportRecord;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
@@ -45,6 +46,9 @@ class EntryStatementImportServiceTest {
     @Mock
     private EntryStatementParser parser;
 
+    @Mock
+    private EntryCategorySuggestionService entryCategorySuggestionService;
+
     @InjectMocks
     private EntryStatementImportService entryStatementImportService;
 
@@ -59,6 +63,9 @@ class EntryStatementImportServiceTest {
         ));
         when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), eq(null), any(BigDecimal.class), any(String.class)))
             .thenReturn(false);
+        when(entryRepository.existsDuplicateIgnoringCategory(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), any(BigDecimal.class), any(String.class)))
+            .thenReturn(false);
+        when(entryCategorySuggestionService.suggest(any())).thenReturn(java.util.Optional.empty());
 
         EntryImportSummary summary = entryStatementImportService.importStatement(1L, "basic-csv", new byte[] {1, 2, 3}, null);
 
@@ -87,6 +94,9 @@ class EntryStatementImportServiceTest {
         ));
         when(entryRepository.existsDuplicate(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), eq(null), any(BigDecimal.class), eq(null)))
             .thenReturn(false);
+        when(entryRepository.existsDuplicateIgnoringCategory(anyLong(), any(LocalDate.class), any(LocalDate.class), any(String.class), any(BigDecimal.class), eq(null)))
+            .thenReturn(false);
+        when(entryCategorySuggestionService.suggest(any())).thenReturn(java.util.Optional.empty());
 
         EntryImportSummary summary = entryStatementImportService.importStatement(1L, "basic-csv", new byte[] {1}, null);
 
