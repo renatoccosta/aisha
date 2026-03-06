@@ -2,30 +2,19 @@
 
 This document centralizes technical development details for AI$HA.
 
-## Security Architecture (Current Baseline)
+## Security Architecture
 
-The current implementation uses local authentication with secure server-side sessions as a baseline, while keeping the codebase ready for future OAuth2/OIDC evolution.
+Security details moved to a dedicated document:
 
-- Security framework: Spring Security
-- Authentication flow: form login (`/login`) + session cookie (`JSESSIONID`)
-- User store: local database table `local_user_accounts` (JPA)
-- Password storage: BCrypt hash
-- Protected routes: all routes require authentication except login and static assets
-- CSRF: enabled by default and enforced for state-changing requests (including HTMX form flows)
-- Session fixation: mitigated via session ID regeneration after login
-- Session policy:
-  - idle timeout: 45 minutes
-  - absolute timeout: 12 hours (custom filter)
-  - concurrent sessions per user: 1 (new login invalidates previous session)
-- Session cookie policy:
-  - `HttpOnly=true`
-  - `SameSite=Lax`
-  - `Secure=true` in `prod` profile
-- Security audit logs (minimum):
-  - login success
-  - login failure
-  - logout
-  - no password logging
+- [docs/security-architecture.md](security-architecture.md)
+
+Current baseline summary:
+
+- Spring Security with authenticated-by-default routes
+- Form login + secure server-side sessions (`JSESSIONID`)
+- OAuth2/OIDC login integration (current provider registration: Google)
+- Global CSRF protection (including HTMX forms)
+- Session hardening (fixation protection, idle timeout, absolute timeout, and concurrent session limit)
 
 
 ## Logging Architecture

@@ -29,9 +29,10 @@ AI$HA follows a layered architecture with clear boundaries:
 
 Frontend uses Spring MVC + Thymeleaf with HTMX for interactive flows.
 
-For full technical architecture, security baseline, data initialization, and endpoint details, see:
+For full technical architecture, security details, data initialization, and endpoint details, see:
 
 - [docs/development.md](docs/development.md)
+- [docs/security-architecture.md](docs/security-architecture.md)
 
 ## Running the Application
 
@@ -72,6 +73,7 @@ For deployment, Docker/GHCR usage, and release workflows, see:
 Additional references:
 
 - Development details: [docs/development.md](docs/development.md)
+- Security architecture: [docs/security-architecture.md](docs/security-architecture.md)
 - AI architecture and category suggestion: [docs/ai-architecture.md](docs/ai-architecture.md)
 - Front-end architecture: [docs/frontend-architecture.md](docs/frontend-architecture.md)
 - Design system: [docs/design-system.md](docs/design-system.md)
