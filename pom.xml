@@ -120,7 +120,7 @@
 				<directory>src/main/resources</directory>
 			</resource>
 			<resource>
-				<directory>docs</directory>
+				<directory>docs/legal</directory>
 				<includes>
 					<include>privacy-policy.md</include>
 					<include>privacy-policy_pt_BR.md</include>
