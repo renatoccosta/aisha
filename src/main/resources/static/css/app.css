@@ -322,6 +322,58 @@ main {
   font-size: 0.9rem;
 }
 
+.auth-legal-link {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.legal-main {
+  padding-top: 2rem;
+}
+
+.legal-card {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.legal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.markdown-content {
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.markdown-content p {
+  margin-top: 0.6rem;
+  color: var(--text);
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-top: 0.6rem;
+  margin-bottom: 0;
+}
+
+.markdown-content li {
+  margin-top: 0.35rem;
+}
+
+.legal-actions {
+  margin-top: 1.25rem;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--line);

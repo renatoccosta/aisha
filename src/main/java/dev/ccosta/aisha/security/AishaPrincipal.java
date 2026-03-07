@@ -1,10 +1,10 @@
 package dev.ccosta.aisha.security;
 
 import java.io.Serial;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 /**
  * Unified authenticated principal used by both local and federated authentication flows.
  */
-public class AishaPrincipal implements UserDetails, OidcUser, Serializable {
+public class AishaPrincipal implements UserDetails, OidcUser {
 
     @Serial
     private static final long serialVersionUID = 1L;

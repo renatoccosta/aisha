@@ -31,6 +31,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
                     "/login",
+                    "/privacy-policy",
                     "/oauth2/**",
                     "/login/oauth2/**",
                     "/auth/federated/link",

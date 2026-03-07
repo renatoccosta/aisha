@@ -115,6 +115,19 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+			<resource>
+				<directory>docs</directory>
+				<includes>
+					<include>privacy-policy.md</include>
+					<include>privacy-policy_pt_BR.md</include>
+				</includes>
+				<targetPath>legal</targetPath>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

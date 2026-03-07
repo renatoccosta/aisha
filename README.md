@@ -33,6 +33,8 @@ For full technical architecture, security details, data initialization, and endp
 
 - [docs/development.md](docs/development.md)
 - [docs/security-architecture.md](docs/security-architecture.md)
+- Privacy policy (EN): [docs/privacy-policy.md](docs/privacy-policy.md)
+- Privacy policy (pt-BR): [docs/privacy-policy_pt_BR.md](docs/privacy-policy_pt_BR.md)
 
 ## Running the Application
 
@@ -84,6 +86,8 @@ Additional references:
 - Front-end architecture: [docs/frontend-architecture.md](docs/frontend-architecture.md)
 - Design system: [docs/design-system.md](docs/design-system.md)
 - Self-hosted deployment: [docs/deploy-self-hosted.md](docs/deploy-self-hosted.md)
+- Privacy policy (EN): [docs/privacy-policy.md](docs/privacy-policy.md)
+- Privacy policy (pt-BR): [docs/privacy-policy_pt_BR.md](docs/privacy-policy_pt_BR.md)
 
 ## License
 

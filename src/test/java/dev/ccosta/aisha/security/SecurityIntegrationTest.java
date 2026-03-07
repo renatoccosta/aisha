@@ -50,9 +50,31 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void shouldAllowAnonymousAccessToPrivacyPolicy() throws Exception {
+        mockMvc.perform(get("/privacy-policy"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Voltar para login")));
+    }
+
+    @Test
+    void shouldRenderPortuguesePrivacyPolicyWhenLocaleIsPtBr() throws Exception {
+        mockMvc.perform(get("/privacy-policy").header("Accept-Language", "pt-BR"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Escopo desta")));
+    }
+
+    @Test
+    void shouldRenderEnglishPrivacyPolicyWhenLocaleIsNotPtBr() throws Exception {
+        mockMvc.perform(get("/privacy-policy").header("Accept-Language", "en-US"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Scope of this policy")));
+    }
+
+    @Test
     void shouldHideGoogleLoginOptionWhenClientCredentialsArePlaceholders() throws Exception {
         mockMvc.perform(get("/login"))
             .andExpect(status().isOk())
+            .andExpect(content().string(containsString("/privacy-policy")))
             .andExpect(content().string(not(containsString("Entrar com o Google"))))
             .andExpect(content().string(not(containsString("/oauth2/authorization/google"))));
     }
