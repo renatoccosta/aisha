@@ -1,94 +1,108 @@
-# AI$HA - Agentic Inteligence for Self-Hosted Accounting
+# AI$HA - Personal Finance + AI for Self-Hosted Environments
 
-AI$HA is a personal finance manager with AI capabilities, focused on correctness, traceability, and safe architectural evolution.
+AI$HA is a personal finance application designed for self-hosted use, with AI-assisted workflows, traceability, and safe operational defaults.
 
-## Project Goals
+## Purpose
 
-- Help users manage personal finances with clear and reliable data.
-- Provide a practical foundation for AI-powered financial insights.
-- Preserve auditability and predictable behavior as the system evolves.
+AI$HA exists to help people and teams manage personal finance data with reliability, auditable behavior, and practical AI support, while keeping control of their own infrastructure and data.
 
-## Main Features
+## Core Features
 
-- Financial entry management (`entries`)
-- Account management (`accounts`)
-- Category management (`categories`)
-- Global date-range filter for analysis
-- Dashboard with financial summaries and charts
-- Local authentication baseline with secure server-side sessions
-- Persisted AI-powered entry category suggestion with background retraining
+- Financial entries with categorization and history tracking
+- Account and category management
+- Dashboard with balance, revenue, expense, and trend views
+- Date-range filtering across analysis screens
+- Local authentication with hardened session controls
+- Optional OAuth2/OIDC-ready architecture
+- AI-powered category suggestion with persisted model lifecycle
 
 ## Architecture Overview
 
-AI$HA follows a layered architecture with clear boundaries:
+AI$HA follows a layered architecture with clear boundaries between domain, application rules, infrastructure adapters, and web delivery.
 
-- `domain`: entities and repository contracts
-- `application`: use cases and business rules
-- `infrastructure`: persistence and technical adapters
-- `web`: MVC controllers, forms, and server-side HTML rendering
+This README keeps only the high-level view. Detailed technical design is documented here:
 
-Frontend uses Spring MVC + Thymeleaf with HTMX for interactive flows.
+- Development guide: [docs/development.md](docs/development.md)
+- Security architecture: [docs/security-architecture.md](docs/security-architecture.md)
+- Front-end architecture: [docs/frontend-architecture.md](docs/frontend-architecture.md)
+- AI architecture: [docs/ai-architecture.md](docs/ai-architecture.md)
 
-For full technical architecture, security details, data initialization, and endpoint details, see:
+## Self-Hosted Deployment
 
-- [docs/development.md](docs/development.md)
-- [docs/security-architecture.md](docs/security-architecture.md)
-- Privacy policy (EN): [docs/privacy-policy.md](docs/privacy-policy.md)
-- Privacy policy (pt-BR): [docs/privacy-policy_pt_BR.md](docs/privacy-policy_pt_BR.md)
+This section is for running AI$HA as a finished product in your own environment.
 
-## Running the Application
+### Common Requirements
 
-### Development mode (embedded HSQLDB)
+- Access to the application package (release JAR) or container image
+- PostgreSQL for persistent environments
+- Runtime configuration for database connection and admin seed credentials
+
+Database schema creation and evolution are handled automatically at startup by Flyway migrations.
+
+### Option 1: Manual Runtime Setup
+
+Use this when you want full control over the runtime environment.
+
+1. Install Java 25 (JRE or JDK) and PostgreSQL.
+2. Create a PostgreSQL database and user for AI$HA.
+3. Download the latest release JAR artifact.
+4. Configure environment variables (minimum):
+   - `SPRING_PROFILES_ACTIVE=postgres,prod`
+   - `DB_URL=jdbc:postgresql://<host>:5432/<database>`
+   - `DB_USERNAME=<db-user>`
+   - `DB_PASSWORD=<db-password>`
+   - `AISHA_SECURITY_SEED_USERNAME=<admin-user>`
+   - `AISHA_SECURITY_SEED_PASSWORD=<admin-password>`
+5. Start the application:
+
+```bash
+java -jar app.jar
+```
+
+6. Access the app at `http://<host>:8080`.
+
+### Option 2: Docker (Recommended for Most Cases)
+
+Use the published image and optionally the repository `compose.yml`.
+
+1. Set the image/tag and credentials in `compose.yml`.
+2. Start the stack:
+
+```bash
+docker compose up -d
+```
+
+3. Access the app at `http://localhost:8080`.
+
+For full container deployment details, image distribution, and upgrade flow, see:
+
+- [docs/deploy-self-hosted.md](docs/deploy-self-hosted.md)
+- [docs/operations.md](docs/operations.md)
+
+## Contributing
+
+Contributions are welcome. For local development setup and technical workflow:
+
+1. Install JDK 25.
+2. Run the app locally (embedded database):
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Application URL: `http://localhost:8080`
-
-### Local sensitive configuration (recommended)
-
-Use a local external config file for secrets during development:
-
-```bash
-cp .env.properties.example .env.properties
-```
-
-`application.yaml` imports `.env.properties` automatically (optional), so the file is never required in Git and can store local sensitive values safely.
-
-### PostgreSQL profile
-
-```bash
-SPRING_PROFILES_ACTIVE=postgres ./mvnw spring-boot:run
-```
-
-For deployment, Docker/GHCR usage, and release workflows, see:
-
-- [docs/operations.md](docs/operations.md)
-- [docs/deploy-self-hosted.md](docs/deploy-self-hosted.md)
-
-## Contributing
-
-- Keep changes small and reviewable.
-- Follow migration-first database changes with Flyway.
-- Add tests for non-trivial logic.
-- Run tests locally before opening a PR:
+3. Run tests before opening a PR:
 
 ```bash
 ./mvnw test
 ```
 
-Additional references:
+Full contributor-oriented documentation:
 
-- Development details: [docs/development.md](docs/development.md)
-- Security architecture: [docs/security-architecture.md](docs/security-architecture.md)
-- AI architecture and category suggestion: [docs/ai-architecture.md](docs/ai-architecture.md)
-- Front-end architecture: [docs/frontend-architecture.md](docs/frontend-architecture.md)
+- [docs/development.md](docs/development.md)
+
+## Additional References
+
 - Design system: [docs/design-system.md](docs/design-system.md)
-- Self-hosted deployment: [docs/deploy-self-hosted.md](docs/deploy-self-hosted.md)
 - Privacy policy (EN): [docs/privacy-policy.md](docs/privacy-policy.md)
 - Privacy policy (pt-BR): [docs/privacy-policy_pt_BR.md](docs/privacy-policy_pt_BR.md)
-
-## License
-
-This project is licensed under the terms defined in [LICENSE](LICENSE).
+- License: [LICENSE](LICENSE)
