@@ -44,14 +44,20 @@ For full technical architecture, security details, data initialization, and endp
 
 Application URL: `http://localhost:8080`
 
+### Local sensitive configuration (recommended)
+
+Use a local external config file for secrets during development:
+
+```bash
+cp .env.properties.example .env.properties
+```
+
+`application.yaml` imports `.env.properties` automatically (optional), so the file is never required in Git and can store local sensitive values safely.
+
 ### PostgreSQL profile
 
 ```bash
-SPRING_PROFILES_ACTIVE=postgres \
-DB_URL=jdbc:postgresql://localhost:5432/aisha \
-DB_USERNAME=aisha \
-DB_PASSWORD=aisha \
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=postgres ./mvnw spring-boot:run
 ```
 
 For deployment, Docker/GHCR usage, and release workflows, see:
