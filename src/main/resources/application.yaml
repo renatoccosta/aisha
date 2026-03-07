@@ -1,6 +1,11 @@
 spring:
+  config:
+    import: optional:file:.env.properties[.properties]
   application:
     name: aisha
+  output:
+    ansi:
+      enabled: always
   datasource:
     url: jdbc:hsqldb:mem:aisha
     username: sa
@@ -14,6 +19,14 @@ spring:
     open-in-view: false
   thymeleaf:
     cache: false
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:change-me-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:change-me-google-client-secret}
+            scope: openid,profile,email
 server:
   servlet:
     session:
@@ -36,7 +49,7 @@ logging:
   level:
     root: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{correlationId:-n/a}] %logger{36} - %msg%n%ex"
+    correlation: "[%X{correlationId:-n/a}] "
 
 aisha:
   debug:

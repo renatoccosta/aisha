@@ -2,6 +2,7 @@ package dev.ccosta.aisha.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -21,7 +22,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+    "GOOGLE_CLIENT_ID=change-me-google-client-id",
+    "GOOGLE_CLIENT_SECRET=change-me-google-client-secret"
+})
 class SecurityIntegrationTest {
 
     private MockMvc mockMvc;
@@ -43,6 +47,36 @@ class SecurityIntegrationTest {
         mockMvc.perform(get("/dashboard"))
             .andExpect(status().isFound())
             .andExpect(redirectedUrl("/login"));
+    }
+
+    @Test
+    void shouldAllowAnonymousAccessToPrivacyPolicy() throws Exception {
+        mockMvc.perform(get("/privacy-policy"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Voltar para login")));
+    }
+
+    @Test
+    void shouldRenderPortuguesePrivacyPolicyWhenLocaleIsPtBr() throws Exception {
+        mockMvc.perform(get("/privacy-policy").header("Accept-Language", "pt-BR"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Escopo desta")));
+    }
+
+    @Test
+    void shouldRenderEnglishPrivacyPolicyWhenLocaleIsNotPtBr() throws Exception {
+        mockMvc.perform(get("/privacy-policy").header("Accept-Language", "en-US"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Scope of this policy")));
+    }
+
+    @Test
+    void shouldHideGoogleLoginOptionWhenClientCredentialsArePlaceholders() throws Exception {
+        mockMvc.perform(get("/login"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("/privacy-policy")))
+            .andExpect(content().string(not(containsString("Entrar com o Google"))))
+            .andExpect(content().string(not(containsString("/oauth2/authorization/google"))));
     }
 
     @Test

@@ -19,6 +19,7 @@
         </div>
 
         <p class="error" th:if="${param.error}" th:text="#{auth.login.error}"></p>
+        <p class="error" th:if="${param.linkError}" th:text="#{auth.login.link.error}"></p>
         <p class="helper" th:if="${param.logout}" th:text="#{auth.login.logout.success}"></p>
         <p class="helper" th:if="${param.expired}" th:text="#{auth.login.expired}"></p>
 
@@ -42,6 +43,39 @@
                 </button>
             </div>
         </form>
+
+        <th:block th:if="${!#lists.isEmpty(externalLoginProviders)}">
+            <div class="auth-divider" role="separator" th:text="#{auth.login.divider}"></div>
+
+            <a class="btn btn-secondary"
+               th:each="provider : ${externalLoginProviders}"
+               th:href="${provider.authorizationUri}">
+                <i th:attr="data-lucide=${provider.icon}" aria-hidden="true"></i>
+                <span th:text="#{__${provider.labelMessageKey}__}"></span>
+            </a>
+        </th:block>
+
+        <form method="post" th:if="${pendingFederatedLink != null}" th:action="@{/auth/federated/link}" th:object="${federatedLinkForm}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <p class="helper" th:text="#{auth.login.link.info(${pendingFederatedLink.email})}"></p>
+
+            <div class="field">
+                <label for="linkPassword" th:text="#{auth.login.link.password}"></label>
+                <input id="linkPassword" type="password" th:field="*{password}" autocomplete="current-password" required>
+            </div>
+
+            <div class="actions-inline auth-actions">
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="link" aria-hidden="true"></i>
+                    <span th:text="#{auth.login.link.confirm}"></span>
+                </button>
+            </div>
+        </form>
+
+        <p class="auth-legal-link">
+            <a th:href="@{/privacy-policy}" th:text="#{auth.login.privacyPolicy}"></a>
+        </p>
     </section>
 </main>
 </body>

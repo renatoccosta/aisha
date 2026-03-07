@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{privacyPolicy.pageTitle}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script defer th:src="@{/js/lucide-init.js}"></script>
+    <script th:inline="javascript">
+        (function () {
+            const key = "aisha-theme";
+            const savedTheme = localStorage.getItem(key);
+            const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            const theme = savedTheme === "dark" || savedTheme === "light"
+                ? savedTheme
+                : (prefersDark ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", theme);
+        }());
+    </script>
+</head>
+<body>
+<main class="wrap legal-main">
+    <section class="card legal-card">
+        <div class="legal-header">
+            <img class="brand-logo" th:src="@{/img/aisha-logo-simple.svg}" th:alt="#{app.logo.alt}">
+        </div>
+
+        <article class="markdown-content" th:utext="${privacyPolicyHtml}"></article>
+
+        <div class="actions-inline legal-actions">
+            <a class="btn btn-secondary" th:href="@{/login}">
+                <i data-lucide="arrow-left" aria-hidden="true"></i>
+                <span th:text="#{privacyPolicy.action.backToLogin}"></span>
+            </a>
+        </div>
+    </section>
+</main>
+</body>
+</html>
