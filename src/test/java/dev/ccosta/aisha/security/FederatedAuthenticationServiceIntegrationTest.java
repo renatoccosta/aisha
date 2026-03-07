@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -67,5 +68,21 @@ class FederatedAuthenticationServiceIntegrationTest {
 
         assertThat(account.getUsername()).isEqualTo("vinculo@example.com");
         assertThat(federatedUserIdentityRepository.findByProviderAndSubject("google", "subject-link")).isPresent();
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void shouldReturnInitializedLocalAccountWhenFederatedIdentityAlreadyExists() {
+        LocalUserAccount firstLoginAccount = federatedAuthenticationService.resolveOrCreateLocalAccount(
+            "google", "subject-relogin", "relogin@example.com"
+        );
+        assertThat(firstLoginAccount.getUsername()).isEqualTo("relogin@example.com");
+
+        LocalUserAccount secondLoginAccount = federatedAuthenticationService.resolveOrCreateLocalAccount(
+            "google", "subject-relogin", "relogin@example.com"
+        );
+
+        assertThat(secondLoginAccount.getId()).isEqualTo(firstLoginAccount.getId());
+        assertThat(secondLoginAccount.getUsername()).isEqualTo("relogin@example.com");
     }
 }
