@@ -2,6 +2,7 @@ package dev.ccosta.aisha.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -21,7 +22,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+    "GOOGLE_CLIENT_ID=change-me-google-client-id",
+    "GOOGLE_CLIENT_SECRET=change-me-google-client-secret"
+})
 class SecurityIntegrationTest {
 
     private MockMvc mockMvc;
@@ -46,11 +50,11 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    void shouldRenderGoogleLoginOptionOnLoginPage() throws Exception {
+    void shouldHideGoogleLoginOptionWhenClientCredentialsArePlaceholders() throws Exception {
         mockMvc.perform(get("/login"))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Entrar com o Google")))
-            .andExpect(content().string(containsString("/oauth2/authorization/google")));
+            .andExpect(content().string(not(containsString("Entrar com o Google"))))
+            .andExpect(content().string(not(containsString("/oauth2/authorization/google"))));
     }
 
     @Test

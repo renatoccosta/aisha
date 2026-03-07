@@ -1,5 +1,6 @@
 package dev.ccosta.aisha.web.auth;
 
+import dev.ccosta.aisha.security.ConfiguredOAuth2LoginProviderService;
 import dev.ccosta.aisha.security.FederatedAuthPendingLink;
 import dev.ccosta.aisha.security.FederatedAuthenticationFailureHandler;
 import jakarta.servlet.http.HttpSession;
@@ -13,6 +14,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @Controller
 public class LoginController {
 
+    private final ConfiguredOAuth2LoginProviderService configuredOAuth2LoginProviderService;
+
+    public LoginController(ConfiguredOAuth2LoginProviderService configuredOAuth2LoginProviderService) {
+        this.configuredOAuth2LoginProviderService = configuredOAuth2LoginProviderService;
+    }
+
     @ModelAttribute("federatedLinkForm")
     public FederatedLinkConfirmationForm federatedLinkConfirmationForm() {
         return new FederatedLinkConfirmationForm();
@@ -25,6 +32,8 @@ public class LoginController {
             && !(authentication instanceof AnonymousAuthenticationToken)) {
             return "redirect:/dashboard";
         }
+
+        model.addAttribute("externalLoginProviders", configuredOAuth2LoginProviderService.enabledProviders());
 
         if (session != null) {
             FederatedAuthPendingLink pendingLink =
