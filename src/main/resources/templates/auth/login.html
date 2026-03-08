@@ -73,12 +73,8 @@
             </div>
         </form>
 
-        <p class="auth-legal-link">
-            <a th:href="@{/privacy-policy}" th:text="#{auth.login.privacyPolicy}"></a>
-            <span aria-hidden="true"> · </span>
-            <a th:href="@{/terms-of-use}" th:text="#{auth.login.termsOfUse}"></a>
-        </p>
     </section>
 </main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
 </body>
 </html>

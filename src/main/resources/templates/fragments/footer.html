@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="appFooter" class="app-footer">
+    <div class="wrap app-footer-content">
+        <section class="app-footer-block">
+            <p class="app-footer-tagline" th:text="#{footer.tagline}"></p>
+            <p class="app-footer-rights" th:text="#{footer.rights(${#dates.format(#dates.createNow(), 'yyyy')})}"></p>
+        </section>
+
+        <section class="app-footer-block">
+            <h2 class="app-footer-title" th:text="#{footer.links.title}"></h2>
+            <nav class="app-footer-links" th:attr="aria-label=#{footer.links.aria}">
+                <a th:href="@{/privacy-policy}">
+                    <i data-lucide="file-lock-2" aria-hidden="true"></i>
+                    <span th:text="#{footer.link.privacyPolicy}"></span>
+                </a>
+                <a th:href="@{/terms-of-use}">
+                    <i data-lucide="file-text" aria-hidden="true"></i>
+                    <span th:text="#{footer.link.termsOfUse}"></span>
+                </a>
+            </nav>
+        </section>
+
+        <section class="app-footer-block">
+            <h2 class="app-footer-title" th:text="#{footer.system.title}"></h2>
+            <ul class="app-footer-info-list">
+                <li>
+                    <i data-lucide="wrench" aria-hidden="true"></i>
+                    <span th:text="#{footer.system.stack}"></span>
+                </li>
+                <li>
+                    <i data-lucide="shield-check" aria-hidden="true"></i>
+                    <span th:text="#{footer.system.security}"></span>
+                </li>
+            </ul>
+        </section>
+    </div>
+</footer>
+</body>
+</html>
