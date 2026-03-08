@@ -11,7 +11,7 @@ CREATE TABLE entry_category_suggestion_models (
     training_started_at TIMESTAMP NOT NULL,
     completed_at TIMESTAMP,
     failure_message VARCHAR(500),
-    model_payload CLOB,
+    model_payload VARCHAR(1048576),
     CONSTRAINT uk_entry_category_suggestion_models_version UNIQUE (version)
 );
 

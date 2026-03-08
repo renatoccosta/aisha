@@ -8,7 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
@@ -58,8 +57,7 @@ public class EntryCategorySuggestionModelArtifact {
     @Column(name = "failure_message", length = 500)
     private String failureMessage;
 
-    @Lob
-    @Column(name = "model_payload")
+    @Column(name = "model_payload", length = 1048576)
     private String modelPayload;
 
     public Long getId() {
