@@ -10,7 +10,9 @@ RUN chmod +x mvnw && ./mvnw -q -DskipTests dependency:go-offline
 
 COPY src ./src
 COPY docs/legal ./docs/legal
-RUN ./mvnw -q -DskipTests package
+RUN ./mvnw -q -DskipTests package \
+    && mkdir -p target/layers/dependencies target/layers/snapshot-dependencies target/layers/spring-boot-loader target/layers/application \
+    && java -Djarmode=layertools -jar target/*.jar extract --destination target/layers
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
@@ -24,7 +26,10 @@ RUN apt-get update \
 ENV TZ=UTC
 ENV JAVA_OPTS="-XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom -Dfile.encoding=UTF-8"
 
-COPY --from=builder /workspace/target/*.jar /app/app.jar
+COPY --from=builder /workspace/target/layers/dependencies/ ./
+COPY --from=builder /workspace/target/layers/snapshot-dependencies/ ./
+COPY --from=builder /workspace/target/layers/spring-boot-loader/ ./
+COPY --from=builder /workspace/target/layers/application/ ./
 
 EXPOSE 8080
 
@@ -33,4 +38,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 
 USER aisha
 
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
