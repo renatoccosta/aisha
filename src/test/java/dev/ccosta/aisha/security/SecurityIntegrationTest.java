@@ -57,6 +57,13 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void shouldAllowAnonymousAccessToTermsOfUse() throws Exception {
+        mockMvc.perform(get("/terms-of-use"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Voltar para login")));
+    }
+
+    @Test
     void shouldRenderPortuguesePrivacyPolicyWhenLocaleIsPtBr() throws Exception {
         mockMvc.perform(get("/privacy-policy").header("Accept-Language", "pt-BR"))
             .andExpect(status().isOk())
@@ -71,10 +78,25 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void shouldRenderPortugueseTermsOfUseWhenLocaleIsPtBr() throws Exception {
+        mockMvc.perform(get("/terms-of-use").header("Accept-Language", "pt-BR"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("Sobre a AI$HA e estes termos")));
+    }
+
+    @Test
+    void shouldRenderEnglishTermsOfUseWhenLocaleIsNotPtBr() throws Exception {
+        mockMvc.perform(get("/terms-of-use").header("Accept-Language", "en-US"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("About AI$HA and these terms")));
+    }
+
+    @Test
     void shouldHideGoogleLoginOptionWhenClientCredentialsArePlaceholders() throws Exception {
         mockMvc.perform(get("/login"))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("/privacy-policy")))
+            .andExpect(content().string(containsString("/terms-of-use")))
             .andExpect(content().string(not(containsString("Entrar com o Google"))))
             .andExpect(content().string(not(containsString("/oauth2/authorization/google"))));
     }

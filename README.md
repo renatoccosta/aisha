@@ -105,4 +105,6 @@ Full contributor-oriented documentation:
 - Design system: [docs/design-system.md](docs/design-system.md)
 - Privacy policy (EN): [docs/legal/privacy-policy.md](docs/legal/privacy-policy.md)
 - Privacy policy (pt-BR): [docs/legal/privacy-policy_pt_BR.md](docs/legal/privacy-policy_pt_BR.md)
+- Terms of use (EN): [docs/legal/terms-of-use.md](docs/legal/terms-of-use.md)
+- Terms of use (pt-BR): [docs/legal/terms-of-use_pt_BR.md](docs/legal/terms-of-use_pt_BR.md)
 - License: [LICENSE](LICENSE)

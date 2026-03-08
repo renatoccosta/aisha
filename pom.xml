@@ -124,6 +124,8 @@
 				<includes>
 					<include>privacy-policy.md</include>
 					<include>privacy-policy_pt_BR.md</include>
+					<include>terms-of-use.md</include>
+					<include>terms-of-use_pt_BR.md</include>
 				</includes>
 				<targetPath>legal</targetPath>
 			</resource>
