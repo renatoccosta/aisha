@@ -119,11 +119,10 @@ jobs:
             exit 1
           fi
 
-          release_jar="aisha-${{ steps.semver.outputs.next_version }}.jar"
-          cp "$original_jar" "target/$release_jar"
+          release_jar="$(basename "$original_jar")"
 
           echo "release_jar=$release_jar" >> "$GITHUB_OUTPUT"
-          echo "release_jar_path=target/$release_jar" >> "$GITHUB_OUTPUT"
+          echo "release_jar_path=$original_jar" >> "$GITHUB_OUTPUT"
 
       - name: Create and push Git tag
         shell: bash
