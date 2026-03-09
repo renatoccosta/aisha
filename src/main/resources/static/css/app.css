@@ -313,6 +313,15 @@ main {
   font-size: 0.86rem;
 }
 
+.app-footer-version {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .app-footer-links {
   display: flex;
   flex-direction: column;
@@ -345,6 +354,19 @@ main {
   align-items: flex-start;
   gap: 0.4rem;
   color: var(--color-text-secondary);
+}
+
+.app-footer-info-list a {
+  color: var(--color-action-secondary-bg);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.app-footer-info-list a:hover {
+  text-decoration: underline;
 }
 
 .auth-main {

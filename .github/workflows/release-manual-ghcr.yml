@@ -102,10 +102,10 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: ./mvnw test
+        run: ./mvnw -Drevision=${{ steps.semver.outputs.next_version }} test
 
       - name: Build application JAR
-        run: ./mvnw -DskipTests package
+        run: ./mvnw -Drevision=${{ steps.semver.outputs.next_version }} -DskipTests package
 
       - name: Prepare release artifact
         id: artifact

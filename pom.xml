@@ -10,12 +10,13 @@
 	</parent>
 	<groupId>dev.ccosta</groupId>
 	<artifactId>aisha</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>${revision}</version>
 	<name>aisha</name>
 	<description>Agentic Intelligence for $elf-Hosted Accounting</description>
 
 	<properties>
 		<java.version>25</java.version>
+		<revision>0.0.1-SNAPSHOT</revision>
 	</properties>
 
 	<dependencies>
@@ -146,6 +147,13 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>build-info</goal>
+						</goals>
+					</execution>
+				</executions>
 				<configuration>
 					<excludes>
 						<exclude>

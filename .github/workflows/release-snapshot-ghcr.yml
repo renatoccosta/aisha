@@ -77,10 +77,10 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: ./mvnw test
+        run: ./mvnw -Drevision=${{ steps.snapshot.outputs.snapshot_tag }} test
 
       - name: Build application JAR
-        run: ./mvnw -DskipTests package
+        run: ./mvnw -Drevision=${{ steps.snapshot.outputs.snapshot_tag }} -DskipTests package
 
       - name: Prepare snapshot artifact
         id: artifact
