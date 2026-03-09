@@ -73,10 +73,8 @@
             </div>
         </form>
 
-        <p class="auth-legal-link">
-            <a th:href="@{/privacy-policy}" th:text="#{auth.login.privacyPolicy}"></a>
-        </p>
     </section>
 </main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
 </body>
 </html>

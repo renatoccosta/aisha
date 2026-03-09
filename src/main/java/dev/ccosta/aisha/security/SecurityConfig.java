@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/login",
                     "/privacy-policy",
+                    "/terms-of-use",
                     "/oauth2/**",
                     "/login/oauth2/**",
                     "/auth/federated/link",

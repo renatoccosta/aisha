@@ -63,16 +63,17 @@ java -jar app.jar
 
 ### Option 2: Docker (Recommended for Most Cases)
 
-Use the published image and optionally the repository `compose.yml`.
+Use Docker Compose with the published `latest` image available in the container registry.
 
-1. Set the image/tag and credentials in `compose.yml`.
-2. Start the stack:
+1. Copy `compose.example.yml` to `compose.yml`.
+2. Adjust credentials and environment values in `compose.yml`.
+3. Start the stack:
 
 ```bash
 docker compose up -d
 ```
 
-3. Access the app at `http://localhost:8080`.
+4. Access the app at `http://localhost:8080`.
 
 For full container deployment details, image distribution, and upgrade flow, see:
 
@@ -105,4 +106,6 @@ Full contributor-oriented documentation:
 - Design system: [docs/design-system.md](docs/design-system.md)
 - Privacy policy (EN): [docs/legal/privacy-policy.md](docs/legal/privacy-policy.md)
 - Privacy policy (pt-BR): [docs/legal/privacy-policy_pt_BR.md](docs/legal/privacy-policy_pt_BR.md)
+- Terms of use (EN): [docs/legal/terms-of-use.md](docs/legal/terms-of-use.md)
+- Terms of use (pt-BR): [docs/legal/terms-of-use_pt_BR.md](docs/legal/terms-of-use_pt_BR.md)
 - License: [LICENSE](LICENSE)

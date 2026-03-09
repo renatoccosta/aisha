@@ -16,10 +16,7 @@ services:
       retries: 5
 
   aisha:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: aisha:local
+    image: ghcr.io/renatoccosta/aisha:latest
     container_name: aisha-app
     restart: unless-stopped
     depends_on:
