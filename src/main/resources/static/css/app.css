@@ -886,9 +886,17 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.stack-form,
 .import-form {
   display: grid;
   gap: 0.9rem;
+}
+
+.stack-form .field,
+.stack-form .field-checkbox,
+.import-form .field,
+.import-form .field-checkbox {
+  margin-top: 0;
 }
 
 .import-result-card {
