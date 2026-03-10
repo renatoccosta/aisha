@@ -31,16 +31,26 @@ public class AdminController {
     /**
      * Displays the administration landing page with the currently available operational sections.
      *
-     * @param model the UI model used to render the administration page
      * @return the administration page template
      */
     @GetMapping
-    public String index(
+    public String index() {
+        return "admin/index";
+    }
+
+    /**
+     * Displays the category model administration page with the current training status.
+     *
+     * @param model the UI model used to render the model administration page
+     * @return the category model administration page template
+     */
+    @GetMapping("/models")
+    public String models(
         @RequestParam(name = "manualTrainingRequested", defaultValue = "false") boolean manualTrainingRequested,
         Model model
     ) {
         fillCategoryModelStatus(model, manualTrainingRequested);
-        return "admin/index";
+        return "admin/models";
     }
 
     /**
@@ -52,7 +62,7 @@ public class AdminController {
     @GetMapping("/fragments/category-model-status")
     public String categoryModelStatus(Model model) {
         fillCategoryModelStatus(model, false);
-        return "admin/index :: categoryModelStatus";
+        return "admin/models :: categoryModelStatus";
     }
 
     /**
@@ -64,7 +74,7 @@ public class AdminController {
     @PostMapping("/category-model/retrain")
     public String retrainCategoryModel() {
         entryCategoryModelTrainingCoordinator.requestTraining(EntryCategoryModelTrainingTrigger.MANUAL);
-        return "redirect:/admin?manualTrainingRequested=true";
+        return "redirect:/admin/models?manualTrainingRequested=true";
     }
 
     private void fillCategoryModelStatus(Model model, boolean manualTrainingRequested) {

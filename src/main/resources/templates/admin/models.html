@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{admin.models.pageTitle}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{admin.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="#{admin.models.heading}"></h2>
+        <p th:text="#{admin.models.subtitle}"></p>
+    </section>
+
+    <section
+        id="category-model-status"
+        th:fragment="categoryModelStatus"
+        class="card import-result-card"
+        hx-get="/admin/fragments/category-model-status"
+        hx-trigger="every 4s"
+        hx-target="#category-model-status"
+        hx-swap="outerHTML">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{admin.models.heading}"></h3>
+                <p th:text="#{admin.models.detailSubtitle}"></p>
+            </div>
+            <form
+                method="post"
+                th:action="@{/admin/category-model/retrain}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button class="btn btn-secondary" type="submit">
+                    <i data-lucide="brain-circuit" aria-hidden="true"></i>
+                    <span th:text="#{admin.models.action.retrain}"></span>
+                </button>
+            </form>
+        </div>
+
+        <p class="helper" th:if="${manualTrainingRequested}" th:text="#{admin.models.manualRequested}"></p>
+
+        <div class="cell-stack">
+            <span class="status-chip" th:if="${categoryModelStatus.trainingInProgress}" th:text="#{admin.models.status.training}"></span>
+            <span class="status-chip" th:if="${!categoryModelStatus.trainingInProgress and categoryModelStatus.modelAvailable}" th:text="#{admin.models.status.ready}"></span>
+            <span class="status-chip" th:if="${!categoryModelStatus.trainingInProgress and !categoryModelStatus.modelAvailable}" th:text="#{admin.models.status.unavailable}"></span>
+            <span class="status-chip" th:if="${categoryModelStatus.retrainQueued}" th:text="#{admin.models.status.queued}"></span>
+        </div>
+
+        <dl class="import-summary-grid">
+            <div>
+                <dt th:text="#{admin.models.summary.version}"></dt>
+                <dd th:text="${categoryModelStatus.version != null ? categoryModelStatus.version : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.models.summary.modelName}"></dt>
+                <dd th:text="${categoryModelStatus.modelName != null ? categoryModelStatus.modelName : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.models.summary.pipeline}"></dt>
+                <dd th:text="${categoryModelStatus.pipelineVersion != null ? categoryModelStatus.pipelineVersion : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.models.summary.examples}"></dt>
+                <dd th:text="${categoryModelStatus.trainingExampleCount != null ? categoryModelStatus.trainingExampleCount : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.models.summary.labels}"></dt>
+                <dd th:text="${categoryModelStatus.labelCount != null ? categoryModelStatus.labelCount : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.models.summary.vocabulary}"></dt>
+                <dd th:text="${categoryModelStatus.vocabularySize != null ? categoryModelStatus.vocabularySize : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.models.summary.trigger}"></dt>
+                <dd th:text="${categoryModelStatus.trigger != null ? #messages.msg('admin.models.trigger.' + #strings.toLowerCase(categoryModelStatus.trigger)) : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.models.summary.completedAt}"></dt>
+                <dd th:text="${categoryModelStatus.completedAt != null ? #temporals.format(categoryModelStatus.completedAt, 'dd/MM/yyyy HH:mm:ss') : '-'}"></dd>
+            </div>
+        </dl>
+
+        <p class="helper"
+           th:if="${categoryModelStatus.failureMessage != null and !#strings.isEmpty(categoryModelStatus.failureMessage)}"
+           th:text="#{admin.models.failure(${categoryModelStatus.failureMessage})}"></p>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>
