@@ -26,6 +26,15 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
                 (:onlyWithoutCategory = true and e.category is null)
                 or (:onlyWithoutCategory = false and (:categoryId is null or e.category.id = :categoryId))
           )
+          and (
+                :descriptionFilter is null
+                or upper(function('translate', e.description, :accentedCharacters, :plainCharacters))
+                    like concat(
+                        '%',
+                        upper(function('translate', :descriptionFilter, :accentedCharacters, :plainCharacters)),
+                        '%'
+                    ) escape '\\'
+          )
           and (:onlyPendingCategorySuggestions = false or e.categorySuggestionStatus = :pendingStatus)
         order by e.settlementDate desc, e.id desc
         """
@@ -35,9 +44,12 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
         LocalDate endDate,
         @Param("accountId") Long accountId,
         @Param("categoryId") Long categoryId,
+        @Param("descriptionFilter") String descriptionFilter,
         @Param("onlyWithoutCategory") boolean onlyWithoutCategory,
         @Param("onlyPendingCategorySuggestions") boolean onlyPendingCategorySuggestions,
         @Param("pendingStatus") EntryCategorySuggestionStatus pendingStatus,
+        @Param("accentedCharacters") String accentedCharacters,
+        @Param("plainCharacters") String plainCharacters,
         Pageable pageable
     );
 

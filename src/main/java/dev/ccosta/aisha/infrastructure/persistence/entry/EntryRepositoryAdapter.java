@@ -17,6 +17,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class EntryRepositoryAdapter implements EntryRepository {
 
+    private static final String ACCENTED_CHARACTERS = "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ";
+    private static final String PLAIN_CHARACTERS = "AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn";
+
     private final JpaEntryRepository jpaEntryRepository;
 
     public EntryRepositoryAdapter(JpaEntryRepository jpaEntryRepository) {
@@ -29,6 +32,7 @@ public class EntryRepositoryAdapter implements EntryRepository {
         LocalDate endDate,
         Long accountId,
         Long categoryId,
+        String descriptionFilter,
         boolean onlyWithoutCategory,
         boolean onlyPendingCategorySuggestions,
         int page,
@@ -40,9 +44,12 @@ public class EntryRepositoryAdapter implements EntryRepository {
             endDate,
             accountId,
             categoryId,
+            escapeLikePattern(descriptionFilter),
             onlyWithoutCategory,
             onlyPendingCategorySuggestions,
             EntryCategorySuggestionStatus.PENDING,
+            ACCENTED_CHARACTERS,
+            PLAIN_CHARACTERS,
             pageRequest
         );
         return new PagedResult<>(
@@ -142,5 +149,16 @@ public class EntryRepositoryAdapter implements EntryRepository {
     @Override
     public void deleteByIds(Collection<Long> ids) {
         jpaEntryRepository.deleteAllByIdInBatch(ids);
+    }
+
+    private String escapeLikePattern(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        return value
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
     }
 }

@@ -157,7 +157,7 @@ class SecurityIntegrationTest {
                 .session((MockHttpSession) session)
                 .with(csrf()))
             .andExpect(status().isFound())
-            .andExpect(redirectedUrl("/admin?manualTrainingRequested=true"));
+            .andExpect(redirectedUrl("/admin/models?manualTrainingRequested=true"));
     }
 
     @Test

@@ -42,8 +42,8 @@
             hx-target="#table-container"
             hx-swap="outerHTML"
             hx-push-url="true"
-            hx-trigger="change from:#filter-account, change from:#filter-category, change from:#filter-pending-suggestions">
-            <div class="grid-3">
+            hx-trigger="change from:#filter-account, change from:#filter-category, change from:#filter-pending-suggestions, input changed delay:400ms from:#filter-description, search from:#filter-description">
+            <div class="grid-2">
                 <div class="field">
                     <label for="filter-account" th:text="#{entries.list.filter.account}"></label>
                     <select id="filter-account" name="accountId">
@@ -71,6 +71,15 @@
                     </select>
                 </div>
                 <div class="field">
+                    <label for="filter-description" th:text="#{entries.list.filter.description}"></label>
+                    <input
+                        id="filter-description"
+                        name="description"
+                        type="search"
+                        th:value="${selectedDescription}"
+                        th:placeholder="#{entries.list.filter.description.placeholder}">
+                </div>
+                <div class="field">
                     <label for="filter-pending-suggestions" th:text="#{entries.list.filter.pendingSuggestions}"></label>
                     <select id="filter-pending-suggestions" name="pendingSuggestions">
                         <option value="false" th:selected="${!selectedPendingSuggestions}" th:text="#{entries.list.filter.pendingSuggestions.all}"></option>
@@ -94,10 +103,11 @@
                     hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
+                    <input type="hidden" name="description" th:value="${selectedDescription}">
                     <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
                     <input type="hidden" name="page" value="0">
                     <label for="entries-page-size" th:text="#{pagination.size.label}"></label>
-                    <select id="entries-page-size" name="size">
+                    <select id="entries-page-size" name="size" onchange="this.form.requestSubmit()">
                         <option
                             th:each="allowedSize : ${allowedPageSizes}"
                             th:value="${allowedSize}"
@@ -105,10 +115,6 @@
                             th:text="${allowedSize}">
                         </option>
                     </select>
-                    <button class="btn btn-secondary" type="submit">
-                        <i data-lucide="check" aria-hidden="true"></i>
-                        <span th:text="#{pagination.size.apply}"></span>
-                    </button>
                 </form>
 
                 <form
@@ -121,6 +127,7 @@
                     hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
+                    <input type="hidden" name="description" th:value="${selectedDescription}">
                     <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
                     <input type="hidden" name="size" th:value="${pagination.pageSize}">
                     <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.firstPage()}" th:disabled="${!pagination.hasPrevious()}">
@@ -157,6 +164,7 @@
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="accountId" th:value="${selectedAccountId}">
             <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
+            <input type="hidden" name="description" th:value="${selectedDescription}">
             <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
             <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
             <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
@@ -220,7 +228,7 @@
                                     class="btn btn-secondary"
                                     type="button"
                                     th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
-                                    th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})}"
+                                    th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},description=${selectedDescription},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <i data-lucide="check-check" aria-hidden="true"></i>
@@ -233,7 +241,7 @@
                                 <button
                                     class="btn btn-danger"
                                     type="button"
-                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{entries.list.confirm.delete}"
+                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},description=${selectedDescription},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{entries.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <i data-lucide="trash-2" aria-hidden="true"></i>
