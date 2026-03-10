@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class EntryService {
@@ -34,6 +35,7 @@ public class EntryService {
         LocalDate endDate,
         Long accountId,
         Long categoryId,
+        String descriptionFilter,
         boolean onlyWithoutCategory,
         boolean onlyPendingCategorySuggestions,
         int page,
@@ -45,11 +47,13 @@ public class EntryService {
         if (endDate.isBefore(startDate)) {
             throw new IllegalArgumentException("End date must be greater than or equal to start date");
         }
+        String effectiveDescriptionFilter = StringUtils.hasText(descriptionFilter) ? descriptionFilter.trim() : null;
         return entryRepository.listMostRecentBySettlementDateBetweenAndFilters(
             startDate,
             endDate,
             accountId,
             categoryId,
+            effectiveDescriptionFilter,
             onlyWithoutCategory,
             onlyPendingCategorySuggestions,
             page,

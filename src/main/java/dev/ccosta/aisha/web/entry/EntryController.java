@@ -81,12 +81,13 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+        fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
         return "entries/list";
     }
 
@@ -95,6 +96,7 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
@@ -102,7 +104,7 @@ public class EntryController {
         HttpServletResponse response,
         Model model
     ) {
-        fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+        fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
         setCanonicalEntriesPushUrl(request, response);
         return "entries/list :: table";
     }
@@ -349,6 +351,7 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
@@ -357,7 +360,7 @@ public class EntryController {
     ) {
         entryService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -369,6 +372,7 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
@@ -377,7 +381,7 @@ public class EntryController {
     ) {
         entryService.confirmCategorySuggestion(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -389,6 +393,7 @@ public class EntryController {
         @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
@@ -397,7 +402,7 @@ public class EntryController {
     ) {
         entryService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, pendingSuggestions, page, size);
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
             return "entries/list :: table";
         }
         return "redirect:/entries";
@@ -424,6 +429,7 @@ public class EntryController {
         DateFilterState globalDateFilter,
         Long accountId,
         Long categoryId,
+        String description,
         boolean pendingSuggestions,
         Integer page,
         Integer size
@@ -444,6 +450,7 @@ public class EntryController {
             effectiveDateFilter.getEndDate(),
             effectiveAccountId,
             toEffectiveCategoryId(categoryId),
+            normalizeDescriptionFilter(description),
             isWithoutCategoryFilter(categoryId),
             pendingSuggestions,
             requestedPage,
@@ -456,6 +463,7 @@ public class EntryController {
                 effectiveDateFilter.getEndDate(),
                 effectiveAccountId,
                 toEffectiveCategoryId(categoryId),
+                normalizeDescriptionFilter(description),
                 isWithoutCategoryFilter(categoryId),
                 pendingSuggestions,
                 effectivePage,
@@ -467,6 +475,7 @@ public class EntryController {
         model.addAttribute("entries", pageResult.items());
         model.addAttribute("selectedAccountId", effectiveAccountId);
         model.addAttribute("selectedCategoryId", categoryId);
+        model.addAttribute("selectedDescription", normalizeDescriptionFilter(description));
         model.addAttribute("selectedPendingSuggestions", pendingSuggestions);
         model.addAttribute("accountOptions", accountOptions);
         model.addAttribute("pagination", pagination);
@@ -516,6 +525,10 @@ public class EntryController {
             return null;
         }
         return categoryId;
+    }
+
+    private String normalizeDescriptionFilter(String description) {
+        return StringUtils.hasText(description) ? description.trim() : null;
     }
 
     private Entry toDomain(EntryForm form) {

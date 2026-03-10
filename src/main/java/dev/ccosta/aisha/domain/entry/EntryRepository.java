@@ -14,6 +14,7 @@ public interface EntryRepository {
         LocalDate endDate,
         Long accountId,
         Long categoryId,
+        String descriptionFilter,
         boolean onlyWithoutCategory,
         boolean onlyPendingCategorySuggestions,
         int page,
