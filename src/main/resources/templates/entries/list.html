@@ -228,7 +228,7 @@
                                     class="btn btn-secondary"
                                     type="button"
                                     th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
-                                    th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},description=${selectedDescription},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})}"
+                                    th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id})},hx-confirm='unset'"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <i data-lucide="check-check" aria-hidden="true"></i>
@@ -241,7 +241,7 @@
                                 <button
                                     class="btn btn-danger"
                                     type="button"
-                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},description=${selectedDescription},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{entries.list.confirm.delete}"
+                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <i data-lucide="trash-2" aria-hidden="true"></i>
