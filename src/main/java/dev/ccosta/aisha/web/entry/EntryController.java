@@ -52,6 +52,7 @@ public class EntryController {
     private static final Logger log = LoggerFactory.getLogger(EntryController.class);
 
     private static final long UNCATEGORIZED_FILTER_VALUE = -1L;
+    private static final long NEW_CATEGORY_OPTION_VALUE = -2L;
 
     private final EntryService entryService;
     private final AccountService accountService;
@@ -204,6 +205,7 @@ public class EntryController {
     @GetMapping("/new")
     public String createForm(Model model) {
         EntryForm form = EntryForm.newWithCurrentDates();
+        prepareFormForRendering(form);
         model.addAttribute("form", form);
         fillEntryFormAccountOptions(model, null);
         fillCategoryOptions(model);
@@ -216,14 +218,16 @@ public class EntryController {
     public String categorySuggestion(@ModelAttribute("form") EntryForm form, Model model) {
         fillCategoryOptions(model);
         applySuggestedCategory(form);
+        prepareFormForRendering(form);
         fillCategorySuggestionState(model, form);
-        return "entries/form :: categorySection";
+        return "entries/form :: categorySelectionSection";
     }
 
     @PostMapping
     public String create(@Valid @ModelAttribute("form") EntryForm form, BindingResult bindingResult, Model model) {
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -235,6 +239,7 @@ public class EntryController {
             entryService.create(toDomain(form), form.getAccountId(), toCategorySelection(form));
         } catch (AccountNotFoundException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -242,6 +247,7 @@ public class EntryController {
             return "entries/form";
         } catch (CategoryNotFoundException ex) {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -254,6 +260,7 @@ public class EntryController {
                 new Object[] {ex.getAccountDeactivationDate()},
                 null
             );
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -262,6 +269,7 @@ public class EntryController {
         } catch (IllegalArgumentException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
             validateCategoryChoice(form, bindingResult);
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -275,6 +283,7 @@ public class EntryController {
     public String editForm(@PathVariable Long id, Model model) {
         Entry entry = entryService.findById(id);
         EntryForm form = fromDomain(entry);
+        prepareFormForRendering(form);
         model.addAttribute("form", form);
         fillEntryFormAccountOptions(model, entry.getAccount().getId());
         fillCategoryOptions(model);
@@ -293,6 +302,7 @@ public class EntryController {
     ) {
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -305,6 +315,7 @@ public class EntryController {
             entryService.update(id, toDomain(form), form.getAccountId(), toCategorySelection(form));
         } catch (AccountNotFoundException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -313,6 +324,7 @@ public class EntryController {
             return "entries/form";
         } catch (CategoryNotFoundException ex) {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -326,6 +338,7 @@ public class EntryController {
                 new Object[] {ex.getAccountDeactivationDate()},
                 null
             );
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -335,6 +348,7 @@ public class EntryController {
         } catch (IllegalArgumentException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
             validateCategoryChoice(form, bindingResult);
+            prepareFormForRendering(form);
             fillEntryFormAccountOptions(model, form.getAccountId());
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
@@ -575,6 +589,7 @@ public class EntryController {
         if (form == null || form.getSuggestedCategoryId() == null) {
             model.addAttribute("suggestedCategory", null);
             model.addAttribute("pendingCategorySuggestion", false);
+            model.addAttribute("showNewCategoryField", shouldShowNewCategoryField(form));
             return;
         }
 
@@ -582,14 +597,30 @@ public class EntryController {
         model.addAttribute("suggestedCategory", suggestedCategory);
         model.addAttribute(
             "pendingCategorySuggestion",
-            form.getCategoryId() != null && form.getCategoryId().equals(form.getSuggestedCategoryId())
+            effectiveCategoryId(form) != null && effectiveCategoryId(form).equals(form.getSuggestedCategoryId())
         );
+        model.addAttribute("showNewCategoryField", shouldShowNewCategoryField(form));
     }
 
     private void validateCategoryChoice(EntryForm form, BindingResult bindingResult) {
-        boolean hasCategoryId = form.getCategoryId() != null;
+        boolean hasCategoryId = effectiveCategoryId(form) != null;
         boolean hasNewCategoryTitle = StringUtils.hasText(form.getNewCategoryTitle());
         if (hasCategoryId || hasNewCategoryTitle) {
+            return;
+        }
+
+        if (isNewCategoryOptionSelected(form)) {
+            bindingResult.addError(
+                new FieldError(
+                    "form",
+                    "newCategoryTitle",
+                    form.getNewCategoryTitle(),
+                    false,
+                    new String[] {"entryForm.newCategoryTitle.notBlank"},
+                    null,
+                    null
+                )
+            );
             return;
         }
 
@@ -600,7 +631,7 @@ public class EntryController {
 
     private EntryCategorySelection toCategorySelection(EntryForm form) {
         return new EntryCategorySelection(
-            form.getCategoryId(),
+            effectiveCategoryId(form),
             form.getNewCategoryTitle(),
             form.getSuggestedCategoryId(),
             form.getSuggestedCategoryConfidence()
@@ -609,7 +640,7 @@ public class EntryController {
 
     private void applySuggestedCategory(EntryForm form) {
         if (!shouldSuggestCategory(form)) {
-            if (form.getCategoryId() == null && !StringUtils.hasText(form.getNewCategoryTitle())) {
+            if (effectiveCategoryId(form) == null && !StringUtils.hasText(form.getNewCategoryTitle())) {
                 form.setSuggestedCategoryId(null);
                 form.setSuggestedCategoryConfidence(null);
             }
@@ -628,7 +659,7 @@ public class EntryController {
     }
 
     private boolean shouldSuggestCategory(EntryForm form) {
-        return form.getCategoryId() == null
+        return effectiveCategoryId(form) == null
             && !StringUtils.hasText(form.getNewCategoryTitle())
             && form.getAccountId() != null
             && form.getAmount() != null
@@ -639,6 +670,30 @@ public class EntryController {
         form.setCategoryId(suggestion.category().getId());
         form.setSuggestedCategoryId(suggestion.category().getId());
         form.setSuggestedCategoryConfidence(suggestion.confidence());
+    }
+
+    private void prepareFormForRendering(EntryForm form) {
+        if (form == null) {
+            return;
+        }
+        if (form.getCategoryId() == null && StringUtils.hasText(form.getNewCategoryTitle())) {
+            form.setCategoryId(NEW_CATEGORY_OPTION_VALUE);
+        }
+    }
+
+    private boolean shouldShowNewCategoryField(EntryForm form) {
+        return form != null && (isNewCategoryOptionSelected(form) || StringUtils.hasText(form.getNewCategoryTitle()));
+    }
+
+    private boolean isNewCategoryOptionSelected(EntryForm form) {
+        return form != null && form.getCategoryId() != null && form.getCategoryId() == NEW_CATEGORY_OPTION_VALUE;
+    }
+
+    private Long effectiveCategoryId(EntryForm form) {
+        if (isNewCategoryOptionSelected(form)) {
+            return null;
+        }
+        return form == null ? null : form.getCategoryId();
     }
 
     private void fillImportErrorModel(Model model, String rawMessage) {

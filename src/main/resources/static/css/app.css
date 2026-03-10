@@ -727,6 +727,11 @@ th {
   max-width: 800px;
 }
 
+.form-card > h2 + form,
+.form-card > h2 + p {
+  margin-top: 0.9rem;
+}
+
 .grid-2 {
   display: grid;
   gap: 1rem;
@@ -745,6 +750,11 @@ th {
 
 .field-checkbox {
   margin-top: 1.25rem;
+}
+
+.field-group {
+  display: grid;
+  gap: 0.9rem;
 }
 
 .label-checkbox {
