@@ -130,6 +130,8 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            REVISION=${{ steps.snapshot.outputs.snapshot_tag }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.snapshot.outputs.snapshot_image_tag }}
 
