@@ -28,7 +28,14 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
           )
           and (
                 :descriptionFilter is null
-                or upper(function('translate', e.description, :accentedCharacters, :plainCharacters))
+                or upper(
+                    function(
+                        'translate',
+                        e.description,
+                        'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ',
+                        'AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn'
+                    )
+                )
                     like concat(
                         '%',
                         :descriptionFilter,
@@ -48,8 +55,6 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
         @Param("onlyWithoutCategory") boolean onlyWithoutCategory,
         @Param("onlyPendingCategorySuggestions") boolean onlyPendingCategorySuggestions,
         @Param("pendingStatus") EntryCategorySuggestionStatus pendingStatus,
-        @Param("accentedCharacters") String accentedCharacters,
-        @Param("plainCharacters") String plainCharacters,
         Pageable pageable
     );
 

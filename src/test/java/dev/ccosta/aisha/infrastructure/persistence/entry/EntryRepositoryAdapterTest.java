@@ -38,8 +38,6 @@ class EntryRepositoryAdapterTest {
             anyBoolean(),
             anyBoolean(),
             any(EntryCategorySuggestionStatus.class),
-            anyString(),
-            anyString(),
             any(Pageable.class)
         )).thenReturn(Page.empty());
 
@@ -65,8 +63,6 @@ class EntryRepositoryAdapterTest {
             anyBoolean(),
             anyBoolean(),
             any(EntryCategorySuggestionStatus.class),
-            anyString(),
-            anyString(),
             any(Pageable.class)
         );
 
