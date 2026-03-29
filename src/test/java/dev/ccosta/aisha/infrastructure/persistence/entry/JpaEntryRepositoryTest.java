@@ -22,9 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 @TestPropertySource(properties = "spring.sql.init.mode=never")
 class JpaEntryRepositoryTest {
 
-    private static final String ACCENTED_CHARACTERS = "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ";
-    private static final String PLAIN_CHARACTERS = "AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn";
-
     @Autowired
     private JpaEntryRepository jpaEntryRepository;
 
@@ -49,8 +46,6 @@ class JpaEntryRepositoryTest {
             false,
             false,
             EntryCategorySuggestionStatus.PENDING,
-            ACCENTED_CHARACTERS,
-            PLAIN_CHARACTERS,
             PageRequest.of(0, 25)
         );
 

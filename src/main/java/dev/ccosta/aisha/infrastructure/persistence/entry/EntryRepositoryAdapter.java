@@ -19,9 +19,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class EntryRepositoryAdapter implements EntryRepository {
 
-    private static final String ACCENTED_CHARACTERS = "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ";
-    private static final String PLAIN_CHARACTERS = "AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn";
-
     private final JpaEntryRepository jpaEntryRepository;
 
     public EntryRepositoryAdapter(JpaEntryRepository jpaEntryRepository) {
@@ -50,8 +47,6 @@ public class EntryRepositoryAdapter implements EntryRepository {
             onlyWithoutCategory,
             onlyPendingCategorySuggestions,
             EntryCategorySuggestionStatus.PENDING,
-            ACCENTED_CHARACTERS,
-            PLAIN_CHARACTERS,
             pageRequest
         );
         return new PagedResult<>(
