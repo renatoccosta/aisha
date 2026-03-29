@@ -6,9 +6,11 @@ import dev.ccosta.aisha.domain.entry.EntryCategoryTrainingExample;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,7 +46,7 @@ public class EntryRepositoryAdapter implements EntryRepository {
             endDate,
             accountId,
             categoryId,
-            escapeLikePattern(descriptionFilter),
+            normalizeDescriptionFilter(descriptionFilter),
             onlyWithoutCategory,
             onlyPendingCategorySuggestions,
             EntryCategorySuggestionStatus.PENDING,
@@ -149,6 +151,17 @@ public class EntryRepositoryAdapter implements EntryRepository {
     @Override
     public void deleteByIds(Collection<Long> ids) {
         jpaEntryRepository.deleteAllByIdInBatch(ids);
+    }
+
+    private String normalizeDescriptionFilter(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}+", "");
+
+        return escapeLikePattern(normalized).toUpperCase(Locale.ROOT);
     }
 
     private String escapeLikePattern(String value) {
