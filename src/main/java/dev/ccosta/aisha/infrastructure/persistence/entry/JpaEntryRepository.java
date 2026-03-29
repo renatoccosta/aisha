@@ -31,7 +31,7 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
                 or upper(function('translate', e.description, :accentedCharacters, :plainCharacters))
                     like concat(
                         '%',
-                        upper(function('translate', :descriptionFilter, :accentedCharacters, :plainCharacters)),
+                        upper(:descriptionFilter),
                         '%'
                     ) escape '\\'
           )
