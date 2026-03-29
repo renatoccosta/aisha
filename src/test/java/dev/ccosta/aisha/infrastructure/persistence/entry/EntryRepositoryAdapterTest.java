@@ -70,6 +70,6 @@ class EntryRepositoryAdapterTest {
             any(Pageable.class)
         );
 
-        org.assertj.core.api.Assertions.assertThat(descriptionCaptor.getValue()).isEqualTo("Cafe\\_100\\%");
+        org.assertj.core.api.Assertions.assertThat(descriptionCaptor.getValue()).isEqualTo("CAFE\\_100\\%");
     }
 }

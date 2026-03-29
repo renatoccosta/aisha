@@ -10,6 +10,7 @@ import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -160,7 +161,7 @@ public class EntryRepositoryAdapter implements EntryRepository {
         String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
             .replaceAll("\\p{M}+", "");
 
-        return escapeLikePattern(normalized);
+        return escapeLikePattern(normalized).toUpperCase(Locale.ROOT);
     }
 
     private String escapeLikePattern(String value) {
