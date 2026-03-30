@@ -54,6 +54,32 @@ class JpaEntryRepositoryTest {
             .containsExactly(matchingEntry.getId());
     }
 
+    @Test
+    void shouldListEntriesWithoutDescriptionFilter() {
+        Account account = persistAccount("Conta teste");
+        Category category = persistCategory("Categoria teste");
+        Entry newerEntry = persistEntry(account, category, "Compra mercado");
+        Entry olderEntry = persistEntry(account, category, "Padaria");
+        olderEntry.setSettlementDate(LocalDate.of(2026, 1, 5));
+        entityManager.flush();
+        entityManager.clear();
+
+        Page<Entry> result = jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            account.getId(),
+            null,
+            false,
+            false,
+            EntryCategorySuggestionStatus.PENDING,
+            PageRequest.of(0, 25)
+        );
+
+        assertThat(result.getContent())
+            .extracting(Entry::getId)
+            .containsExactly(newerEntry.getId(), olderEntry.getId());
+    }
+
     private Account persistAccount(String title) {
         Account account = new Account();
         account.setTitle(title);
