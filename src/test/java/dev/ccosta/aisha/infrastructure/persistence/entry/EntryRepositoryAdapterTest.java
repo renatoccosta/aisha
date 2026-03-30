@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,8 +39,6 @@ class EntryRepositoryAdapterTest {
             anyBoolean(),
             anyBoolean(),
             any(EntryCategorySuggestionStatus.class),
-            anyString(),
-            anyString(),
             any(Pageable.class)
         )).thenReturn(Page.empty());
 
@@ -65,11 +64,57 @@ class EntryRepositoryAdapterTest {
             anyBoolean(),
             anyBoolean(),
             any(EntryCategorySuggestionStatus.class),
-            anyString(),
-            anyString(),
             any(Pageable.class)
         );
 
         org.assertj.core.api.Assertions.assertThat(descriptionCaptor.getValue()).isEqualTo("CAFE\\_100\\%");
+    }
+
+    @Test
+    void shouldUseQueryWithoutDescriptionWhenFilterIsBlank() {
+        when(jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
+            any(),
+            any(),
+            anyLong(),
+            anyLong(),
+            anyBoolean(),
+            anyBoolean(),
+            any(EntryCategorySuggestionStatus.class),
+            any(Pageable.class)
+        )).thenReturn(Page.empty());
+
+        entryRepositoryAdapter.listMostRecentBySettlementDateBetweenAndFilters(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            1L,
+            2L,
+            "   ",
+            false,
+            false,
+            0,
+            25
+        );
+
+        verify(jpaEntryRepository).searchBySettlementDateBetweenAndFiltersWithoutDescription(
+            any(),
+            any(),
+            anyLong(),
+            anyLong(),
+            anyBoolean(),
+            anyBoolean(),
+            any(EntryCategorySuggestionStatus.class),
+            any(Pageable.class)
+        );
+        verify(jpaEntryRepository, never()).searchBySettlementDateBetweenAndFilters(
+            any(),
+            any(),
+            anyLong(),
+            anyLong(),
+            anyString(),
+            anyBoolean(),
+            anyBoolean(),
+            any(EntryCategorySuggestionStatus.class),
+            any(Pageable.class)
+        );
     }
 }

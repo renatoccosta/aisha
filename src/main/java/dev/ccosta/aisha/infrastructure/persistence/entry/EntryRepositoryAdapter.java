@@ -19,9 +19,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class EntryRepositoryAdapter implements EntryRepository {
 
-    private static final String ACCENTED_CHARACTERS = "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ";
-    private static final String PLAIN_CHARACTERS = "AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn";
-
     private final JpaEntryRepository jpaEntryRepository;
 
     public EntryRepositoryAdapter(JpaEntryRepository jpaEntryRepository) {
@@ -41,19 +38,29 @@ public class EntryRepositoryAdapter implements EntryRepository {
         int pageSize
     ) {
         PageRequest pageRequest = PageRequest.of(page, pageSize);
-        Page<Entry> result = jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
-            startDate,
-            endDate,
-            accountId,
-            categoryId,
-            normalizeDescriptionFilter(descriptionFilter),
-            onlyWithoutCategory,
-            onlyPendingCategorySuggestions,
-            EntryCategorySuggestionStatus.PENDING,
-            ACCENTED_CHARACTERS,
-            PLAIN_CHARACTERS,
-            pageRequest
-        );
+        String normalizedDescriptionFilter = normalizeDescriptionFilter(descriptionFilter);
+        Page<Entry> result = normalizedDescriptionFilter == null
+            ? jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
+                startDate,
+                endDate,
+                accountId,
+                categoryId,
+                onlyWithoutCategory,
+                onlyPendingCategorySuggestions,
+                EntryCategorySuggestionStatus.PENDING,
+                pageRequest
+            )
+            : jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
+                startDate,
+                endDate,
+                accountId,
+                categoryId,
+                normalizedDescriptionFilter,
+                onlyWithoutCategory,
+                onlyPendingCategorySuggestions,
+                EntryCategorySuggestionStatus.PENDING,
+                pageRequest
+            );
         return new PagedResult<>(
             result.getContent(),
             result.getNumber(),
@@ -155,6 +162,10 @@ public class EntryRepositoryAdapter implements EntryRepository {
 
     private String normalizeDescriptionFilter(String value) {
         if (value == null) {
+            return null;
+        }
+
+        if (value.isBlank()) {
             return null;
         }
 

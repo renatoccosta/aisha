@@ -26,9 +26,42 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
                 (:onlyWithoutCategory = true and e.category is null)
                 or (:onlyWithoutCategory = false and (:categoryId is null or e.category.id = :categoryId))
           )
+          and (:onlyPendingCategorySuggestions = false or e.categorySuggestionStatus = :pendingStatus)
+        order by e.settlementDate desc, e.id desc
+        """
+    )
+    Page<Entry> searchBySettlementDateBetweenAndFiltersWithoutDescription(
+        LocalDate startDate,
+        LocalDate endDate,
+        @Param("accountId") Long accountId,
+        @Param("categoryId") Long categoryId,
+        @Param("onlyWithoutCategory") boolean onlyWithoutCategory,
+        @Param("onlyPendingCategorySuggestions") boolean onlyPendingCategorySuggestions,
+        @Param("pendingStatus") EntryCategorySuggestionStatus pendingStatus,
+        Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"account", "category", "suggestedCategory"})
+    @Query(
+        """
+        select e
+        from Entry e
+        where e.settlementDate between :startDate and :endDate
+          and (:accountId is null or e.account.id = :accountId)
+          and (
+                (:onlyWithoutCategory = true and e.category is null)
+                or (:onlyWithoutCategory = false and (:categoryId is null or e.category.id = :categoryId))
+          )
           and (
                 :descriptionFilter is null
-                or upper(function('translate', e.description, :accentedCharacters, :plainCharacters))
+                or upper(
+                    function(
+                        'translate',
+                        e.description,
+                        'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ',
+                        'AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn'
+                    )
+                )
                     like concat(
                         '%',
                         :descriptionFilter,
@@ -48,8 +81,6 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
         @Param("onlyWithoutCategory") boolean onlyWithoutCategory,
         @Param("onlyPendingCategorySuggestions") boolean onlyPendingCategorySuggestions,
         @Param("pendingStatus") EntryCategorySuggestionStatus pendingStatus,
-        @Param("accentedCharacters") String accentedCharacters,
-        @Param("plainCharacters") String plainCharacters,
         Pageable pageable
     );
 
