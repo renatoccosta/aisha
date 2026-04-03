@@ -3,14 +3,16 @@
 FROM maven:3.9.11-eclipse-temurin-25 AS builder
 WORKDIR /workspace
 
+ARG REVISION=0.0.1-SNAPSHOT
+
 COPY pom.xml ./
 COPY .mvn ./.mvn
 COPY mvnw ./
-RUN chmod +x mvnw && ./mvnw -q -DskipTests dependency:go-offline
+RUN chmod +x mvnw && ./mvnw -q -Drevision=${REVISION} -DskipTests dependency:go-offline
 
 COPY src ./src
 COPY docs/legal ./docs/legal
-RUN ./mvnw -q -DskipTests package \
+RUN ./mvnw -q -Drevision=${REVISION} -DskipTests package \
     && mkdir -p target/layers/dependencies target/layers/snapshot-dependencies target/layers/spring-boot-loader target/layers/application \
     && java -Djarmode=layertools -jar target/*.jar extract --destination target/layers
 

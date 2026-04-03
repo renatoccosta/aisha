@@ -552,6 +552,36 @@ p {
   overflow-x: auto;
 }
 
+.table-select-all-toggle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.table-select-all-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.table-select-all-toggle .table-heading-label {
+  color: inherit;
+}
+
+.responsive-list tbody tr.is-selectable {
+  cursor: pointer;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.responsive-list tbody tr.is-selectable:hover {
+  background: var(--color-action-tertiary-bg);
+}
+
+.responsive-list tbody tr.is-selected {
+  background: color-mix(in srgb, var(--color-focus-ring) 18%, var(--card));
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -577,6 +607,12 @@ th {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+.table-select-all-toggle:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .empty {
@@ -666,6 +702,17 @@ th {
     overflow: hidden;
   }
 
+  .responsive-list tbody tr.is-selectable:hover {
+    background: color-mix(in srgb, var(--color-action-tertiary-bg) 72%, var(--color-bg-subtle));
+    border-color: var(--color-border-strong);
+  }
+
+  .responsive-list tbody tr.is-selected {
+    background: color-mix(in srgb, var(--color-focus-ring) 16%, var(--color-bg-subtle));
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--secondary) 24%, transparent);
+  }
+
   .responsive-list tbody tr.empty-row {
     border: 0;
     background: transparent;
@@ -727,6 +774,11 @@ th {
   max-width: 800px;
 }
 
+.form-card > h2 + form,
+.form-card > h2 + p {
+  margin-top: 0.9rem;
+}
+
 .grid-2 {
   display: grid;
   gap: 1rem;
@@ -745,6 +797,11 @@ th {
 
 .field-checkbox {
   margin-top: 1.25rem;
+}
+
+.field-group {
+  display: grid;
+  gap: 0.9rem;
 }
 
 .label-checkbox {

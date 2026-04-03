@@ -181,10 +181,23 @@
                     <thead>
                     <tr>
                         <th>
-                            <span class="table-heading-label" aria-hidden="true">
-                                <i data-lucide="check-square" aria-hidden="true"></i>
-                            </span>
-                            <span class="sr-only" th:text="#{entries.list.table.select}"></span>
+                            <button
+                                class="table-select-all-toggle"
+                                type="button"
+                                th:attr="data-label-none=#{selection.toggle.none},data-label-some=#{selection.toggle.some},data-label-all=#{selection.toggle.all}">
+                                <span class="table-heading-label" aria-hidden="true">
+                                    <span data-state-icon="none">
+                                        <i data-lucide="square" aria-hidden="true"></i>
+                                    </span>
+                                    <span data-state-icon="some" hidden>
+                                        <i data-lucide="minus-square" aria-hidden="true"></i>
+                                    </span>
+                                    <span data-state-icon="all" hidden>
+                                        <i data-lucide="check-square" aria-hidden="true"></i>
+                                    </span>
+                                </span>
+                                <span class="sr-only" th:text="#{entries.list.table.select}"></span>
+                            </button>
                         </th>
                         <th><span class="table-heading-label"><i data-lucide="briefcase" aria-hidden="true"></i><span th:text="#{entries.list.table.account}"></span></span></th>
                         <th><span class="table-heading-label"><i data-lucide="calendar" aria-hidden="true"></i><span th:text="#{entries.list.table.movementDate}"></span></span></th>
@@ -228,7 +241,7 @@
                                     class="btn btn-secondary"
                                     type="button"
                                     th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
-                                    th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},description=${selectedDescription},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})}"
+                                    th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id})},hx-confirm='unset'"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <i data-lucide="check-check" aria-hidden="true"></i>
@@ -241,7 +254,7 @@
                                 <button
                                     class="btn btn-danger"
                                     type="button"
-                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id},accountId=${selectedAccountId},categoryId=${selectedCategoryId},description=${selectedDescription},pendingSuggestions=${selectedPendingSuggestions},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{entries.list.confirm.delete}"
+                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
                                     hx-target="#table-container"
                                     hx-swap="outerHTML">
                                     <i data-lucide="trash-2" aria-hidden="true"></i>
