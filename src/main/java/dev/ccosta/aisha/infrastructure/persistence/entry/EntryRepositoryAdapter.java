@@ -6,9 +6,11 @@ import dev.ccosta.aisha.domain.entry.EntryCategoryTrainingExample;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,9 +18,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class EntryRepositoryAdapter implements EntryRepository {
-
-    private static final String ACCENTED_CHARACTERS = "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ";
-    private static final String PLAIN_CHARACTERS = "AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn";
 
     private final JpaEntryRepository jpaEntryRepository;
 
@@ -39,19 +38,29 @@ public class EntryRepositoryAdapter implements EntryRepository {
         int pageSize
     ) {
         PageRequest pageRequest = PageRequest.of(page, pageSize);
-        Page<Entry> result = jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
-            startDate,
-            endDate,
-            accountId,
-            categoryId,
-            escapeLikePattern(descriptionFilter),
-            onlyWithoutCategory,
-            onlyPendingCategorySuggestions,
-            EntryCategorySuggestionStatus.PENDING,
-            ACCENTED_CHARACTERS,
-            PLAIN_CHARACTERS,
-            pageRequest
-        );
+        String normalizedDescriptionFilter = normalizeDescriptionFilter(descriptionFilter);
+        Page<Entry> result = normalizedDescriptionFilter == null
+            ? jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
+                startDate,
+                endDate,
+                accountId,
+                categoryId,
+                onlyWithoutCategory,
+                onlyPendingCategorySuggestions,
+                EntryCategorySuggestionStatus.PENDING,
+                pageRequest
+            )
+            : jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
+                startDate,
+                endDate,
+                accountId,
+                categoryId,
+                normalizedDescriptionFilter,
+                onlyWithoutCategory,
+                onlyPendingCategorySuggestions,
+                EntryCategorySuggestionStatus.PENDING,
+                pageRequest
+            );
         return new PagedResult<>(
             result.getContent(),
             result.getNumber(),
@@ -149,6 +158,21 @@ public class EntryRepositoryAdapter implements EntryRepository {
     @Override
     public void deleteByIds(Collection<Long> ids) {
         jpaEntryRepository.deleteAllByIdInBatch(ids);
+    }
+
+    private String normalizeDescriptionFilter(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value.isBlank()) {
+            return null;
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}+", "");
+
+        return escapeLikePattern(normalized).toUpperCase(Locale.ROOT);
     }
 
     private String escapeLikePattern(String value) {

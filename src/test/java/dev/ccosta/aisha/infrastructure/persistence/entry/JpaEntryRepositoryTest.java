@@ -22,9 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 @TestPropertySource(properties = "spring.sql.init.mode=never")
 class JpaEntryRepositoryTest {
 
-    private static final String ACCENTED_CHARACTERS = "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ";
-    private static final String PLAIN_CHARACTERS = "AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn";
-
     @Autowired
     private JpaEntryRepository jpaEntryRepository;
 
@@ -49,14 +46,38 @@ class JpaEntryRepositoryTest {
             false,
             false,
             EntryCategorySuggestionStatus.PENDING,
-            ACCENTED_CHARACTERS,
-            PLAIN_CHARACTERS,
             PageRequest.of(0, 25)
         );
 
         assertThat(result.getContent())
             .extracting(Entry::getId)
             .containsExactly(matchingEntry.getId());
+    }
+
+    @Test
+    void shouldListEntriesWithoutDescriptionFilter() {
+        Account account = persistAccount("Conta teste");
+        Category category = persistCategory("Categoria teste");
+        Entry newerEntry = persistEntry(account, category, "Compra mercado");
+        Entry olderEntry = persistEntry(account, category, "Padaria");
+        olderEntry.setSettlementDate(LocalDate.of(2026, 1, 5));
+        entityManager.flush();
+        entityManager.clear();
+
+        Page<Entry> result = jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            account.getId(),
+            null,
+            false,
+            false,
+            EntryCategorySuggestionStatus.PENDING,
+            PageRequest.of(0, 25)
+        );
+
+        assertThat(result.getContent())
+            .extracting(Entry::getId)
+            .containsExactly(newerEntry.getId(), olderEntry.getId());
     }
 
     private Account persistAccount(String title) {
