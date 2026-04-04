@@ -13,6 +13,7 @@ import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -62,6 +63,27 @@ class EntryServiceTest {
         verify(entryRepository).save(existing);
     }
 
+
+    @Test
+    void shouldDefineManualSourceWhenUpdatingLegacyEntry() {
+        Entry existing = newEntry("Descricao antiga", new BigDecimal("10.00"));
+        existing.setEntrySource(null);
+        existing.setRegistrationDate(null);
+        Entry updatedData = newEntry("Descricao nova", new BigDecimal("99.90"));
+        Account account = newAccount("Conta nova");
+        Category category = newCategory("Alimentação");
+
+        when(entryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(accountService.findById(6L)).thenReturn(account);
+        when(categoryService.findById(7L)).thenReturn(category);
+        when(entryRepository.save(existing)).thenReturn(existing);
+
+        Entry updated = entryService.update(1L, updatedData, 6L, selection(7L, null, null, null));
+
+        assertThat(updated.getEntrySource()).isEqualTo(EntrySource.MANUAL);
+        assertThat(updated.getRegistrationDate()).isNotNull();
+    }
+
     @Test
     void shouldFailUpdateWhenEntryDoesNotExist() {
         Entry updatedData = newEntry("Descricao", new BigDecimal("99.90"));
@@ -104,6 +126,8 @@ class EntryServiceTest {
 
         assertThat(created.getAccount().getTitle()).isEqualTo("Conta Corrente");
         assertThat(created.getCategory().getTitle()).isEqualTo("Categoria existente");
+        assertThat(created.getEntrySource()).isEqualTo(EntrySource.MANUAL);
+        assertThat(created.getRegistrationDate()).isNotNull();
         verify(accountService).validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
         verify(accountService).findById(2L);
         verify(accountService).adjustInitialBalanceForBackdatedEntry(2L, LocalDate.of(2026, 2, 11));

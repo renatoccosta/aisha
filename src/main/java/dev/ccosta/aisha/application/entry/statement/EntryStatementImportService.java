@@ -11,6 +11,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.entry.EntrySource;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -111,6 +112,8 @@ public class EntryStatementImportService {
             entry.setAmount(record.amount());
             entry.setNotes(record.notes());
             entry.setExternalId(record.externalId());
+            entry.setEntrySource(EntrySource.IMPORT);
+            entry.setRegistrationDate(LocalDate.now());
             applyCategorySuggestion(entry, account, record);
             entryRepository.save(entry);
             imported++;

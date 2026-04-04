@@ -16,6 +16,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+
 @Entity
 @Table(name = "entries")
 public class Entry {
@@ -60,6 +61,13 @@ public class Entry {
 
     @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entry_source", length = 20)
+    private EntrySource entrySource;
+
+    @Column(name = "registration_date")
+    private LocalDate registrationDate;
 
     public Long getId() {
         return id;
@@ -151,6 +159,22 @@ public class Entry {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public EntrySource getEntrySource() {
+        return entrySource;
+    }
+
+    public void setEntrySource(EntrySource entrySource) {
+        this.entrySource = entrySource;
+    }
+
+    public LocalDate getRegistrationDate() {
+        return registrationDate;
+    }
+
+    public void setRegistrationDate(LocalDate registrationDate) {
+        this.registrationDate = registrationDate;
     }
 
     public boolean hasPendingCategorySuggestion() {

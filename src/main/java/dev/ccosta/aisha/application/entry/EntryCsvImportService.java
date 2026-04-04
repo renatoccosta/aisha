@@ -6,6 +6,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.entry.EntrySource;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -134,6 +135,8 @@ public class EntryCsvImportService {
             entry.setAmount(record.amount());
             entry.setNotes(record.notes());
             entry.setExternalId(record.externalId());
+            entry.setEntrySource(EntrySource.IMPORT);
+            entry.setRegistrationDate(LocalDate.now());
             entryRepository.save(entry);
 
             if (

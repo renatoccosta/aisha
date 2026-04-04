@@ -305,6 +305,7 @@ public class EntryController {
         fillCategoryOptions(model);
         fillCategorySuggestionState(model, form);
         model.addAttribute("entryId", id);
+        fillEntryRegistrationInfo(model, entry);
         model.addAttribute("mode", "edit");
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
         return "entries/form";
@@ -325,6 +326,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
+            fillEntryRegistrationInfo(model, entryService.findById(id));
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -339,6 +341,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
+            fillEntryRegistrationInfo(model, entryService.findById(id));
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -349,6 +352,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
+            fillEntryRegistrationInfo(model, entryService.findById(id));
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -364,6 +368,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
+            fillEntryRegistrationInfo(model, entryService.findById(id));
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -375,6 +380,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
+            fillEntryRegistrationInfo(model, entryService.findById(id));
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -608,6 +614,12 @@ public class EntryController {
         form.setNotes(entry.getNotes());
         form.setAmount(entry.getAmount());
         return form;
+    }
+
+
+    private void fillEntryRegistrationInfo(Model model, Entry entry) {
+        model.addAttribute("entrySource", entry.getEntrySource());
+        model.addAttribute("entryRegistrationDate", entry.getRegistrationDate());
     }
 
     private void fillStatementImportOptions(Model model) {
