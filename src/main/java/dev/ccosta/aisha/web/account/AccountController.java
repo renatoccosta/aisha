@@ -8,6 +8,7 @@ import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
+import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
@@ -65,16 +66,23 @@ public class AccountController {
     }
 
     @GetMapping("/new")
-    public String createForm(Model model) {
+    public String createForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
         model.addAttribute("form", new AccountForm());
         model.addAttribute("mode", "create");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
         return "accounts/form";
     }
 
     @PostMapping
-    public String create(@Valid @ModelAttribute("form") AccountForm form, BindingResult bindingResult, Model model) {
+    public String create(
+        @Valid @ModelAttribute("form") AccountForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
         }
 
@@ -88,17 +96,23 @@ public class AccountController {
                 null
             );
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
         }
-        return "redirect:/accounts";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/accounts");
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         Account account = accountService.findById(id);
         model.addAttribute("form", fromDomain(account));
         model.addAttribute("accountId", id);
         model.addAttribute("mode", "edit");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
         return "accounts/form";
     }
 
@@ -107,11 +121,13 @@ public class AccountController {
         @PathVariable Long id,
         @Valid @ModelAttribute("form") AccountForm form,
         BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("accountId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
         }
 
@@ -126,9 +142,10 @@ public class AccountController {
             );
             model.addAttribute("accountId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
         }
-        return "redirect:/accounts";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/accounts");
     }
 
     @PostMapping("/{id}/delete")
@@ -214,6 +231,10 @@ public class AccountController {
         model.addAttribute("accounts", accounts);
         model.addAttribute("pagination", pagination);
         model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
+        model.addAttribute(
+            "returnTo",
+            ReturnPathSupport.buildReturnPath("/accounts", "page", pagination.page(), "size", pagination.pageSize())
+        );
 
         DateFilterState effectiveFilter = globalDateFilter != null
             ? globalDateFilter

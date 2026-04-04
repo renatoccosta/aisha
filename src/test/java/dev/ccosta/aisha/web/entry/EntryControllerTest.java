@@ -71,7 +71,7 @@ class EntryControllerTest {
         when(accountService.listAvailableForEntryForm(any())).thenReturn(List.of());
         when(categoryService.listHierarchyOptions()).thenReturn(List.of(new CategoryOption(1L, "Alimentação")));
 
-        String view = entryController.create(form, bindingResult, model);
+        String view = entryController.create(form, bindingResult, "/entries", model);
 
         assertThat(view).isEqualTo("entries/form");
         assertThat(bindingResult.hasFieldErrors("newCategoryTitle")).isTrue();
@@ -84,13 +84,33 @@ class EntryControllerTest {
         form.setCategoryId(-2L);
         form.setNewCategoryTitle("Educação");
 
-        String view = entryController.create(form, new BeanPropertyBindingResult(form, "form"), new ConcurrentModel());
+        String view = entryController.create(
+            form,
+            new BeanPropertyBindingResult(form, "form"),
+            "/entries?page=2&size=50",
+            new ConcurrentModel()
+        );
 
-        assertThat(view).isEqualTo("redirect:/entries");
+        assertThat(view).isEqualTo("redirect:/entries?page=2&size=50");
         ArgumentCaptor<EntryCategorySelection> selectionCaptor = ArgumentCaptor.forClass(EntryCategorySelection.class);
         verify(entryService).create(any(Entry.class), any(), selectionCaptor.capture());
         assertThat(selectionCaptor.getValue().categoryId()).isNull();
         assertThat(selectionCaptor.getValue().newCategoryTitle()).isEqualTo("Educação");
+    }
+
+    @Test
+    void shouldFallbackToEntriesListingWhenReturnPathIsUnsafe() {
+        EntryForm form = baseForm();
+        form.setCategoryId(1L);
+
+        String view = entryController.create(
+            form,
+            new BeanPropertyBindingResult(form, "form"),
+            "https://evil.example/entries",
+            new ConcurrentModel()
+        );
+
+        assertThat(view).isEqualTo("redirect:/entries");
     }
 
     private EntryForm baseForm() {

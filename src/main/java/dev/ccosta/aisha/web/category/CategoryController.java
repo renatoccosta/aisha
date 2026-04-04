@@ -7,6 +7,7 @@ import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
+import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
@@ -64,32 +65,44 @@ public class CategoryController {
     }
 
     @GetMapping("/new")
-    public String createForm(Model model) {
+    public String createForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
         model.addAttribute("form", new CategoryForm());
         fillParentOptions(model, null);
         model.addAttribute("mode", "create");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/categories"));
         return "categories/form";
     }
 
     @PostMapping
-    public String create(@Valid @ModelAttribute("form") CategoryForm form, BindingResult bindingResult, Model model) {
+    public String create(
+        @Valid @ModelAttribute("form") CategoryForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         if (bindingResult.hasErrors()) {
             fillParentOptions(model, null);
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/categories"));
             return "categories/form";
         }
 
         categoryService.create(toDomain(form), form.getParentId());
-        return "redirect:/categories";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/categories");
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         Category category = categoryService.findById(id);
         model.addAttribute("form", fromDomain(category));
         model.addAttribute("categoryId", id);
         fillParentOptions(model, id);
         model.addAttribute("mode", "edit");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/categories"));
         return "categories/form";
     }
 
@@ -98,17 +111,19 @@ public class CategoryController {
         @PathVariable Long id,
         @Valid @ModelAttribute("form") CategoryForm form,
         BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("categoryId", id);
             fillParentOptions(model, id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/categories"));
             return "categories/form";
         }
 
         categoryService.update(id, toDomain(form), form.getParentId());
-        return "redirect:/categories";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/categories");
     }
 
     @PostMapping("/{id}/delete")
@@ -194,6 +209,10 @@ public class CategoryController {
         model.addAttribute("categories", categories);
         model.addAttribute("pagination", pagination);
         model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
+        model.addAttribute(
+            "returnTo",
+            ReturnPathSupport.buildReturnPath("/categories", "page", pagination.page(), "size", pagination.pageSize())
+        );
 
         DateFilterState effectiveFilter = globalDateFilter != null
             ? globalDateFilter

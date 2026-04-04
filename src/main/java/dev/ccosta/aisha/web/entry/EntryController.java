@@ -21,6 +21,7 @@ import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
+import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
@@ -107,7 +108,7 @@ public class EntryController {
     ) {
         fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
         setCanonicalEntriesPushUrl(request, response);
-        return "entries/list :: table";
+        return "entries/list :: listing";
     }
 
     @GetMapping("/import")
@@ -203,7 +204,7 @@ public class EntryController {
     }
 
     @GetMapping("/new")
-    public String createForm(Model model) {
+    public String createForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
         EntryForm form = EntryForm.newWithCurrentDates();
         prepareFormForRendering(form);
         model.addAttribute("form", form);
@@ -211,6 +212,7 @@ public class EntryController {
         fillCategoryOptions(model);
         fillCategorySuggestionState(model, form);
         model.addAttribute("mode", "create");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
         return "entries/form";
     }
 
@@ -224,7 +226,12 @@ public class EntryController {
     }
 
     @PostMapping
-    public String create(@Valid @ModelAttribute("form") EntryForm form, BindingResult bindingResult, Model model) {
+    public String create(
+        @Valid @ModelAttribute("form") EntryForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
             prepareFormForRendering(form);
@@ -232,6 +239,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         }
 
@@ -244,6 +252,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         } catch (CategoryNotFoundException ex) {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
@@ -252,6 +261,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         } catch (EntrySettlementAfterAccountDeactivationException ex) {
             bindingResult.rejectValue(
@@ -265,6 +275,7 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         } catch (IllegalArgumentException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
@@ -274,13 +285,18 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         }
-        return "redirect:/entries";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         Entry entry = entryService.findById(id);
         EntryForm form = fromDomain(entry);
         prepareFormForRendering(form);
@@ -290,6 +306,7 @@ public class EntryController {
         fillCategorySuggestionState(model, form);
         model.addAttribute("entryId", id);
         model.addAttribute("mode", "edit");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
         return "entries/form";
     }
 
@@ -298,6 +315,7 @@ public class EntryController {
         @PathVariable Long id,
         @Valid @ModelAttribute("form") EntryForm form,
         BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
         validateCategoryChoice(form, bindingResult);
@@ -308,6 +326,7 @@ public class EntryController {
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         }
 
@@ -321,6 +340,7 @@ public class EntryController {
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         } catch (CategoryNotFoundException ex) {
             bindingResult.rejectValue("categoryId", "entryForm.categoryId.notNull");
@@ -330,6 +350,7 @@ public class EntryController {
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         } catch (EntrySettlementAfterAccountDeactivationException ex) {
             bindingResult.rejectValue(
@@ -344,6 +365,7 @@ public class EntryController {
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         } catch (IllegalArgumentException ex) {
             bindingResult.rejectValue("accountId", "entryForm.accountId.notNull");
@@ -354,9 +376,10 @@ public class EntryController {
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
         }
-        return "redirect:/entries";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
     }
 
     @PostMapping("/{id}/delete")
@@ -375,7 +398,7 @@ public class EntryController {
         entryService.deleteById(id);
         if (isHtmx(request)) {
             fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
-            return "entries/list :: table";
+            return "entries/list :: listing";
         }
         return "redirect:/entries";
     }
@@ -396,7 +419,7 @@ public class EntryController {
         entryService.confirmCategorySuggestion(id);
         if (isHtmx(request)) {
             fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
-            return "entries/list :: table";
+            return "entries/list :: listing";
         }
         return "redirect:/entries";
     }
@@ -417,7 +440,7 @@ public class EntryController {
         entryService.bulkDelete(ids);
         if (isHtmx(request)) {
             fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
-            return "entries/list :: table";
+            return "entries/list :: listing";
         }
         return "redirect:/entries";
     }
@@ -494,6 +517,24 @@ public class EntryController {
         model.addAttribute("accountOptions", accountOptions);
         model.addAttribute("pagination", pagination);
         model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
+        model.addAttribute(
+            "returnTo",
+            ReturnPathSupport.buildReturnPath(
+                "/entries",
+                "accountId",
+                effectiveAccountId,
+                "categoryId",
+                categoryId,
+                "description",
+                normalizeDescriptionFilter(description),
+                "pendingSuggestions",
+                pendingSuggestions,
+                "page",
+                pagination.page(),
+                "size",
+                pagination.pageSize()
+            )
+        );
         fillCategoryOptions(model);
     }
 

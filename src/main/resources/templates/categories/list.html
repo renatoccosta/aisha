@@ -17,7 +17,7 @@
             <h2 th:text="#{categories.list.heading}"></h2>
             <p th:text="#{categories.list.subtitle}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/categories/new}">
+        <a class="btn btn-primary" th:href="@{/categories/new(returnTo=${returnTo})}">
             <i data-lucide="plus" aria-hidden="true"></i>
             <span th:text="#{categories.list.action.new}"></span>
         </a>
@@ -139,7 +139,7 @@
                         <td th:attr="data-label=#{categories.list.table.parent}" th:text="${category.parent != null ? category.parent.title : '-'}"></td>
                         <td class="cell-actions" th:attr="data-label=#{categories.list.table.actions}">
                             <div class="actions-inline">
-                                <a class="btn btn-secondary" th:href="@{/categories/{id}/edit(id=${category.id})}">
+                                <a class="btn btn-secondary" th:href="@{/categories/{id}/edit(id=${category.id},returnTo=${returnTo})}">
                                     <i data-lucide="edit-3" aria-hidden="true"></i>
                                     <span th:text="#{categories.list.action.edit}"></span>
                                 </a>
