@@ -484,6 +484,21 @@ main {
   flex-wrap: wrap;
 }
 
+.filter-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.filter-panel-header {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.listing-stack {
+  display: grid;
+  gap: 1rem;
+}
+
 .admin-grid {
   display: grid;
   gap: 1rem;

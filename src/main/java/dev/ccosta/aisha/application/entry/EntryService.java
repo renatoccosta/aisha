@@ -7,6 +7,7 @@ import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -74,6 +75,7 @@ public class EntryService {
         Category category = resolveCategory(categorySelection);
         entry.setCategory(category);
         applyCategorySuggestionFeedback(entry, category, categorySelection);
+        applyManualMetadataForCreation(entry);
         Entry createdEntry = entryRepository.save(entry);
         accountService.adjustInitialBalanceForBackdatedEntry(accountId, createdEntry.getSettlementDate());
         return createdEntry;
@@ -92,6 +94,7 @@ public class EntryService {
         applyCategorySuggestionFeedback(existing, category, categorySelection);
         existing.setNotes(updatedData.getNotes());
         existing.setAmount(updatedData.getAmount());
+        applyManualMetadataForLegacyUpdate(existing);
         return entryRepository.save(existing);
     }
 
@@ -146,6 +149,23 @@ public class EntryService {
         }
 
         return accountService.findById(accountId);
+    }
+
+    private void applyManualMetadataForCreation(Entry entry) {
+        if (entry.getEntrySource() == null) {
+            entry.setEntrySource(EntrySource.MANUAL);
+        }
+        if (entry.getRegistrationDate() == null) {
+            entry.setRegistrationDate(LocalDate.now());
+        }
+    }
+
+    private void applyManualMetadataForLegacyUpdate(Entry entry) {
+        if (entry.getEntrySource() != null) {
+            return;
+        }
+        entry.setEntrySource(EntrySource.MANUAL);
+        entry.setRegistrationDate(LocalDate.now());
     }
 
     private void applyCategorySuggestionFeedback(Entry entry, Category category, EntryCategorySelection selection) {

@@ -16,6 +16,7 @@
 
         <form class="stack-form" th:object="${form}" th:action="${mode == 'create'} ? @{/categories} : @{/categories/{id}(id=${categoryId})}" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="returnTo" th:value="${returnTo}">
             <div class="field">
                 <label for="title" th:text="#{categories.form.field.title.required}"></label>
                 <input id="title" type="text" th:field="*{title}" maxlength="120" required>
@@ -47,7 +48,7 @@
                     <i data-lucide="save" aria-hidden="true"></i>
                     <span th:text="${mode == 'create'} ? #{categories.form.action.save} : #{categories.form.action.update}"></span>
                 </button>
-                <a class="btn btn-secondary" th:href="@{/categories}">
+                <a class="btn btn-secondary" th:href="${returnTo}">
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
                     <span th:text="#{categories.form.action.cancel}"></span>
                 </a>

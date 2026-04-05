@@ -26,79 +26,87 @@
                 <i data-lucide="file-input" aria-hidden="true"></i>
                 <span th:text="#{entries.list.action.importStatement}"></span>
             </a>
-            <a class="btn btn-primary" th:href="@{/entries/new}">
+            <a class="btn btn-primary" th:href="@{/entries/new(returnTo=${returnTo})}">
                 <i data-lucide="plus" aria-hidden="true"></i>
                 <span th:text="#{entries.list.action.new}"></span>
             </a>
         </div>
     </section>
 
-    <section id="table-container" th:fragment="table" class="card">
-        <form
-            class="list-filters"
-            method="get"
-            th:action="@{/entries}"
-            hx-get="/entries/fragments/table"
-            hx-target="#table-container"
-            hx-swap="outerHTML"
-            hx-push-url="true"
-            hx-trigger="change from:#filter-account, change from:#filter-category, change from:#filter-pending-suggestions, input changed delay:400ms from:#filter-description, search from:#filter-description">
-            <div class="grid-2">
-                <div class="field">
-                    <label for="filter-account" th:text="#{entries.list.filter.account}"></label>
-                    <select id="filter-account" name="accountId">
-                        <option value="" th:text="#{entries.list.filter.allAccounts}"></option>
-                        <option
-                            th:each="account : ${accountOptions}"
-                            th:value="${account.id}"
-                            th:selected="${selectedAccountId != null and selectedAccountId == account.id}"
-                            th:text="${account.title}">
-                        </option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="filter-category" th:text="#{entries.list.filter.category}"></label>
-                    <select id="filter-category" name="categoryId">
-                        <option value="" th:text="#{entries.list.filter.allCategories}"></option>
-                        <option value="-1" th:selected="${selectedCategoryId != null and selectedCategoryId == -1}"
-                                th:text="#{entries.list.filter.withoutCategory}"></option>
-                        <option
-                            th:each="category : ${categoryOptions}"
-                            th:value="${category.id}"
-                            th:selected="${selectedCategoryId != null and selectedCategoryId == category.id}"
-                            th:text="${category.label}">
-                        </option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="filter-description" th:text="#{entries.list.filter.description}"></label>
-                    <input
-                        id="filter-description"
-                        name="description"
-                        type="search"
-                        th:value="${selectedDescription}"
-                        th:placeholder="#{entries.list.filter.description.placeholder}">
-                </div>
-                <div class="field">
-                    <label for="filter-pending-suggestions" th:text="#{entries.list.filter.pendingSuggestions}"></label>
-                    <select id="filter-pending-suggestions" name="pendingSuggestions">
-                        <option value="false" th:selected="${!selectedPendingSuggestions}" th:text="#{entries.list.filter.pendingSuggestions.all}"></option>
-                        <option value="true" th:selected="${selectedPendingSuggestions}" th:text="#{entries.list.filter.pendingSuggestions.onlyPending}"></option>
-                    </select>
-                </div>
+    <div id="entries-listing" th:fragment="listing" class="listing-stack">
+        <section class="card filter-panel">
+            <div class="filter-panel-header">
+                <h3 th:text="#{entries.list.filters.heading}"></h3>
+                <p th:text="#{entries.list.filters.subtitle}"></p>
             </div>
-            <input type="hidden" name="page" value="0">
-            <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
-        </form>
 
-        <div class="pagination-bar" th:if="${pagination != null}">
+            <form
+                class="list-filters"
+                method="get"
+                th:action="@{/entries}"
+                hx-get="/entries/fragments/table"
+                hx-target="#entries-listing"
+                hx-swap="outerHTML"
+                hx-push-url="true"
+                hx-trigger="input changed delay:400ms from:#filter-description, search from:#filter-description, change from:#filter-account, change from:#filter-category, change from:#filter-pending-suggestions">
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="filter-description" th:text="#{entries.list.filter.description}"></label>
+                        <input
+                            id="filter-description"
+                            name="description"
+                            type="search"
+                            th:value="${selectedDescription}"
+                            th:placeholder="#{entries.list.filter.description.placeholder}">
+                    </div>
+                    <div class="field">
+                        <label for="filter-account" th:text="#{entries.list.filter.account}"></label>
+                        <select id="filter-account" name="accountId">
+                            <option value="" th:text="#{entries.list.filter.allAccounts}"></option>
+                            <option
+                                th:each="account : ${accountOptions}"
+                                th:value="${account.id}"
+                                th:selected="${selectedAccountId != null and selectedAccountId == account.id}"
+                                th:text="${account.title}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="filter-category" th:text="#{entries.list.filter.category}"></label>
+                        <select id="filter-category" name="categoryId">
+                            <option value="" th:text="#{entries.list.filter.allCategories}"></option>
+                            <option value="-1" th:selected="${selectedCategoryId != null and selectedCategoryId == -1}"
+                                    th:text="#{entries.list.filter.withoutCategory}"></option>
+                            <option
+                                th:each="category : ${categoryOptions}"
+                                th:value="${category.id}"
+                                th:selected="${selectedCategoryId != null and selectedCategoryId == category.id}"
+                                th:text="${category.label}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="filter-pending-suggestions" th:text="#{entries.list.filter.pendingSuggestions}"></label>
+                        <select id="filter-pending-suggestions" name="pendingSuggestions">
+                            <option value="false" th:selected="${!selectedPendingSuggestions}" th:text="#{entries.list.filter.pendingSuggestions.all}"></option>
+                            <option value="true" th:selected="${selectedPendingSuggestions}" th:text="#{entries.list.filter.pendingSuggestions.onlyPending}"></option>
+                        </select>
+                    </div>
+                </div>
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
+            </form>
+        </section>
+
+        <section id="table-container" class="card">
+            <div class="pagination-bar" th:if="${pagination != null}">
             <div class="pagination-controls">
                 <form
                     class="pagination-size-form"
                     method="get"
                     th:action="@{/entries}"
                     hx-get="/entries/fragments/table"
-                    hx-target="#table-container"
+                    hx-target="#entries-listing"
                     hx-swap="outerHTML"
                     hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
@@ -122,7 +130,7 @@
                     method="get"
                     th:action="@{/entries}"
                     hx-get="/entries/fragments/table"
-                    hx-target="#table-container"
+                    hx-target="#entries-listing"
                     hx-swap="outerHTML"
                     hx-push-url="true">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
@@ -152,32 +160,32 @@
                 <span th:text="#{pagination.summary.page(${pagination.currentPageDisplay()}, ${pagination.totalPages})}"></span>
                 <span th:text="#{pagination.summary.range(${pagination.rangeStart}, ${pagination.rangeEnd}, ${pagination.totalItems})}"></span>
             </div>
-        </div>
-
-        <form
-            th:action="@{/entries/bulk-delete}"
-            method="post"
-            hx-post="/entries/bulk-delete"
-            hx-target="#table-container"
-            hx-swap="outerHTML"
-            th:attr="hx-confirm=#{entries.list.confirm.bulkDelete}">
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <input type="hidden" name="accountId" th:value="${selectedAccountId}">
-            <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
-            <input type="hidden" name="description" th:value="${selectedDescription}">
-            <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
-            <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
-            <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
-
-            <div class="table-actions">
-                <button class="btn btn-danger" type="submit">
-                    <i data-lucide="trash-2" aria-hidden="true"></i>
-                    <span th:text="#{entries.list.action.bulkDelete}"></span>
-                </button>
             </div>
 
-            <div class="table-wrap">
-                <table class="responsive-list">
+            <form
+                th:action="@{/entries/bulk-delete}"
+                method="post"
+                hx-post="/entries/bulk-delete"
+                hx-target="#entries-listing"
+                hx-swap="outerHTML"
+                th:attr="hx-confirm=#{entries.list.confirm.bulkDelete}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <input type="hidden" name="accountId" th:value="${selectedAccountId}">
+                <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
+                <input type="hidden" name="description" th:value="${selectedDescription}">
+                <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
+                <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
+                <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
+
+                <div class="table-actions">
+                    <button class="btn btn-danger" type="submit">
+                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                        <span th:text="#{entries.list.action.bulkDelete}"></span>
+                    </button>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="responsive-list">
                     <thead>
                     <tr>
                         <th>
@@ -242,12 +250,12 @@
                                     type="button"
                                     th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
                                     th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id})},hx-confirm='unset'"
-                                    hx-target="#table-container"
+                                    hx-target="#entries-listing"
                                     hx-swap="outerHTML">
                                     <i data-lucide="check-check" aria-hidden="true"></i>
                                     <span th:text="#{entries.list.action.confirmSuggestion}"></span>
                                 </button>
-                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id})}">
+                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id},returnTo=${returnTo})}">
                                     <i data-lucide="edit-3" aria-hidden="true"></i>
                                     <span th:text="#{entries.list.action.edit}"></span>
                                 </a>
@@ -255,7 +263,7 @@
                                     class="btn btn-danger"
                                     type="button"
                                     th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
-                                    hx-target="#table-container"
+                                    hx-target="#entries-listing"
                                     hx-swap="outerHTML">
                                     <i data-lucide="trash-2" aria-hidden="true"></i>
                                     <span th:text="#{entries.list.action.delete}"></span>
@@ -264,10 +272,11 @@
                         </td>
                     </tr>
                     </tbody>
-                </table>
-            </div>
-        </form>
-    </section>
+                    </table>
+                </div>
+            </form>
+        </section>
+    </div>
 </main>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>
 </body>

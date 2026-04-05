@@ -17,7 +17,7 @@
             <h2 th:text="#{localUsers.list.heading}"></h2>
             <p th:text="#{localUsers.list.subtitle}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/local-users/new}">
+        <a class="btn btn-primary" th:href="@{/local-users/new(returnTo=${returnTo})}">
             <i data-lucide="user-plus" aria-hidden="true"></i>
             <span th:text="#{localUsers.list.action.new}"></span>
         </a>
@@ -163,7 +163,7 @@
                         </td>
                         <td class="cell-actions" th:attr="data-label=#{localUsers.list.table.actions}">
                             <div class="actions-inline">
-                                <a class="btn btn-secondary" th:href="@{/local-users/{id}/edit(id=${localUser.id})}">
+                                <a class="btn btn-secondary" th:href="@{/local-users/{id}/edit(id=${localUser.id},returnTo=${returnTo})}">
                                     <i data-lucide="edit-3" aria-hidden="true"></i>
                                     <span th:text="#{localUsers.list.action.edit}"></span>
                                 </a>

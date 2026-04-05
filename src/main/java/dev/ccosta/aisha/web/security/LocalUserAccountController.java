@@ -7,6 +7,7 @@ import dev.ccosta.aisha.application.security.LocalUserAccountUsernameAlreadyExis
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.infrastructure.persistence.security.LocalUserAccount;
+import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,30 +62,42 @@ public class LocalUserAccountController {
     }
 
     @GetMapping("/new")
-    public String createForm(Model model) {
+    public String createForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
         model.addAttribute("form", new LocalUserAccountForm());
         model.addAttribute("mode", "create");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/local-users"));
         return "local-users/form";
     }
 
     @PostMapping
-    public String create(@Valid @ModelAttribute("form") LocalUserAccountForm form, BindingResult bindingResult, Model model) {
+    public String create(
+        @Valid @ModelAttribute("form") LocalUserAccountForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         validateCreateForm(form, bindingResult);
         if (bindingResult.hasErrors()) {
             model.addAttribute("mode", "create");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/local-users"));
             return "local-users/form";
         }
 
         localUserAccountService.create(form.getUsername(), form.getPassword(), form.isEnabled());
-        return "redirect:/local-users";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/local-users");
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
         LocalUserAccount account = localUserAccountService.findById(id);
         model.addAttribute("form", fromDomain(account));
         model.addAttribute("localUserId", id);
         model.addAttribute("mode", "edit");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/local-users"));
         return "local-users/form";
     }
 
@@ -93,16 +106,18 @@ public class LocalUserAccountController {
         @PathVariable Long id,
         @Valid @ModelAttribute("form") LocalUserAccountForm form,
         BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("localUserId", id);
             model.addAttribute("mode", "edit");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/local-users"));
             return "local-users/form";
         }
 
         localUserAccountService.update(id, form.getUsername(), form.getPassword(), form.isEnabled());
-        return "redirect:/local-users";
+        return ReturnPathSupport.resolveRedirect(returnTo, "/local-users");
     }
 
     @PostMapping("/{id}/delete")
@@ -202,6 +217,10 @@ public class LocalUserAccountController {
         model.addAttribute("localUsers", pageResult.items());
         model.addAttribute("pagination", pagination);
         model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
+        model.addAttribute(
+            "returnTo",
+            ReturnPathSupport.buildReturnPath("/local-users", "page", pagination.page(), "size", pagination.pageSize())
+        );
     }
 
     private LocalUserAccountForm fromDomain(LocalUserAccount account) {
