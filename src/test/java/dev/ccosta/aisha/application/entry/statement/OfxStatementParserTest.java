@@ -126,6 +126,47 @@ class OfxStatementParserTest {
         assertThat(records.getFirst().notes()).isEqualTo("Aplicação automática");
     }
 
+    @Test
+    void shouldPreferUtf8WhenHeaderDeclaresWindows1252ButContentIsUtf8() {
+        String ofx1Content = """
+            OFXHEADER:100
+            DATA:OFXSGML
+            VERSION:102
+            SECURITY:NONE
+            ENCODING:USASCII
+            CHARSET:1252
+            COMPRESSION:NONE
+            OLDFILEUID:NONE
+            NEWFILEUID:NONE
+
+            <OFX>
+              <BANKMSGSRSV1>
+                <STMTTRNRS>
+                  <STMTRS>
+                    <BANKTRANLIST>
+                      <STMTTRN>
+                        <DTPOSTED>20260201000000[-3:BRT]
+                        <TRNAMT>-10.00
+                        <FITID>id-1
+                        <NAME>Transferência recebida
+                        <MEMO>Descrição com acentuação
+                      </STMTTRN>
+                    </BANKTRANLIST>
+                  </STMTRS>
+                </STMTTRNRS>
+              </BANKMSGSRSV1>
+            </OFX>
+            """;
+
+        byte[] utf8Bytes = ofx1Content.getBytes(StandardCharsets.UTF_8);
+
+        List<EntryStatementImportRecord> records = parser.parse(utf8Bytes);
+
+        assertThat(records).hasSize(1);
+        assertThat(records.getFirst().description()).isEqualTo("Transferência recebida");
+        assertThat(records.getFirst().notes()).isEqualTo("Descrição com acentuação");
+    }
+
     private byte[] readFixture(String path) throws IOException {
         return Files.readAllBytes(Path.of(path));
     }

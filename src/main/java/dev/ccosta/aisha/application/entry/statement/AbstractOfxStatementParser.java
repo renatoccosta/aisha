@@ -37,11 +37,13 @@ import org.xml.sax.InputSource;
 
 public abstract class AbstractOfxStatementParser implements EntryStatementParser {
 
+    private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
     private static final Pattern XML_ENCODING_PATTERN = Pattern.compile(
         "<\\?xml[^>]*encoding\\s*=\\s*['\"]([^'\"]+)['\"]",
         Pattern.CASE_INSENSITIVE
     );
     private static final Pattern HEADER_LINE_PATTERN = Pattern.compile("(?m)^([A-Z]+)\\s*:\\s*(.+?)\\s*$");
+    private static final Pattern LIKELY_MOJIBAKE_PATTERN = Pattern.compile("[ÃÂ][\\p{L}\\p{Punct}]");
     private static final int MAX_DESCRIPTION_LENGTH = 200;
     private static final int MAX_NOTES_LENGTH = 1000;
     private static final int MAX_EXTERNAL_ID_LENGTH = 255;
@@ -83,14 +85,25 @@ public abstract class AbstractOfxStatementParser implements EntryStatementParser
         String asciiPreview = new String(fileContent, StandardCharsets.ISO_8859_1);
         Charset declaredCharset = resolveDeclaredCharset(asciiPreview);
         if (declaredCharset != null) {
-            return new String(fileContent, declaredCharset);
+            String decodedContent = new String(fileContent, declaredCharset);
+            if (shouldPreferUtf8(fileContent, declaredCharset, decodedContent)) {
+                return new String(fileContent, StandardCharsets.UTF_8);
+            }
+            return decodedContent;
         }
 
         if (isValidUtf8(fileContent)) {
             return new String(fileContent, StandardCharsets.UTF_8);
         }
 
-        return new String(fileContent, Charset.forName("windows-1252"));
+        return new String(fileContent, WINDOWS_1252);
+    }
+
+    private boolean shouldPreferUtf8(byte[] fileContent, Charset declaredCharset, String decodedContent) {
+        if (StandardCharsets.UTF_8.equals(declaredCharset) || !isValidUtf8(fileContent)) {
+            return false;
+        }
+        return LIKELY_MOJIBAKE_PATTERN.matcher(decodedContent).find();
     }
 
     private Charset resolveDeclaredCharset(String asciiPreview) {
@@ -129,7 +142,7 @@ public abstract class AbstractOfxStatementParser implements EntryStatementParser
         if (charsetValue != null) {
             String normalizedCharset = charsetValue.trim().toUpperCase(Locale.ROOT);
             if ("1252".equals(normalizedCharset)) {
-                return Charset.forName("windows-1252");
+                return WINDOWS_1252;
             }
             if ("UTF-8".equals(normalizedCharset) || "UTF8".equals(normalizedCharset) || "65001".equals(normalizedCharset)) {
                 return StandardCharsets.UTF_8;
@@ -146,7 +159,7 @@ public abstract class AbstractOfxStatementParser implements EntryStatementParser
         if (encodingValue != null) {
             String normalizedEncoding = encodingValue.trim().toUpperCase(Locale.ROOT);
             if ("USASCII".equals(normalizedEncoding) && "1252".equals(headers.getOrDefault("CHARSET", "").trim())) {
-                return Charset.forName("windows-1252");
+                return WINDOWS_1252;
             }
             if ("UNICODE".equals(normalizedEncoding) || "UTF-8".equals(normalizedEncoding) || "UTF8".equals(normalizedEncoding)) {
                 return StandardCharsets.UTF_8;
