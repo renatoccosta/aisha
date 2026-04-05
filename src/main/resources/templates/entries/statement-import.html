@@ -7,11 +7,12 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script defer th:src="@{/js/import-file-drop.js}"></script>
 </head>
 <body>
 <header th:replace="~{fragments/header :: topbar(subtitle=#{entries.statementImport.header.subtitle})}"></header>
 
-<main class="wrap">
+<main class="wrap import-drop-page" data-import-drop-input="statement-file">
     <section class="card form-card">
         <h2 th:text="#{entries.statementImport.heading}"></h2>
         <p th:text="#{entries.statementImport.subtitle}"></p>
@@ -55,6 +56,7 @@
                 <label for="statement-file" th:text="#{entries.statementImport.form.file.required}"></label>
                 <input id="statement-file" type="file" name="file" required>
                 <p class="helper" th:text="#{entries.statementImport.form.file.help}"></p>
+                <p class="helper" th:text="#{entries.statementImport.form.file.dropHelp}"></p>
                 <ul class="helper-list">
                     <li th:each="format : ${statementFormats}" th:text="${#messages.msg(format.fileHelpMessageKey)}"></li>
                 </ul>
@@ -123,6 +125,13 @@
             <p class="helper" th:text="#{entries.import.result.failure.rollback}"></p>
         </div>
     </section>
+
+    <div class="import-drop-overlay" aria-hidden="true">
+        <div class="import-drop-overlay-content">
+            <i data-lucide="file-up" aria-hidden="true"></i>
+            <p th:text="#{entries.statementImport.drop.overlay}"></p>
+        </div>
+    </div>
 </main>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>
 </body>
