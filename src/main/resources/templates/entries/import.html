@@ -7,11 +7,12 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script defer th:src="@{/js/import-file-drop.js}"></script>
 </head>
 <body>
 <header th:replace="~{fragments/header :: topbar(subtitle=#{entries.import.header.subtitle})}"></header>
 
-<main class="wrap">
+<main class="wrap import-drop-page" data-import-drop-input="csv-file">
     <section class="card form-card">
         <h2 th:text="#{entries.import.heading}"></h2>
         <p th:text="#{entries.import.subtitle}"></p>
@@ -30,6 +31,7 @@
                 <label for="csv-file" th:text="#{entries.import.form.file.required}"></label>
                 <input id="csv-file" type="file" name="file" accept=".csv,text/csv" required>
                 <p class="helper" th:text="#{entries.import.form.file.help}"></p>
+                <p class="helper" th:text="#{entries.import.form.file.dropHelp}"></p>
             </div>
 
             <div class="field">
@@ -53,9 +55,11 @@
                     </select>
                     <input
                         id="separator-other"
+                        class="conditional-input"
                         type="text"
                         name="separatorOther"
                         maxlength="4"
+                        hidden
                         th:placeholder="#{entries.import.form.separator.other.placeholder}">
                     <p class="helper" th:text="#{entries.import.form.separator.help}"></p>
                 </div>
@@ -71,9 +75,11 @@
                     </select>
                     <input
                         id="date-format-other"
+                        class="conditional-input"
                         type="text"
                         name="dateFormatOther"
                         maxlength="60"
+                        hidden
                         th:placeholder="#{entries.import.form.dateFormat.other.placeholder}">
                     <p class="helper" th:text="#{entries.import.form.dateFormat.help}"></p>
                     <p class="helper">
@@ -95,9 +101,11 @@
                 </select>
                 <input
                     id="amount-format-other"
+                    class="conditional-input"
                     type="text"
                     name="amountFormatOther"
                     maxlength="120"
+                    hidden
                     th:placeholder="#{entries.import.form.amountFormat.other.placeholder}">
                 <p class="helper" th:text="#{entries.import.form.amountFormat.help}"></p>
                 <p class="helper">
@@ -180,6 +188,13 @@
             <p class="helper" th:text="#{entries.import.result.failure.rollback}"></p>
         </div>
     </section>
+
+    <div class="import-drop-overlay" aria-hidden="true">
+        <div class="import-drop-overlay-content">
+            <i data-lucide="file-up" aria-hidden="true"></i>
+            <p th:text="#{entries.import.drop.overlay}"></p>
+        </div>
+    </div>
 </main>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>
 </body>

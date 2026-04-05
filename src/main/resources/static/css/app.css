@@ -964,11 +964,68 @@ textarea:focus {
   gap: 0.9rem;
 }
 
+.import-drop-page {
+  position: relative;
+}
+
 .stack-form .field,
 .stack-form .field-checkbox,
 .import-form .field,
 .import-form .field-checkbox {
   margin-top: 0;
+}
+
+.import-form .conditional-input {
+  margin-top: 0.45rem;
+}
+
+.import-form .conditional-input[hidden] {
+  display: none;
+}
+
+.import-drop-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: color-mix(in srgb, var(--color-overlay) 78%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 1200;
+}
+
+.import-drop-overlay-content {
+  width: min(100%, 32rem);
+  display: grid;
+  justify-items: center;
+  gap: 0.85rem;
+  padding: 2rem 1.5rem;
+  border: 2px dashed color-mix(in srgb, var(--color-focus-ring) 72%, white);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  box-shadow: 0 10px 30px var(--color-card-shadow);
+  text-align: center;
+}
+
+.import-drop-overlay-content svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--secondary);
+}
+
+.import-drop-overlay-content p {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+body.import-drag-active .import-drop-overlay {
+  opacity: 1;
+  visibility: visible;
 }
 
 .import-result-card {

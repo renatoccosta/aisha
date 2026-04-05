@@ -9,12 +9,16 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Provides cached access to the latest ready entry category suggestion model.
  */
 @Service
 public class EntryCategoryModelManager {
+
+    private static final Object INITIAL_TRAINING_REGISTRATION_KEY = new Object();
 
     private final AtomicReference<EntryCategoryModelSnapshot> cachedSnapshot = new AtomicReference<>();
     private final EntryCategorySuggestionModelRepository modelRepository;
@@ -41,7 +45,7 @@ public class EntryCategoryModelManager {
         Optional<TextClassificationModel<Long>> model = loadActiveModel();
         if (model.isEmpty()) {
             if (modelRepository.findLatest().isEmpty()) {
-                trainingCoordinator().requestTraining(EntryCategoryModelTrainingTrigger.INITIAL);
+                requestInitialTraining();
             }
             return Optional.empty();
         }
@@ -119,5 +123,31 @@ public class EntryCategoryModelManager {
 
     private EntryCategoryModelTrainingCoordinator trainingCoordinator() {
         return trainingCoordinatorProvider.getObject();
+    }
+
+    private void requestInitialTraining() {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            trainingCoordinator().requestTraining(EntryCategoryModelTrainingTrigger.INITIAL);
+            return;
+        }
+
+        if (TransactionSynchronizationManager.hasResource(INITIAL_TRAINING_REGISTRATION_KEY)) {
+            return;
+        }
+
+        TransactionSynchronizationManager.bindResource(INITIAL_TRAINING_REGISTRATION_KEY, Boolean.TRUE);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                trainingCoordinator().requestTraining(EntryCategoryModelTrainingTrigger.INITIAL);
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (TransactionSynchronizationManager.hasResource(INITIAL_TRAINING_REGISTRATION_KEY)) {
+                    TransactionSynchronizationManager.unbindResource(INITIAL_TRAINING_REGISTRATION_KEY);
+                }
+            }
+        });
     }
 }
