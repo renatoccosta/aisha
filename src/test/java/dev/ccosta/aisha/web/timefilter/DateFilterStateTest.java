@@ -62,6 +62,25 @@ class DateFilterStateTest {
     }
 
     @Test
+    void shouldNavigateCustomIntervalKeepingIntervalLength() {
+        DateFilterState state = DateFilterState.defaultState(FIXED_CLOCK);
+
+        state.applyCustom(LocalDate.of(2026, 1, 10), LocalDate.of(2026, 1, 20));
+
+        state.goPrevious(FIXED_CLOCK);
+        assertThat(state.getStartDate()).isEqualTo(LocalDate.of(2025, 12, 30));
+        assertThat(state.getEndDate()).isEqualTo(LocalDate.of(2026, 1, 9));
+
+        state.goNext(FIXED_CLOCK);
+        assertThat(state.getStartDate()).isEqualTo(LocalDate.of(2026, 1, 10));
+        assertThat(state.getEndDate()).isEqualTo(LocalDate.of(2026, 1, 20));
+
+        state.goNext(FIXED_CLOCK);
+        assertThat(state.getStartDate()).isEqualTo(LocalDate.of(2026, 1, 21));
+        assertThat(state.getEndDate()).isEqualTo(LocalDate.of(2026, 1, 31));
+    }
+
+    @Test
     void shouldRejectInvalidCustomInterval() {
         DateFilterState state = DateFilterState.defaultState(FIXED_CLOCK);
 
