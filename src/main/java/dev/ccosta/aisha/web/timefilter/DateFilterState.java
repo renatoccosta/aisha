@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 
 public class DateFilterState implements Serializable {
@@ -33,6 +34,7 @@ public class DateFilterState implements Serializable {
 
     public void goPrevious(Clock clock) {
         if (custom) {
+            shiftCustomRange(-1);
             return;
         }
 
@@ -51,6 +53,7 @@ public class DateFilterState implements Serializable {
 
     public void goNext(Clock clock) {
         if (custom) {
+            shiftCustomRange(1);
             return;
         }
 
@@ -70,6 +73,14 @@ public class DateFilterState implements Serializable {
         this.offset = 0;
         this.startDate = startDate;
         this.endDate = endDate;
+    }
+
+
+    private void shiftCustomRange(int direction) {
+        long intervalLengthInDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        long shiftInDays = intervalLengthInDays * direction;
+        this.startDate = startDate.plusDays(shiftInDays);
+        this.endDate = endDate.plusDays(shiftInDays);
     }
 
     private void recalculateFromPreset(Clock clock) {
