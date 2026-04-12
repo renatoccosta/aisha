@@ -50,14 +50,15 @@ class AccountBalanceReportServiceTest {
 
         AccountBalanceRow checkingRow = report.rows().get(0);
         assertThat(checkingRow.previousPeriodBalance()).isEqualByComparingTo("150.00");
-        assertThat(checkingRow.periodBalances().get(0)).isEqualByComparingTo("500.00");
-        assertThat(checkingRow.periodBalances().get(1)).isEqualByComparingTo("-120.50");
-        assertThat(checkingRow.periodBalances().get(2)).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(checkingRow.periodBalances().get(0)).isEqualByComparingTo("650.00");
+        assertThat(checkingRow.periodBalances().get(1)).isEqualByComparingTo("529.50");
+        assertThat(checkingRow.periodBalances().get(2)).isEqualByComparingTo("529.50");
 
         AccountBalanceRow cashRow = report.rows().get(1);
         assertThat(cashRow.previousPeriodBalance()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(cashRow.periodBalances().get(0)).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(cashRow.periodBalances().get(1)).isEqualByComparingTo("60.00");
-        assertThat(cashRow.periodBalances().get(10)).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(cashRow.periodBalances().get(10)).isEqualByComparingTo("60.00");
     }
 
     @Test
@@ -83,9 +84,9 @@ class AccountBalanceReportServiceTest {
         assertThat(row.previousPeriodBalance()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(row.periodBalances()).containsExactly(
             new BigDecimal("250.00"),
-            BigDecimal.ZERO,
-            new BigDecimal("25.00"),
-            BigDecimal.ZERO
+            new BigDecimal("250.00"),
+            new BigDecimal("275.00"),
+            new BigDecimal("275.00")
         );
     }
 
