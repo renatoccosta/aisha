@@ -2,7 +2,7 @@
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <body>
 <header th:fragment="topbar(subtitle)" class="topbar">
-    <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script defer th:src="@{/vendor/lucide/lucide.min.js}"></script>
     <script defer th:src="@{/js/lucide-init.js}"></script>
     <script defer th:src="@{/js/selectable-table-rows.js}"></script>
     <script th:inline="javascript">
