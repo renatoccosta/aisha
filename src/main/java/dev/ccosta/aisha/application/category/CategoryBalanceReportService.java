@@ -33,7 +33,6 @@ public class CategoryBalanceReportService {
         CategoryBalanceGranularity granularity = resolveGranularity(startDate, endDate);
         List<CategoryBalanceBucket> buckets = buildBuckets(startDate, endDate, granularity);
 
-        Map<Long, BigDecimal> previousBalancesByCategory = new HashMap<>();
         Map<Long, Map<LocalDate, BigDecimal>> periodBalancesByCategory = new HashMap<>();
         for (Entry entry : entryRepository.listAllBySettlementDateLessThanEqual(endDate)) {
             if (entry.getCategory() == null) {
@@ -44,7 +43,6 @@ public class CategoryBalanceReportService {
             LocalDate settlementDate = entry.getSettlementDate();
 
             if (settlementDate.isBefore(startDate)) {
-                previousBalancesByCategory.merge(categoryId, amount, BigDecimal::add);
                 continue;
             }
 
@@ -66,7 +64,6 @@ public class CategoryBalanceReportService {
                 category.getId(),
                 category.getTitle(),
                 category.getDescription(),
-                previousBalancesByCategory.getOrDefault(category.getId(), BigDecimal.ZERO),
                 periodBalances
             ));
         }

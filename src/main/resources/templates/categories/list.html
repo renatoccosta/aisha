@@ -178,12 +178,6 @@
                             <span th:text="#{categories.balance.table.category}"></span>
                         </span>
                     </th>
-                    <th class="amount-cell">
-                        <span class="table-heading-label">
-                            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
-                            <span th:text="#{categories.balance.table.previousPeriod}"></span>
-                        </span>
-                    </th>
                     <th class="amount-cell" th:each="bucket : ${categoryBalanceReport.buckets}">
                         <span class="table-heading-label">
                             <i data-lucide="calendar" aria-hidden="true"></i>
@@ -199,13 +193,12 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(categoryBalanceReport.rows)}">
-                    <td class="empty" th:colspan="${2 + #lists.size(categoryBalanceReport.buckets)}" th:text="#{categories.balance.empty}"></td>
+                    <td class="empty" th:colspan="${1 + #lists.size(categoryBalanceReport.buckets)}" th:text="#{categories.balance.empty}"></td>
                 </tr>
                 <tr th:each="row : ${categoryBalanceReport.rows}">
                     <td>
                         <strong th:text="${row.categoryTitle}"></strong>
                     </td>
-                    <td class="amount-cell" th:text="${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
                     <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
                 </tr>
                 </tbody>
