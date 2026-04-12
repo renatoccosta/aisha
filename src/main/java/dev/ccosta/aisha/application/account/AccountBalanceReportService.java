@@ -72,16 +72,19 @@ public class AccountBalanceReportService {
         List<AccountBalanceRow> rows = new ArrayList<>();
         for (Account account : accounts) {
             Map<LocalDate, BigDecimal> accountBuckets = periodBalancesByAccount.getOrDefault(account.getId(), Map.of());
+            BigDecimal previousPeriodBalance = previousBalancesByAccount.getOrDefault(account.getId(), BigDecimal.ZERO);
             List<BigDecimal> periodBalances = new ArrayList<>(buckets.size());
+            BigDecimal runningBalance = previousPeriodBalance;
             for (AccountBalanceBucket bucket : buckets) {
-                periodBalances.add(accountBuckets.getOrDefault(bucket.startDate(), BigDecimal.ZERO));
+                runningBalance = runningBalance.add(accountBuckets.getOrDefault(bucket.startDate(), BigDecimal.ZERO));
+                periodBalances.add(runningBalance);
             }
 
             rows.add(new AccountBalanceRow(
                 account.getId(),
                 account.getTitle(),
                 account.getDescription(),
-                previousBalancesByAccount.getOrDefault(account.getId(), BigDecimal.ZERO),
+                previousPeriodBalance,
                 periodBalances
             ));
         }
