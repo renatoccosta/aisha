@@ -63,6 +63,9 @@ public class DashboardService {
             }
 
             if (isInsideRange(settlementDate, startDate, endDate)) {
+                if (entry.isTransfer()) {
+                    continue;
+                }
                 if (amount.signum() < 0) {
                     currentExpenses = currentExpenses.add(amount.abs());
                 } else if (amount.signum() > 0) {
@@ -72,6 +75,9 @@ public class DashboardService {
             }
 
             if (isInsideRange(settlementDate, previousStartDate, previousEndDate)) {
+                if (entry.isTransfer()) {
+                    continue;
+                }
                 if (amount.signum() < 0) {
                     previousExpenses = previousExpenses.add(amount.abs());
                 } else if (amount.signum() > 0) {
@@ -158,6 +164,9 @@ public class DashboardService {
             if (!isInsideRange(settlementDate, startDate, endDate)) {
                 continue;
             }
+            if (entry.isTransfer()) {
+                continue;
+            }
 
             BigDecimal amount = entry.getAmount();
             LocalDate bucketDate = normalizeBucketStart(settlementDate, granularity);
@@ -209,6 +218,9 @@ public class DashboardService {
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
             if (!isInsideRange(settlementDate, startDate, endDate)) {
+                continue;
+            }
+            if (entry.isTransfer()) {
                 continue;
             }
             if (entry.getCategory() == null) {
@@ -275,6 +287,9 @@ public class DashboardService {
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
             if (!isInsideRange(settlementDate, startDate, endDate)) {
+                continue;
+            }
+            if (entry.isTransfer()) {
                 continue;
             }
             if (entry.getCategory() == null) {

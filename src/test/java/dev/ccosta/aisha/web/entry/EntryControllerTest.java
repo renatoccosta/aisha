@@ -11,6 +11,7 @@ import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
 import dev.ccosta.aisha.application.entry.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryService;
+import dev.ccosta.aisha.application.entry.EntryTransferService;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
 import dev.ccosta.aisha.domain.entry.Entry;
 import java.math.BigDecimal;
@@ -39,6 +40,9 @@ class EntryControllerTest {
 
     @Mock
     private EntryCategorySuggestionService entryCategorySuggestionService;
+
+    @Mock
+    private EntryTransferService entryTransferService;
 
     @Mock
     private EntryStatementImportService entryStatementImportService;

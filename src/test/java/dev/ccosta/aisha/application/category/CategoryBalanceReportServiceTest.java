@@ -107,6 +107,27 @@ class CategoryBalanceReportServiceTest {
         assertThat(row.periodBalances()).containsExactly(new BigDecimal("-50.00"));
     }
 
+    @Test
+    void shouldIgnoreTransferEntriesEvenWhenCategoryIsPresent() {
+        Category housing = newCategory(1L, "Moradia");
+        Entry transferEntry = newEntry(1L, LocalDate.of(2026, 2, 10), "-99.00");
+        transferEntry.setEntryType(dev.ccosta.aisha.domain.entry.EntryType.TRANSFER);
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 2, 10))).thenReturn(List.of(
+            transferEntry,
+            newEntry(1L, LocalDate.of(2026, 2, 10), "-50.00")
+        ));
+
+        CategoryBalanceReport report = categoryBalanceReportService.buildReport(
+            List.of(housing),
+            LocalDate.of(2026, 2, 10),
+            LocalDate.of(2026, 2, 10)
+        );
+
+        CategoryBalanceRow row = report.rows().getFirst();
+        assertThat(row.periodBalances()).containsExactly(new BigDecimal("-50.00"));
+    }
+
     private Category newCategory(Long id, String title) {
         Category category = new Category();
         category.setTitle(title);

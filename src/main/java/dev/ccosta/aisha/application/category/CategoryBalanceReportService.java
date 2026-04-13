@@ -35,6 +35,9 @@ public class CategoryBalanceReportService {
 
         Map<Long, Map<LocalDate, BigDecimal>> periodBalancesByCategory = new HashMap<>();
         for (Entry entry : entryRepository.listAllBySettlementDateLessThanEqual(endDate)) {
+            if (entry.isTransfer()) {
+                continue;
+            }
             if (entry.getCategory() == null) {
                 continue;
             }

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${mode == 'edit'} ? #{entries.transferForm.title.edit} : #{entries.transferForm.title.create}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{entries.form.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="${mode == 'edit'} ? #{entries.transferForm.title.edit} : #{entries.transferForm.title.create}"></h2>
+
+        <form class="stack-form" th:object="${form}" th:action="${transferFormAction}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="returnTo" th:value="${returnTo}">
+
+            <p class="error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></p>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="originAccountId" th:text="#{entries.transferForm.field.originAccount.required}"></label>
+                    <select id="originAccountId" th:field="*{originAccountId}" required>
+                        <option value="" th:text="#{entries.form.field.account.placeholder}"></option>
+                        <option th:each="account : ${accountOptions}" th:value="${account.id}" th:text="${account.title}"></option>
+                    </select>
+                    <p class="error" th:if="${#fields.hasErrors('originAccountId')}" th:errors="*{originAccountId}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="destinationAccountId" th:text="#{entries.transferForm.field.destinationAccount.required}"></label>
+                    <select id="destinationAccountId" th:field="*{destinationAccountId}" required>
+                        <option value="" th:text="#{entries.form.field.account.placeholder}"></option>
+                        <option th:each="account : ${accountOptions}" th:value="${account.id}" th:text="${account.title}"></option>
+                    </select>
+                    <p class="error" th:if="${#fields.hasErrors('destinationAccountId')}" th:errors="*{destinationAccountId}"></p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="movementDate" th:text="#{entries.form.field.movementDate.required}"></label>
+                    <input id="movementDate" type="date" th:field="*{movementDate}" required>
+                    <p class="error" th:if="${#fields.hasErrors('movementDate')}" th:errors="*{movementDate}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="settlementDate" th:text="#{entries.form.field.settlementDate.required}"></label>
+                    <input id="settlementDate" type="date" th:field="*{settlementDate}" required>
+                    <p class="error" th:if="${#fields.hasErrors('settlementDate')}" th:errors="*{settlementDate}"></p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="description" th:text="#{entries.form.field.description.required}"></label>
+                <input id="description" type="text" th:field="*{description}" maxlength="200" required>
+                <p class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            </div>
+
+            <div class="field">
+                <label for="amount" th:text="#{entries.form.field.amount.required}"></label>
+                <input id="amount" type="number" th:field="*{amount}" step="0.01" required>
+                <p class="error" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}"></p>
+            </div>
+
+            <div class="field">
+                <label for="notes" th:text="#{entries.form.field.notes}"></label>
+                <textarea id="notes" th:field="*{notes}" rows="4" maxlength="1000"></textarea>
+                <p class="error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+            </div>
+
+            <div class="actions-inline">
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="save" aria-hidden="true"></i>
+                    <span th:text="${mode == 'edit'} ? #{entries.transferForm.action.update} : #{entries.transferForm.action.save}"></span>
+                </button>
+                <a class="btn btn-secondary" th:href="${returnTo}">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <span th:text="#{entries.form.action.cancel}"></span>
+                </a>
+            </div>
+        </form>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

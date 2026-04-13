@@ -1,3 +1,4 @@
+DELETE FROM entry_transfers;
 DELETE FROM entries;
 DELETE FROM accounts;
 DELETE FROM categories;
@@ -546,3 +547,31 @@ INSERT INTO entries (account_id, movement_date, settlement_date, description, ca
 ((SELECT id FROM accounts WHERE title = 'Carteira'), DATE '2026-02-06', DATE '2026-02-06', 'Fatura de internet', (SELECT id FROM categories WHERE title = 'Internet'), 'Carga sintética 498', -165.26),
 ((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-07', DATE '2026-02-07', 'Aplicação em renda fixa', (SELECT id FROM categories WHERE title = 'Renda Fixa'), 'Carga sintética 499', -742.63),
 ((SELECT id FROM accounts WHERE title = 'Cartão Inter'), DATE '2026-02-08', DATE '2026-02-08', 'Compra de ações', (SELECT id FROM categories WHERE title = 'Ações'), 'Carga sintética 500', -569.00);
+
+INSERT INTO entries (account_id, movement_date, settlement_date, description, category_id, notes, amount, entry_type) VALUES
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-09', DATE '2026-02-09', 'Transferência para carteira', NULL, 'Seed transferência 001 origem', -320.00, 'TRANSFER'),
+((SELECT id FROM accounts WHERE title = 'Carteira'), DATE '2026-02-09', DATE '2026-02-09', 'Transferência para carteira', NULL, 'Seed transferência 001 destino', 320.00, 'TRANSFER'),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-10', DATE '2026-02-10', 'Pagamento da fatura do cartão', NULL, 'Seed transferência 002 origem', -845.37, 'TRANSFER'),
+((SELECT id FROM accounts WHERE title = 'Cartão Inter'), DATE '2026-02-10', DATE '2026-02-10', 'Pagamento da fatura do cartão', NULL, 'Seed transferência 002 destino', 845.37, 'TRANSFER'),
+((SELECT id FROM accounts WHERE title = 'Carteira'), DATE '2026-02-11', DATE '2026-02-11', 'Depósito em conta corrente', NULL, 'Seed transferência 003 origem', -150.00, 'TRANSFER'),
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2026-02-11', DATE '2026-02-11', 'Depósito em conta corrente', NULL, 'Seed transferência 003 destino', 150.00, 'TRANSFER');
+
+INSERT INTO entry_transfers (origin_entry_id, destination_entry_id, created_at, notes) VALUES
+(
+    (SELECT id FROM entries WHERE notes = 'Seed transferência 001 origem'),
+    (SELECT id FROM entries WHERE notes = 'Seed transferência 001 destino'),
+    TIMESTAMP '2026-02-09 10:15:00',
+    'Transferência seed: Nubank para Carteira'
+),
+(
+    (SELECT id FROM entries WHERE notes = 'Seed transferência 002 origem'),
+    (SELECT id FROM entries WHERE notes = 'Seed transferência 002 destino'),
+    TIMESTAMP '2026-02-10 15:40:00',
+    'Transferência seed: pagamento do Cartão Inter'
+),
+(
+    (SELECT id FROM entries WHERE notes = 'Seed transferência 003 origem'),
+    (SELECT id FROM entries WHERE notes = 'Seed transferência 003 destino'),
+    TIMESTAMP '2026-02-11 08:25:00',
+    'Transferência seed: Carteira para Nubank'
+);

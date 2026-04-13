@@ -11,6 +11,10 @@ import dev.ccosta.aisha.application.entry.EntryCategorySuggestionRequest;
 import dev.ccosta.aisha.application.entry.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
 import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
+import dev.ccosta.aisha.application.entry.EntryTransferCounterpartRequest;
+import dev.ccosta.aisha.application.entry.EntryTransferCreationRequest;
+import dev.ccosta.aisha.application.entry.EntryTransferService;
+import dev.ccosta.aisha.application.entry.EntryTransferView;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementFormat;
 import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
@@ -28,7 +32,10 @@ import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -59,6 +66,7 @@ public class EntryController {
     private final AccountService accountService;
     private final CategoryService categoryService;
     private final EntryCategorySuggestionService entryCategorySuggestionService;
+    private final EntryTransferService entryTransferService;
     private final EntryStatementImportService entryStatementImportService;
     private final EntryImportJobCoordinator entryImportJobCoordinator;
 
@@ -67,6 +75,7 @@ public class EntryController {
         AccountService accountService,
         CategoryService categoryService,
         EntryCategorySuggestionService entryCategorySuggestionService,
+        EntryTransferService entryTransferService,
         EntryStatementImportService entryStatementImportService,
         EntryImportJobCoordinator entryImportJobCoordinator
     ) {
@@ -74,6 +83,7 @@ public class EntryController {
         this.accountService = accountService;
         this.categoryService = categoryService;
         this.entryCategorySuggestionService = entryCategorySuggestionService;
+        this.entryTransferService = entryTransferService;
         this.entryStatementImportService = entryStatementImportService;
         this.entryImportJobCoordinator = entryImportJobCoordinator;
     }
@@ -216,6 +226,263 @@ public class EntryController {
         return "entries/form";
     }
 
+    @GetMapping("/transfers/new")
+    public String createTransferForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
+        model.addAttribute("form", TransferForm.newWithCurrentDates());
+        fillTransferFormAccountOptions(model, null, null);
+        model.addAttribute("mode", "create");
+        model.addAttribute("transferFormAction", "/entries/transfers");
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+        return "entries/transfer-form";
+    }
+
+    @PostMapping("/transfers")
+    public String createTransfer(
+        @Valid @ModelAttribute("form") TransferForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        validateDistinctAccounts(form.getOriginAccountId(), form.getDestinationAccountId(), "destinationAccountId", bindingResult);
+        validatePositiveAmount(form.getAmount(), "amount", bindingResult);
+        if (bindingResult.hasErrors()) {
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("mode", "create");
+            model.addAttribute("transferFormAction", "/entries/transfers");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        }
+
+        try {
+            entryTransferService.createTransfer(toTransferCreationRequest(form));
+            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
+        } catch (AccountNotFoundException ex) {
+            bindingResult.rejectValue("originAccountId", "transferForm.originAccountId.notNull");
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("mode", "create");
+            model.addAttribute("transferFormAction", "/entries/transfers");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        } catch (EntrySettlementAfterAccountDeactivationException ex) {
+            bindingResult.rejectValue(
+                "settlementDate",
+                "entryForm.settlementDate.afterAccountDeactivation",
+                new Object[] {ex.getAccountDeactivationDate()},
+                null
+            );
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("mode", "create");
+            model.addAttribute("transferFormAction", "/entries/transfers");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("transferForm.invalid", new Object[] {ex.getMessage()}, null);
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("mode", "create");
+            model.addAttribute("transferFormAction", "/entries/transfers");
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        }
+    }
+
+    @GetMapping("/{id}/transfer/edit")
+    public String editTransferForm(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        EntryTransferCreationRequest request = toTransferCreationRequest(entryTransferService.findTransferByAnyEntryId(id));
+        TransferForm form = new TransferForm();
+        form.setOriginAccountId(request.originAccountId());
+        form.setDestinationAccountId(request.destinationAccountId());
+        form.setMovementDate(request.movementDate());
+        form.setSettlementDate(request.settlementDate());
+        form.setDescription(request.description());
+        form.setAmount(request.amount());
+        form.setNotes(request.notes());
+        model.addAttribute("form", form);
+        fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+        model.addAttribute("entryId", id);
+        model.addAttribute("mode", "edit");
+        model.addAttribute("transferFormAction", "/entries/transfers/" + id);
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+        return "entries/transfer-form";
+    }
+
+    @PostMapping("/transfers/{id}")
+    public String updateTransfer(
+        @PathVariable Long id,
+        @Valid @ModelAttribute("form") TransferForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        validateDistinctAccounts(form.getOriginAccountId(), form.getDestinationAccountId(), "destinationAccountId", bindingResult);
+        validatePositiveAmount(form.getAmount(), "amount", bindingResult);
+        if (bindingResult.hasErrors()) {
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("entryId", id);
+            model.addAttribute("mode", "edit");
+            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        }
+
+        try {
+            entryTransferService.updateTransferByEntryId(id, toTransferCreationRequest(form));
+            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
+        } catch (AccountNotFoundException ex) {
+            bindingResult.rejectValue("originAccountId", "transferForm.originAccountId.notNull");
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("entryId", id);
+            model.addAttribute("mode", "edit");
+            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        } catch (EntrySettlementAfterAccountDeactivationException ex) {
+            bindingResult.rejectValue(
+                "settlementDate",
+                "entryForm.settlementDate.afterAccountDeactivation",
+                new Object[] {ex.getAccountDeactivationDate()},
+                null
+            );
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("entryId", id);
+            model.addAttribute("mode", "edit");
+            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("transferForm.invalid", new Object[] {ex.getMessage()}, null);
+            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
+            model.addAttribute("entryId", id);
+            model.addAttribute("mode", "edit");
+            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-form";
+        }
+    }
+
+    @GetMapping("/{id}/transfer-counterpart")
+    public String createTransferCounterpartForm(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        Entry entry = entryService.findById(id);
+        TransferForm form = new TransferForm();
+        form.setMovementDate(entry.getMovementDate());
+        form.setSettlementDate(entry.getSettlementDate());
+        form.setDescription(entry.getDescription());
+        form.setNotes(entry.getNotes());
+        form.setAmount(entry.getAmount().abs());
+        if (entry.getAmount().signum() < 0) {
+            form.setOriginAccountId(entry.getAccount().getId());
+        } else {
+            form.setDestinationAccountId(entry.getAccount().getId());
+        }
+
+        model.addAttribute("form", form);
+        fillSourceEntrySummary(model, entry);
+        fillEntryFormAccountOptions(model, entry.getAccount().getId());
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+        return "entries/transfer-counterpart-form";
+    }
+
+    @PostMapping("/{id}/transfer-counterpart")
+    public String createTransferCounterpart(
+        @PathVariable Long id,
+        @Valid @ModelAttribute("form") TransferForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        Entry sourceEntry = entryService.findById(id);
+        Long fixedAccountId = sourceEntry.getAccount().getId();
+        Long counterpartAccountId = sourceEntry.getAmount().signum() < 0 ? form.getDestinationAccountId() : form.getOriginAccountId();
+        validateDistinctAccounts(fixedAccountId, counterpartAccountId, sourceEntry.getAmount().signum() < 0 ? "destinationAccountId" : "originAccountId", bindingResult);
+        validatePositiveAmount(form.getAmount(), "amount", bindingResult);
+        if (form.getAmount() != null && sourceEntry.getAmount() != null && form.getAmount().compareTo(sourceEntry.getAmount().abs()) != 0) {
+            bindingResult.rejectValue("amount", "transferForm.amount.mustMatchSource");
+        }
+        if (bindingResult.hasErrors()) {
+            fillSourceEntrySummary(model, sourceEntry);
+            fillEntryFormAccountOptions(model, fixedAccountId);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-counterpart-form";
+        }
+
+        try {
+            entryTransferService.createCounterpartFromEntry(id, new EntryTransferCounterpartRequest(
+                counterpartAccountId,
+                form.getMovementDate(),
+                form.getSettlementDate(),
+                form.getDescription(),
+                form.getNotes()
+            ));
+            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("transferForm.invalid", new Object[] {ex.getMessage()}, null);
+            fillSourceEntrySummary(model, sourceEntry);
+            fillEntryFormAccountOptions(model, fixedAccountId);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-counterpart-form";
+        }
+    }
+
+    @GetMapping("/{id}/transfer-link")
+    public String linkTransferForm(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        Entry entry = entryService.findById(id);
+        TransferLinkForm form = new TransferLinkForm();
+        form.setSourceEntryId(id);
+        model.addAttribute("form", form);
+        fillSourceEntrySummary(model, entry);
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+        return "entries/transfer-link-form";
+    }
+
+    @PostMapping("/{id}/transfer-link")
+    public String linkTransfer(
+        @PathVariable Long id,
+        @Valid @ModelAttribute("form") TransferLinkForm form,
+        BindingResult bindingResult,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        Entry sourceEntry = entryService.findById(id);
+        if (form.getCounterpartEntryId() != null && form.getCounterpartEntryId().equals(id)) {
+            bindingResult.rejectValue("counterpartEntryId", "transferLinkForm.counterpartEntryId.distinct");
+        }
+        if (bindingResult.hasErrors()) {
+            fillSourceEntrySummary(model, sourceEntry);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-link-form";
+        }
+
+        try {
+            entryTransferService.linkExistingEntries(id, form.getCounterpartEntryId());
+            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("transferLinkForm.invalid", new Object[] {ex.getMessage()}, null);
+            fillSourceEntrySummary(model, sourceEntry);
+            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+            return "entries/transfer-link-form";
+        }
+    }
+
+    @PostMapping("/{id}/transfer-unlink")
+    public String unlinkTransfer(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo
+    ) {
+        entryTransferService.unlinkTransferByEntryId(id);
+        return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
+    }
+
     @GetMapping("/fragments/category-suggestion")
     public String categorySuggestion(@ModelAttribute("form") EntryForm form, Model model) {
         fillCategoryOptions(model);
@@ -298,12 +565,16 @@ public class EntryController {
         Model model
     ) {
         Entry entry = entryService.findById(id);
+        if (entry.isTransfer()) {
+            return editTransferForm(id, returnTo, model);
+        }
         EntryForm form = fromDomain(entry);
         prepareFormForRendering(form);
         model.addAttribute("form", form);
         fillEntryFormAccountOptions(model, entry.getAccount().getId());
         fillCategoryOptions(model);
         fillCategorySuggestionState(model, form);
+        fillTransferEntryState(model, entry);
         model.addAttribute("entryId", id);
         fillEntryRegistrationInfo(model, entry);
         model.addAttribute("mode", "edit");
@@ -326,7 +597,9 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            fillEntryRegistrationInfo(model, entryService.findById(id));
+            Entry persistedEntry = entryService.findById(id);
+            fillEntryRegistrationInfo(model, persistedEntry);
+            fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -341,7 +614,9 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            fillEntryRegistrationInfo(model, entryService.findById(id));
+            Entry persistedEntry = entryService.findById(id);
+            fillEntryRegistrationInfo(model, persistedEntry);
+            fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -352,7 +627,9 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            fillEntryRegistrationInfo(model, entryService.findById(id));
+            Entry persistedEntry = entryService.findById(id);
+            fillEntryRegistrationInfo(model, persistedEntry);
+            fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -368,7 +645,9 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            fillEntryRegistrationInfo(model, entryService.findById(id));
+            Entry persistedEntry = entryService.findById(id);
+            fillEntryRegistrationInfo(model, persistedEntry);
+            fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -380,7 +659,9 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            fillEntryRegistrationInfo(model, entryService.findById(id));
+            Entry persistedEntry = entryService.findById(id);
+            fillEntryRegistrationInfo(model, persistedEntry);
+            fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
             return "entries/form";
@@ -515,6 +796,7 @@ public class EntryController {
         }
 
         PaginationView pagination = PaginationSupport.toView(pageResult);
+        model.addAttribute("transferViewsByEntryId", buildTransferViewsByEntryId(pageResult.items()));
         model.addAttribute("entries", pageResult.items());
         model.addAttribute("selectedAccountId", effectiveAccountId);
         model.addAttribute("selectedCategoryId", categoryId);
@@ -613,6 +895,7 @@ public class EntryController {
         form.setSuggestedCategoryConfidence(entry.getCategorySuggestionConfidence());
         form.setNotes(entry.getNotes());
         form.setAmount(entry.getAmount());
+        form.setTransferEntry(entry.isTransfer());
         return form;
     }
 
@@ -620,6 +903,23 @@ public class EntryController {
     private void fillEntryRegistrationInfo(Model model, Entry entry) {
         model.addAttribute("entrySource", entry.getEntrySource());
         model.addAttribute("entryRegistrationDate", entry.getRegistrationDate());
+    }
+
+    private void fillTransferEntryState(Model model, Entry entry) {
+        if (entry == null || !entry.isTransfer()) {
+            model.addAttribute("transferEntry", false);
+            model.addAttribute("transferView", null);
+            return;
+        }
+        model.addAttribute("transferEntry", true);
+        model.addAttribute("transferView", entryTransferService.findTransferViewByEntryId(entry.getId()).orElse(null));
+    }
+
+    private void fillSourceEntrySummary(Model model, Entry entry) {
+        model.addAttribute("sourceEntryId", entry.getId());
+        model.addAttribute("sourceEntryAmount", entry.getAmount());
+        model.addAttribute("sourceEntryAmountSign", entry.getAmount().signum());
+        model.addAttribute("sourceEntryAccountTitle", accountService.findById(entry.getAccount().getId()).getTitle());
     }
 
     private void fillStatementImportOptions(Model model) {
@@ -633,12 +933,30 @@ public class EntryController {
         model.addAttribute("accountOptions", accounts);
     }
 
+    private void fillTransferFormAccountOptions(Model model, Long originAccountId, Long destinationAccountId) {
+        List<Account> accounts = accountService.listAllOrdered()
+            .stream()
+            .filter(account ->
+                account.getDeactivationDate() == null
+                    || (originAccountId != null && originAccountId.equals(account.getId()))
+                    || (destinationAccountId != null && destinationAccountId.equals(account.getId()))
+            )
+            .toList();
+        model.addAttribute("accountOptions", accounts);
+    }
+
     private void fillCategoryOptions(Model model) {
         List<CategoryOption> categoryOptions = categoryService.listHierarchyOptions();
         model.addAttribute("categoryOptions", categoryOptions);
     }
 
     private void fillCategorySuggestionState(Model model, EntryForm form) {
+        if (form != null && form.isTransferEntry()) {
+            model.addAttribute("suggestedCategory", null);
+            model.addAttribute("pendingCategorySuggestion", false);
+            model.addAttribute("showNewCategoryField", false);
+            return;
+        }
         if (form == null || form.getSuggestedCategoryId() == null) {
             model.addAttribute("suggestedCategory", null);
             model.addAttribute("pendingCategorySuggestion", false);
@@ -656,6 +974,9 @@ public class EntryController {
     }
 
     private void validateCategoryChoice(EntryForm form, BindingResult bindingResult) {
+        if (form != null && form.isTransferEntry()) {
+            return;
+        }
         boolean hasCategoryId = effectiveCategoryId(form) != null;
         boolean hasNewCategoryTitle = StringUtils.hasText(form.getNewCategoryTitle());
         if (hasCategoryId || hasNewCategoryTitle) {
@@ -712,6 +1033,9 @@ public class EntryController {
     }
 
     private boolean shouldSuggestCategory(EntryForm form) {
+        if (form != null && form.isTransferEntry()) {
+            return false;
+        }
         return effectiveCategoryId(form) == null
             && !StringUtils.hasText(form.getNewCategoryTitle())
             && form.getAccountId() != null
@@ -735,7 +1059,9 @@ public class EntryController {
     }
 
     private boolean shouldShowNewCategoryField(EntryForm form) {
-        return form != null && (isNewCategoryOptionSelected(form) || StringUtils.hasText(form.getNewCategoryTitle()));
+        return form != null
+            && !form.isTransferEntry()
+            && (isNewCategoryOptionSelected(form) || StringUtils.hasText(form.getNewCategoryTitle()));
     }
 
     private boolean isNewCategoryOptionSelected(EntryForm form) {
@@ -743,10 +1069,60 @@ public class EntryController {
     }
 
     private Long effectiveCategoryId(EntryForm form) {
+        if (form != null && form.isTransferEntry()) {
+            return null;
+        }
         if (isNewCategoryOptionSelected(form)) {
             return null;
         }
         return form == null ? null : form.getCategoryId();
+    }
+
+    private EntryTransferCreationRequest toTransferCreationRequest(TransferForm form) {
+        return new EntryTransferCreationRequest(
+            form.getOriginAccountId(),
+            form.getDestinationAccountId(),
+            form.getMovementDate(),
+            form.getSettlementDate(),
+            form.getDescription(),
+            form.getAmount(),
+            form.getNotes()
+        );
+    }
+
+    private EntryTransferCreationRequest toTransferCreationRequest(dev.ccosta.aisha.domain.entry.EntryTransfer entryTransfer) {
+        Entry originEntry = entryTransfer.getOriginEntry();
+        Entry destinationEntry = entryTransfer.getDestinationEntry();
+        return new EntryTransferCreationRequest(
+            originEntry.getAccount().getId(),
+            destinationEntry.getAccount().getId(),
+            originEntry.getMovementDate(),
+            originEntry.getSettlementDate(),
+            originEntry.getDescription(),
+            originEntry.getAmount().abs(),
+            originEntry.getNotes()
+        );
+    }
+
+    private void validateDistinctAccounts(Long firstAccountId, Long secondAccountId, String fieldName, BindingResult bindingResult) {
+        if (firstAccountId != null && firstAccountId.equals(secondAccountId)) {
+            bindingResult.rejectValue(fieldName, "transferForm.accounts.mustBeDifferent");
+        }
+    }
+
+    private void validatePositiveAmount(BigDecimal amount, String fieldName, BindingResult bindingResult) {
+        if (amount != null && amount.signum() <= 0) {
+            bindingResult.rejectValue(fieldName, "transferForm.amount.positive");
+        }
+    }
+
+    private Map<Long, EntryTransferView> buildTransferViewsByEntryId(List<Entry> entries) {
+        Map<Long, EntryTransferView> transferViewsByEntryId = new LinkedHashMap<>();
+        for (Entry entry : entries) {
+            entryTransferService.findTransferViewByEntryId(entry.getId())
+                .ifPresent(transferView -> transferViewsByEntryId.put(entry.getId(), transferView));
+        }
+        return transferViewsByEntryId;
     }
 
     private void fillImportErrorModel(Model model, String rawMessage) {

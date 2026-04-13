@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{entries.transferForm.title.link}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{entries.form.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="#{entries.transferForm.title.link}"></h2>
+        <p class="helper" th:text="#{entries.transferForm.sourceEntry(${sourceEntryId}, ${sourceEntryAccountTitle}, ${#numbers.formatDecimal(sourceEntryAmount, 1, 'POINT', 2, 'COMMA')})}"></p>
+
+        <form class="stack-form" th:object="${form}" th:action="@{/entries/{id}/transfer-link(id=${sourceEntryId})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="returnTo" th:value="${returnTo}">
+            <input type="hidden" th:field="*{sourceEntryId}">
+
+            <p class="error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></p>
+
+            <div class="field">
+                <label for="counterpartEntryId" th:text="#{entries.transferForm.field.counterpartEntry.required}"></label>
+                <input id="counterpartEntryId" type="number" th:field="*{counterpartEntryId}" min="1" required>
+                <p class="helper" th:text="#{entries.transferForm.field.counterpartEntry.helper}"></p>
+                <p class="error" th:if="${#fields.hasErrors('counterpartEntryId')}" th:errors="*{counterpartEntryId}"></p>
+            </div>
+
+            <div class="actions-inline">
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="link" aria-hidden="true"></i>
+                    <span th:text="#{entries.transferForm.action.link}"></span>
+                </button>
+                <a class="btn btn-secondary" th:href="${returnTo}">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <span th:text="#{entries.form.action.cancel}"></span>
+                </a>
+            </div>
+        </form>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>
