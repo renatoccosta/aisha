@@ -8,6 +8,9 @@ import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
+import dev.ccosta.aisha.domain.entry.EntryTransfer;
+import dev.ccosta.aisha.domain.entry.EntryTransferRepository;
+import dev.ccosta.aisha.domain.entry.EntryType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -21,11 +24,18 @@ import org.springframework.util.StringUtils;
 public class EntryService {
 
     private final EntryRepository entryRepository;
+    private final EntryTransferRepository entryTransferRepository;
     private final AccountService accountService;
     private final CategoryService categoryService;
 
-    public EntryService(EntryRepository entryRepository, AccountService accountService, CategoryService categoryService) {
+    public EntryService(
+        EntryRepository entryRepository,
+        EntryTransferRepository entryTransferRepository,
+        AccountService accountService,
+        CategoryService categoryService
+    ) {
         this.entryRepository = entryRepository;
+        this.entryTransferRepository = entryTransferRepository;
         this.accountService = accountService;
         this.categoryService = categoryService;
     }
@@ -85,6 +95,9 @@ public class EntryService {
     public Entry update(Long id, Entry updatedData, Long accountId, EntryCategorySelection categorySelection) {
         accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, updatedData.getSettlementDate());
         Entry existing = findById(id);
+        if (existing.isTransfer()) {
+            throw new IllegalArgumentException("Transfer entries must be updated through transfer-specific flows");
+        }
         existing.setAccount(resolveAccount(accountId));
         existing.setMovementDate(updatedData.getMovementDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
@@ -125,7 +138,14 @@ public class EntryService {
         }
 
         LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>(ids);
-        entryRepository.deleteByIds(uniqueIds);
+        List<EntryTransfer> transfers = entryTransferRepository.findAllByEntryIds(uniqueIds);
+        LinkedHashSet<Long> effectiveIds = new LinkedHashSet<>(uniqueIds);
+        for (EntryTransfer transfer : transfers) {
+            effectiveIds.add(transfer.getOriginEntry().getId());
+            effectiveIds.add(transfer.getDestinationEntry().getId());
+        }
+        entryTransferRepository.deleteAllByEntryIds(effectiveIds);
+        entryRepository.deleteByIds(effectiveIds);
     }
 
     private Category resolveCategory(EntryCategorySelection categorySelection) {
@@ -157,6 +177,9 @@ public class EntryService {
         }
         if (entry.getRegistrationDate() == null) {
             entry.setRegistrationDate(LocalDate.now());
+        }
+        if (entry.getEntryType() == null) {
+            entry.setEntryType(EntryType.REGULAR);
         }
     }
 

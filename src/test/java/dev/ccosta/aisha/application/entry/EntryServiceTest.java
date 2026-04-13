@@ -3,6 +3,9 @@ package dev.ccosta.aisha.application.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +17,8 @@ import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
+import dev.ccosta.aisha.domain.entry.EntryTransfer;
+import dev.ccosta.aisha.domain.entry.EntryTransferRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,6 +37,9 @@ class EntryServiceTest {
 
     @Mock
     private EntryRepository entryRepository;
+
+    @Mock
+    private EntryTransferRepository entryTransferRepository;
 
     @Mock
     private AccountService accountService;
@@ -101,15 +109,56 @@ class EntryServiceTest {
         entryService.bulkDelete(List.of());
 
         verify(entryRepository, never()).deleteByIds(List.of());
+        verify(entryTransferRepository, never()).findAllByEntryIds(List.of());
     }
 
     @Test
     void shouldRemoveDuplicateIdsInBulkDelete() {
+        doReturn(List.of()).when(entryTransferRepository).findAllByEntryIds(org.mockito.ArgumentMatchers.anyCollection());
+
         entryService.bulkDelete(List.of(1L, 2L, 1L, 2L, 3L));
 
         ArgumentCaptor<Collection<Long>> idsCaptor = ArgumentCaptor.forClass(Collection.class);
         verify(entryRepository).deleteByIds(idsCaptor.capture());
         assertThat(idsCaptor.getValue()).containsExactly(1L, 2L, 3L);
+    }
+
+    @Test
+    void shouldDeleteBothSidesWhenBulkDeleteContainsTransferEntry() {
+        Entry originEntry = newTransferEntry(10L);
+        Entry destinationEntry = newTransferEntry(11L);
+        EntryTransfer transfer = new EntryTransfer();
+        transfer.setOriginEntry(originEntry);
+        transfer.setDestinationEntry(destinationEntry);
+        doReturn(List.of(transfer)).when(entryTransferRepository).findAllByEntryIds(org.mockito.ArgumentMatchers.anyCollection());
+
+        entryService.bulkDelete(List.of(10L));
+
+        ArgumentCaptor<Collection<Long>> idsCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(entryTransferRepository).deleteAllByEntryIds(idsCaptor.capture());
+        ArgumentCaptor<Collection<Long>> entryIdsCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(entryRepository).deleteByIds(entryIdsCaptor.capture());
+        assertThat(idsCaptor.getValue()).containsExactly(10L, 11L);
+        assertThat(entryIdsCaptor.getValue()).containsExactly(10L, 11L);
+    }
+
+    @Test
+    void shouldDeleteEachTransferOnlyOnceWhenBothSidesAreSelected() {
+        Entry originEntry = newTransferEntry(10L);
+        Entry destinationEntry = newTransferEntry(11L);
+        EntryTransfer transfer = new EntryTransfer();
+        transfer.setOriginEntry(originEntry);
+        transfer.setDestinationEntry(destinationEntry);
+        doReturn(List.of(transfer)).when(entryTransferRepository).findAllByEntryIds(org.mockito.ArgumentMatchers.anyCollection());
+
+        entryService.bulkDelete(List.of(10L, 11L));
+
+        ArgumentCaptor<Collection<Long>> idsCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(entryTransferRepository, times(1)).deleteAllByEntryIds(idsCaptor.capture());
+        ArgumentCaptor<Collection<Long>> entryIdsCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(entryRepository).deleteByIds(entryIdsCaptor.capture());
+        assertThat(idsCaptor.getValue()).containsExactly(10L, 11L);
+        assertThat(entryIdsCaptor.getValue()).containsExactly(10L, 11L);
     }
 
     @Test
@@ -304,6 +353,19 @@ class EntryServiceTest {
         verify(entryRepository).save(entry);
     }
 
+    @Test
+    void shouldRejectRegularUpdateForTransferEntry() {
+        Entry existing = newEntry("Transferência", new BigDecimal("-10.00"));
+        existing.setEntryType(dev.ccosta.aisha.domain.entry.EntryType.TRANSFER);
+        Entry updatedData = newEntry("Transferência", new BigDecimal("-10.00"));
+
+        when(entryRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> entryService.update(1L, updatedData, 6L, selection(7L, null, null, null)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("transfer-specific flows");
+    }
+
     private Entry newEntry(String description, BigDecimal amount) {
         Entry entry = new Entry();
         entry.setAccount(newAccount("Conta padrão"));
@@ -312,6 +374,12 @@ class EntryServiceTest {
         entry.setMovementDate(LocalDate.of(2026, 2, 11));
         entry.setSettlementDate(LocalDate.of(2026, 2, 11));
         entry.setAmount(amount);
+        return entry;
+    }
+
+    private Entry newTransferEntry(Long id) {
+        Entry entry = mock(Entry.class);
+        when(entry.getId()).thenReturn(id);
         return entry;
     }
 

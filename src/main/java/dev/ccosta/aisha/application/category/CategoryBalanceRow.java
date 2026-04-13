@@ -7,7 +7,6 @@ public record CategoryBalanceRow(
     Long categoryId,
     String categoryTitle,
     String categoryDescription,
-    BigDecimal previousPeriodBalance,
     List<BigDecimal> periodBalances
 ) {
 }

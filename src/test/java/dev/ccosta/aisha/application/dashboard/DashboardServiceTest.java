@@ -164,6 +164,29 @@ class DashboardServiceTest {
     }
 
     @Test
+    void shouldIgnoreTransferEntriesInRevenueAndExpenseTotals() {
+        Entry revenue = newEntry(LocalDate.of(2026, 1, 1), "15.00");
+        Entry expense = newEntry(LocalDate.of(2026, 1, 1), "-4.00");
+        Entry transferOut = newEntry(LocalDate.of(2026, 1, 1), "-10.00");
+        transferOut.setEntryType(dev.ccosta.aisha.domain.entry.EntryType.TRANSFER);
+        Entry transferIn = newEntry(LocalDate.of(2026, 1, 1), "10.00");
+        transferIn.setEntryType(dev.ccosta.aisha.domain.entry.EntryType.TRANSFER);
+
+        when(accountRepository.findAllOrdered()).thenReturn(List.of());
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            revenue,
+            expense,
+            transferOut,
+            transferIn
+        ));
+
+        DashboardSummary summary = dashboardService.buildSummary(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+
+        assertThat(summary.totalRevenues().currentValue()).isEqualByComparingTo("15.00");
+        assertThat(summary.totalExpenses().currentValue()).isEqualByComparingTo("4.00");
+    }
+
+    @Test
     void shouldTrimTrailingMonthlyBucketsWithoutRecordsInBalanceEvolution() {
         when(accountRepository.findAllOrdered()).thenReturn(List.of());
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 6, 30))).thenReturn(List.of(

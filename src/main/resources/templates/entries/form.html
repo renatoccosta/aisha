@@ -20,15 +20,27 @@
             <span th:if="${entrySource.name() == 'IMPORT'}" th:text="#{entries.form.registrationInfo.import(${#temporals.format(entryRegistrationDate, 'dd/MM/yyyy')})}"></span>
         </p>
 
+        <div class="helper" th:if="${form.transferEntry}">
+            <strong th:text="#{entries.form.transfer.badge}"></strong>
+            <span
+                th:if="${transferView != null and transferView.originSide()}"
+                th:text="#{entries.form.transfer.destination(${transferView.counterpartAccountTitle})}"></span>
+            <span
+                th:if="${transferView != null and !transferView.originSide()}"
+                th:text="#{entries.form.transfer.origin(${transferView.counterpartAccountTitle})}"></span>
+        </div>
+
         <form class="stack-form" th:object="${form}" th:action="${mode == 'create'} ? @{/entries} : @{/entries/{id}(id=${entryId})}" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="returnTo" th:value="${returnTo}">
+            <input type="hidden" th:field="*{transferEntry}">
             <div class="grid-2">
                 <div class="field">
                     <label for="account" th:text="#{entries.form.field.account.required}"></label>
                     <select
                         id="account"
                         th:field="*{accountId}"
+                        th:disabled="${form.transferEntry}"
                         required
                         hx-get="/entries/fragments/category-suggestion"
                         hx-include="closest form"
@@ -45,7 +57,12 @@
                     <p class="error" th:if="${#fields.hasErrors('accountId')}" th:errors="*{accountId}"></p>
                 </div>
 
-                <div id="category-selection-container" class="field-group" th:fragment="categorySelectionSection" th:object="${form}">
+                <div
+                    id="category-selection-container"
+                    class="field-group"
+                    th:fragment="categorySelectionSection"
+                    th:object="${form}"
+                    th:if="${!form.transferEntry}">
                     <input type="hidden" th:field="*{suggestedCategoryId}">
                     <input type="hidden" th:field="*{suggestedCategoryConfidence}">
                     <div class="field">
@@ -88,16 +105,21 @@
                 </div>
             </div>
 
+            <div class="field" th:if="${form.transferEntry}">
+                <label th:text="#{entries.form.field.category}"></label>
+                <p class="helper" th:text="#{entries.form.transfer.noCategory}"></p>
+            </div>
+
             <div class="grid-2">
                 <div class="field">
                     <label for="movementDate" th:text="#{entries.form.field.movementDate.required}"></label>
-                    <input id="movementDate" type="date" th:field="*{movementDate}" required>
+                    <input id="movementDate" type="date" th:field="*{movementDate}" th:disabled="${form.transferEntry}" required>
                     <p class="error" th:if="${#fields.hasErrors('movementDate')}" th:errors="*{movementDate}"></p>
                 </div>
 
                 <div class="field">
                     <label for="settlementDate" th:text="#{entries.form.field.settlementDate.required}"></label>
-                    <input id="settlementDate" type="date" th:field="*{settlementDate}" required>
+                    <input id="settlementDate" type="date" th:field="*{settlementDate}" th:disabled="${form.transferEntry}" required>
                     <p class="error" th:if="${#fields.hasErrors('settlementDate')}" th:errors="*{settlementDate}"></p>
                 </div>
             </div>
@@ -108,6 +130,7 @@
                     id="description"
                     type="text"
                     th:field="*{description}"
+                    th:readonly="${form.transferEntry}"
                     maxlength="200"
                     required
                         hx-get="/entries/fragments/category-suggestion"
@@ -124,6 +147,7 @@
                     id="amount"
                     type="number"
                     th:field="*{amount}"
+                    th:readonly="${form.transferEntry}"
                     step="0.01"
                     required
                     hx-get="/entries/fragments/category-suggestion"
@@ -136,15 +160,29 @@
 
             <div class="field">
                 <label for="notes" th:text="#{entries.form.field.notes}"></label>
-                <textarea id="notes" th:field="*{notes}" rows="4" maxlength="1000"></textarea>
+                <textarea id="notes" th:field="*{notes}" th:readonly="${form.transferEntry}" rows="4" maxlength="1000"></textarea>
                 <p class="error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
             </div>
 
             <div class="actions-inline">
-                <button class="btn btn-primary" type="submit">
+                <button class="btn btn-primary" th:if="${!(mode == 'edit' and form.transferEntry)}" type="submit">
                     <i data-lucide="save" aria-hidden="true"></i>
                     <span th:text="${mode == 'create'} ? #{entries.form.action.save} : #{entries.form.action.update}"></span>
                 </button>
+                <a
+                    class="btn btn-secondary"
+                    th:if="${mode == 'edit' and !form.transferEntry}"
+                    th:href="@{/entries/{id}/transfer-counterpart(id=${entryId},returnTo=${returnTo})}">
+                    <i data-lucide="repeat" aria-hidden="true"></i>
+                    <span th:text="#{entries.form.action.createCounterpart}"></span>
+                </a>
+                <a
+                    class="btn btn-secondary"
+                    th:if="${mode == 'edit' and !form.transferEntry}"
+                    th:href="@{/entries/{id}/transfer-link(id=${entryId},returnTo=${returnTo})}">
+                    <i data-lucide="link" aria-hidden="true"></i>
+                    <span th:text="#{entries.form.action.linkTransfer}"></span>
+                </a>
                 <a class="btn btn-secondary" th:href="${returnTo}">
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
                     <span th:text="#{entries.form.action.cancel}"></span>

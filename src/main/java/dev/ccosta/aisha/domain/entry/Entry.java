@@ -69,6 +69,10 @@ public class Entry {
     @Column(name = "registration_date")
     private LocalDate registrationDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entry_type", nullable = false, length = 20)
+    private EntryType entryType = EntryType.REGULAR;
+
     public Long getId() {
         return id;
     }
@@ -177,7 +181,19 @@ public class Entry {
         this.registrationDate = registrationDate;
     }
 
+    public EntryType getEntryType() {
+        return entryType;
+    }
+
+    public void setEntryType(EntryType entryType) {
+        this.entryType = entryType == null ? EntryType.REGULAR : entryType;
+    }
+
     public boolean hasPendingCategorySuggestion() {
         return categorySuggestionStatus == EntryCategorySuggestionStatus.PENDING;
+    }
+
+    public boolean isTransfer() {
+        return entryType == EntryType.TRANSFER;
     }
 }

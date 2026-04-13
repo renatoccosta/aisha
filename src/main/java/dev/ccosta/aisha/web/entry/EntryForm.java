@@ -41,6 +41,8 @@ public class EntryForm {
     @Digits(integer = 17, fraction = 2, message = "{entryForm.amount.digits}")
     private BigDecimal amount;
 
+    private boolean transferEntry;
+
     public static EntryForm newWithCurrentDates() {
         EntryForm form = new EntryForm();
         LocalDate today = LocalDate.now();
@@ -127,5 +129,13 @@ public class EntryForm {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public boolean isTransferEntry() {
+        return transferEntry;
+    }
+
+    public void setTransferEntry(boolean transferEntry) {
+        this.transferEntry = transferEntry;
     }
 }

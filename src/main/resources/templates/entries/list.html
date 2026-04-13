@@ -26,10 +26,25 @@
                 <i data-lucide="file-input" aria-hidden="true"></i>
                 <span th:text="#{entries.list.action.importStatement}"></span>
             </a>
-            <a class="btn btn-primary" th:href="@{/entries/new(returnTo=${returnTo})}">
-                <i data-lucide="plus" aria-hidden="true"></i>
-                <span th:text="#{entries.list.action.new}"></span>
-            </a>
+            <details class="action-menu">
+                <summary class="btn btn-primary">
+                    <span class="action-menu-trigger">
+                        <i data-lucide="plus" aria-hidden="true"></i>
+                        <span th:text="#{entries.list.action.new}"></span>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                    </span>
+                </summary>
+                <div class="action-menu-panel">
+                    <a class="action-menu-item" th:href="@{/entries/new(returnTo=${returnTo})}">
+                        <i data-lucide="receipt-text" aria-hidden="true"></i>
+                        <span th:text="#{entries.list.action.newRegular}"></span>
+                    </a>
+                    <a class="action-menu-item" th:href="@{/entries/transfers/new(returnTo=${returnTo})}">
+                        <i data-lucide="repeat" aria-hidden="true"></i>
+                        <span th:text="#{entries.list.action.newTransfer}"></span>
+                    </a>
+                </div>
+            </details>
         </div>
     </section>
 
@@ -176,6 +191,7 @@
                 <input type="hidden" name="pendingSuggestions" th:value="${selectedPendingSuggestions}">
                 <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
                 <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
+                <input type="hidden" name="returnTo" th:value="${returnTo}">
 
                 <div class="table-actions">
                     <button class="btn btn-danger" type="submit">
@@ -222,7 +238,11 @@
                     </tr>
                     <tr th:each="entry : ${entries}">
                         <td class="cell-select" th:attr="data-label=#{entries.list.table.select}">
-                            <input type="checkbox" name="ids" th:value="${entry.id}" th:attr="aria-label=#{entries.list.table.selectItem}">
+                            <input
+                                type="checkbox"
+                                name="ids"
+                                th:value="${entry.id}"
+                                th:attr="aria-label=#{entries.list.table.selectItem}">
                         </td>
                         <td th:attr="data-label=#{entries.list.table.account}" th:text="${entry.account.title}"></td>
                         <td th:attr="data-label=#{entries.list.table.movementDate}" th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></td>
@@ -230,7 +250,21 @@
                         <td th:attr="data-label=#{entries.list.table.description}" th:text="${entry.description}"></td>
                         <td th:attr="data-label=#{entries.list.table.category}">
                             <div class="cell-stack">
-                                <span th:text="${entry.category != null ? entry.category.title : #messages.msg('entries.list.table.category.empty')}"></span>
+                                <span
+                                    th:if="${entry.entryType.name() == 'TRANSFER'}"
+                                    th:text="#{entries.list.table.transfer.badge}"></span>
+                                <span
+                                    th:if="${entry.entryType.name() != 'TRANSFER' and entry.category != null}"
+                                    th:text="${entry.category.title}"></span>
+                                <span
+                                    th:if="${entry.entryType.name() != 'TRANSFER' and entry.category == null}"
+                                    th:text="#{entries.list.table.category.empty}"></span>
+                                <span class="helper"
+                                      th:if="${transferViewsByEntryId[entry.id] != null and transferViewsByEntryId[entry.id].originSide()}"
+                                      th:text="#{entries.list.table.transfer.destination(${transferViewsByEntryId[entry.id].counterpartAccountTitle})}"></span>
+                                <span class="helper"
+                                      th:if="${transferViewsByEntryId[entry.id] != null and !transferViewsByEntryId[entry.id].originSide()}"
+                                      th:text="#{entries.list.table.transfer.origin(${transferViewsByEntryId[entry.id].counterpartAccountTitle})}"></span>
                                 <span class="status-chip"
                                       th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
                                       th:text="#{entries.list.table.category.status.pending}"></span>
@@ -244,31 +278,75 @@
                         </td>
                         <td class="amount-cell" th:attr="data-label=#{entries.list.table.amount}" th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></td>
                         <td class="cell-actions" th:attr="data-label=#{entries.list.table.actions}">
-                            <div class="actions-inline entry-actions-inline">
-                                <button
-                                    class="btn btn-secondary"
-                                    type="button"
-                                    th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
-                                    th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id})},hx-confirm='unset'"
-                                    hx-target="#entries-listing"
-                                    hx-swap="outerHTML">
-                                    <i data-lucide="check-check" aria-hidden="true"></i>
-                                    <span th:text="#{entries.list.action.confirmSuggestion}"></span>
-                                </button>
-                                <a class="btn btn-secondary" th:href="@{/entries/{id}/edit(id=${entry.id},returnTo=${returnTo})}">
-                                    <i data-lucide="edit-3" aria-hidden="true"></i>
-                                    <span th:text="#{entries.list.action.edit}"></span>
-                                </a>
-                                <button
-                                    class="btn btn-danger"
-                                    type="button"
-                                    th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
-                                    hx-target="#entries-listing"
-                                    hx-swap="outerHTML">
-                                    <i data-lucide="trash-2" aria-hidden="true"></i>
-                                    <span th:text="#{entries.list.action.delete}"></span>
-                                </button>
-                            </div>
+                            <details class="action-menu action-menu-row">
+                                <summary class="btn btn-secondary">
+                                    <span class="action-menu-trigger">
+                                        <i data-lucide="settings-2" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.table.actions}"></span>
+                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                                    </span>
+                                </summary>
+                                <div class="action-menu-panel">
+                                    <button
+                                        class="action-menu-item"
+                                        type="button"
+                                        th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
+                                        th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id})},hx-confirm='unset'"
+                                        hx-target="#entries-listing"
+                                        hx-swap="outerHTML">
+                                        <i data-lucide="check-check" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.confirmSuggestion}"></span>
+                                    </button>
+                                    <a
+                                        class="action-menu-item"
+                                        th:if="${entry.entryType.name() == 'TRANSFER'}"
+                                        th:href="@{/entries/{id}/transfer/edit(id=${entry.id},returnTo=${returnTo})}">
+                                        <i data-lucide="edit-3" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.edit}"></span>
+                                    </a>
+                                    <a
+                                        class="action-menu-item"
+                                        th:if="${entry.entryType.name() != 'TRANSFER'}"
+                                        th:href="@{/entries/{id}/edit(id=${entry.id},returnTo=${returnTo})}">
+                                        <i data-lucide="edit-3" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.edit}"></span>
+                                    </a>
+                                    <a
+                                        class="action-menu-item"
+                                        th:if="${transferViewsByEntryId[entry.id] == null}"
+                                        th:href="@{/entries/{id}/transfer-counterpart(id=${entry.id},returnTo=${returnTo})}">
+                                        <i data-lucide="repeat" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.createCounterpart}"></span>
+                                    </a>
+                                    <a
+                                        class="action-menu-item"
+                                        th:if="${transferViewsByEntryId[entry.id] == null}"
+                                        th:href="@{/entries/{id}/transfer-link(id=${entry.id},returnTo=${returnTo})}">
+                                        <i data-lucide="link" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.linkTransfer}"></span>
+                                    </a>
+                                    <button
+                                        class="action-menu-item"
+                                        th:if="${transferViewsByEntryId[entry.id] != null}"
+                                        type="submit"
+                                        th:formaction="@{/entries/{id}/transfer-unlink(id=${entry.id})}"
+                                        formmethod="post"
+                                        th:attr="onclick=|return confirm('${#messages.msg('entries.list.confirm.unlinkTransfer')}');|">
+                                        <i data-lucide="unlink" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.unlinkTransfer}"></span>
+                                    </button>
+                                    <button
+                                        class="action-menu-item action-menu-item-danger"
+                                        th:if="${transferViewsByEntryId[entry.id] == null}"
+                                        type="button"
+                                        th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
+                                        hx-target="#entries-listing"
+                                        hx-swap="outerHTML">
+                                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.delete}"></span>
+                                    </button>
+                                </div>
+                            </details>
                         </td>
                     </tr>
                     </tbody>

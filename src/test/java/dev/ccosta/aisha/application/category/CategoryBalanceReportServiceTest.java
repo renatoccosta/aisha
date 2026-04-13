@@ -48,13 +48,11 @@ class CategoryBalanceReportServiceTest {
         assertThat(report.buckets().get(11).startDate()).isEqualTo(LocalDate.of(2026, 12, 1));
 
         CategoryBalanceRow housingRow = report.rows().get(0);
-        assertThat(housingRow.previousPeriodBalance()).isEqualByComparingTo("-100.00");
         assertThat(housingRow.periodBalances().get(0)).isEqualByComparingTo("-500.00");
         assertThat(housingRow.periodBalances().get(1)).isEqualByComparingTo("-120.50");
         assertThat(housingRow.periodBalances().get(2)).isEqualByComparingTo(BigDecimal.ZERO);
 
         CategoryBalanceRow leisureRow = report.rows().get(1);
-        assertThat(leisureRow.previousPeriodBalance()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(leisureRow.periodBalances().get(1)).isEqualByComparingTo("-40.00");
         assertThat(leisureRow.periodBalances().get(10)).isEqualByComparingTo(BigDecimal.ZERO);
     }
@@ -79,7 +77,6 @@ class CategoryBalanceReportServiceTest {
         assertThat(report.buckets()).hasSize(4);
 
         CategoryBalanceRow row = report.rows().getFirst();
-        assertThat(row.previousPeriodBalance()).isEqualByComparingTo("-200.00");
         assertThat(row.periodBalances()).containsExactly(
             new BigDecimal("-50.00"),
             BigDecimal.ZERO,
@@ -97,6 +94,27 @@ class CategoryBalanceReportServiceTest {
 
         when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 2, 10))).thenReturn(List.of(
             uncategorizedEntry,
+            newEntry(1L, LocalDate.of(2026, 2, 10), "-50.00")
+        ));
+
+        CategoryBalanceReport report = categoryBalanceReportService.buildReport(
+            List.of(housing),
+            LocalDate.of(2026, 2, 10),
+            LocalDate.of(2026, 2, 10)
+        );
+
+        CategoryBalanceRow row = report.rows().getFirst();
+        assertThat(row.periodBalances()).containsExactly(new BigDecimal("-50.00"));
+    }
+
+    @Test
+    void shouldIgnoreTransferEntriesEvenWhenCategoryIsPresent() {
+        Category housing = newCategory(1L, "Moradia");
+        Entry transferEntry = newEntry(1L, LocalDate.of(2026, 2, 10), "-99.00");
+        transferEntry.setEntryType(dev.ccosta.aisha.domain.entry.EntryType.TRANSFER);
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 2, 10))).thenReturn(List.of(
+            transferEntry,
             newEntry(1L, LocalDate.of(2026, 2, 10), "-50.00")
         ));
 
