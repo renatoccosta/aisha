@@ -176,13 +176,6 @@
                     <i data-lucide="repeat" aria-hidden="true"></i>
                     <span th:text="#{entries.form.action.createCounterpart}"></span>
                 </a>
-                <a
-                    class="btn btn-secondary"
-                    th:if="${mode == 'edit' and !form.transferEntry}"
-                    th:href="@{/entries/{id}/transfer-link(id=${entryId},returnTo=${returnTo})}">
-                    <i data-lucide="link" aria-hidden="true"></i>
-                    <span th:text="#{entries.form.action.linkTransfer}"></span>
-                </a>
                 <a class="btn btn-secondary" th:href="${returnTo}">
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
                     <span th:text="#{entries.form.action.cancel}"></span>

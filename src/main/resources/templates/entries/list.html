@@ -49,6 +49,13 @@
     </section>
 
     <div id="entries-listing" th:fragment="listing" class="listing-stack">
+        <div class="toast-stack" aria-live="polite" th:if="${toastMessage != null}">
+            <div class="toast-notification" data-auto-dismiss="true" th:classappend="${toastLevel == 'success'} ? ' toast-success' : ' toast-error'">
+                <i th:attr="data-lucide=${toastLevel == 'success'} ? 'check' : 'alert-circle'" aria-hidden="true"></i>
+                <span th:text="${toastMessage}"></span>
+            </div>
+        </div>
+
         <section class="card filter-panel">
             <div class="filter-panel-header">
                 <h3 th:text="#{entries.list.filters.heading}"></h3>
@@ -182,8 +189,7 @@
                 method="post"
                 hx-post="/entries/bulk-delete"
                 hx-target="#entries-listing"
-                hx-swap="outerHTML"
-                th:attr="hx-confirm=#{entries.list.confirm.bulkDelete}">
+                hx-swap="outerHTML">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                 <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
@@ -194,7 +200,7 @@
                 <input type="hidden" name="returnTo" th:value="${returnTo}">
 
                 <div class="table-actions">
-                    <button class="btn btn-danger" type="submit">
+                    <button class="btn btn-danger" type="submit" th:attr="hx-confirm=#{entries.list.confirm.bulkDelete}">
                         <i data-lucide="trash-2" aria-hidden="true"></i>
                         <span th:text="#{entries.list.action.bulkDelete}"></span>
                     </button>
@@ -318,13 +324,18 @@
                                         <i data-lucide="repeat" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.createCounterpart}"></span>
                                     </a>
-                                    <a
+                                    <button
                                         class="action-menu-item"
                                         th:if="${transferViewsByEntryId[entry.id] == null}"
-                                        th:href="@{/entries/{id}/transfer-link(id=${entry.id},returnTo=${returnTo})}">
+                                        type="button"
+                                        th:attr="hx-post=@{/entries/{id}/transfer-link(id=${entry.id})}"
+                                        data-preserve-scroll="true"
+                                        hx-include="closest form"
+                                        hx-target="#entries-listing"
+                                        hx-swap="outerHTML show:none">
                                         <i data-lucide="link" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.linkTransfer}"></span>
-                                    </a>
+                                    </button>
                                     <button
                                         class="action-menu-item"
                                         th:if="${transferViewsByEntryId[entry.id] != null}"

@@ -213,6 +213,16 @@ public class EntryTransferService {
             .orElseThrow(() -> new IllegalArgumentException("Entry is not part of a transfer"));
     }
 
+    /**
+     * Validates whether two existing regular entries can be linked as a transfer without mutating them.
+     */
+    @Transactional(readOnly = true)
+    public void validateExistingEntriesCanBecomeTransfer(Long firstEntryId, Long secondEntryId) {
+        Entry firstEntry = findRegularEntry(firstEntryId);
+        Entry secondEntry = findRegularEntry(secondEntryId);
+        validateEntriesCanBecomeTransfer(firstEntry, secondEntry);
+    }
+
     private Entry findRegularEntry(Long entryId) {
         Entry entry = entryRepository.findById(entryId)
             .orElseThrow(() -> new EntryNotFoundException(entryId));

@@ -20,13 +20,12 @@
             <input type="hidden" name="returnTo" th:value="${returnTo}">
             <input type="hidden" th:field="*{sourceEntryId}">
 
-            <p class="error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></p>
-
             <div class="field">
                 <label for="counterpartEntryId" th:text="#{entries.transferForm.field.counterpartEntry.required}"></label>
                 <input id="counterpartEntryId" type="number" th:field="*{counterpartEntryId}" min="1" required>
                 <p class="helper" th:text="#{entries.transferForm.field.counterpartEntry.helper}"></p>
                 <p class="error" th:if="${#fields.hasErrors('counterpartEntryId')}" th:errors="*{counterpartEntryId}"></p>
+                <p class="error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></p>
             </div>
 
             <div class="actions-inline">
