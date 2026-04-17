@@ -113,6 +113,47 @@ class EntryServiceTest {
     }
 
     @Test
+    void shouldIgnoreBulkConfirmWhenNoIds() {
+        entryService.bulkConfirmCategorySuggestions(List.of());
+
+        verify(entryRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        verify(entryRepository, never()).save(org.mockito.ArgumentMatchers.any(Entry.class));
+    }
+
+    @Test
+    void shouldConfirmOnlyPendingSuggestionsInBulk() {
+        Entry pendingEntry = newEntry("Mercado", new BigDecimal("15.00"));
+        Category suggestedCategory = newCategory("Supermercado");
+        pendingEntry.setCategory(suggestedCategory);
+        pendingEntry.setSuggestedCategory(suggestedCategory);
+        pendingEntry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
+
+        Entry acceptedEntry = newEntry("Padaria", new BigDecimal("8.00"));
+        acceptedEntry.setCategory(suggestedCategory);
+        acceptedEntry.setSuggestedCategory(suggestedCategory);
+        acceptedEntry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.ACCEPTED);
+
+        Entry invalidPendingEntry = newEntry("Farmácia", new BigDecimal("20.00"));
+        invalidPendingEntry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
+
+        when(entryRepository.findById(1L)).thenReturn(Optional.of(pendingEntry));
+        when(entryRepository.findById(2L)).thenReturn(Optional.of(acceptedEntry));
+        when(entryRepository.findById(3L)).thenReturn(Optional.of(invalidPendingEntry));
+        when(entryRepository.save(pendingEntry)).thenReturn(pendingEntry);
+
+        entryService.bulkConfirmCategorySuggestions(List.of(1L, 2L, 1L, 3L));
+
+        assertThat(pendingEntry.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.ACCEPTED);
+        assertThat(pendingEntry.getCategorySuggestionConfidence()).isEqualTo(1.0d);
+        verify(entryRepository, times(1)).findById(1L);
+        verify(entryRepository, times(1)).findById(2L);
+        verify(entryRepository, times(1)).findById(3L);
+        verify(entryRepository).save(pendingEntry);
+        verify(entryRepository, never()).save(acceptedEntry);
+        verify(entryRepository, never()).save(invalidPendingEntry);
+    }
+
+    @Test
     void shouldRemoveDuplicateIdsInBulkDelete() {
         doReturn(List.of()).when(entryTransferRepository).findAllByEntryIds(org.mockito.ArgumentMatchers.anyCollection());
 

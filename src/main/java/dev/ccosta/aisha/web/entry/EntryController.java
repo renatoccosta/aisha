@@ -751,6 +751,27 @@ public class EntryController {
         return "redirect:/entries";
     }
 
+    @PostMapping("/bulk-confirm-category-suggestions")
+    public String bulkConfirmCategorySuggestions(
+        @RequestParam(name = "ids", required = false) List<Long> ids,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "description", required = false) String description,
+        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        Model model
+    ) {
+        entryService.bulkConfirmCategorySuggestions(ids);
+        if (isHtmx(request)) {
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            return "entries/list :: listing";
+        }
+        return "redirect:/entries";
+    }
+
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @org.springframework.web.bind.annotation.ExceptionHandler(EntryNotFoundException.class)
     public String handleNotFound(EntryNotFoundException ex, HttpServletRequest request) {

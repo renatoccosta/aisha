@@ -34,6 +34,15 @@
         return scope ? scope.querySelector(selectAllToggleSelector) : null;
     }
 
+    function findSelectedCountDisplay(scope) {
+        if (!scope) {
+            return null;
+        }
+
+        const form = scope.closest("form");
+        return form ? form.querySelector("[data-selected-count-display]") : null;
+    }
+
     function getSelectionState(scope) {
         const checkboxes = getSelectableCheckboxes(scope);
         const selectedCount = checkboxes.filter(function (checkbox) {
@@ -49,6 +58,26 @@
         }
 
         return "some";
+    }
+
+    function getSelectedCount(scope) {
+        return getSelectableCheckboxes(scope).filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+    }
+
+    function updateSelectedCountDisplay(scope) {
+        const display = findSelectedCountDisplay(scope);
+        if (!display) {
+            return;
+        }
+
+        const selectedCount = getSelectedCount(scope);
+        const label = selectedCount === 1
+            ? display.dataset.labelSingular
+            : display.dataset.labelPlural;
+
+        display.textContent = label.replace("{count}", String(selectedCount));
     }
 
     function updateSelectAllToggle(scope) {
@@ -78,6 +107,7 @@
     function syncTableState(scope) {
         syncAllRows(scope);
         updateSelectAllToggle(scope);
+        updateSelectedCountDisplay(scope);
     }
 
     function getActiveAnchor() {
@@ -224,7 +254,7 @@
             const currentState = getSelectionState(table);
             const shouldSelectAll = currentState !== "all";
             setAllCheckboxes(table, shouldSelectAll);
-            updateSelectAllToggle(table);
+            syncTableState(table);
             return;
         }
 
@@ -280,7 +310,7 @@
             syncRowState(row);
         }
 
-        updateSelectAllToggle(getSelectionScope(checkbox));
+        syncTableState(getSelectionScope(checkbox));
     });
 
     if (document.readyState === "loading") {

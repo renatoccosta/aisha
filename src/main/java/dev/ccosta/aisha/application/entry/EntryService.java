@@ -126,6 +126,20 @@ public class EntryService {
     }
 
     @Transactional
+    public void bulkConfirmCategorySuggestions(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+
+        LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>(ids);
+        for (Long id : uniqueIds) {
+            entryRepository.findById(id)
+                .filter(this::hasPendingCategorySuggestionConfirmation)
+                .ifPresent(this::acceptCategorySuggestion);
+        }
+    }
+
+    @Transactional
     public void deleteById(Long id) {
         findById(id);
         entryRepository.deleteById(id);
@@ -146,6 +160,20 @@ public class EntryService {
         }
         entryTransferRepository.deleteAllByEntryIds(effectiveIds);
         entryRepository.deleteByIds(effectiveIds);
+    }
+
+    private boolean hasPendingCategorySuggestionConfirmation(Entry entry) {
+        return entry.getCategorySuggestionStatus() == EntryCategorySuggestionStatus.PENDING
+            && entry.getCategory() != null
+            && entry.getSuggestedCategory() != null;
+    }
+
+    private void acceptCategorySuggestion(Entry entry) {
+        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.ACCEPTED);
+        if (entry.getCategorySuggestionConfidence() == null) {
+            entry.setCategorySuggestionConfidence(1.0d);
+        }
+        entryRepository.save(entry);
     }
 
     private Category resolveCategory(EntryCategorySelection categorySelection) {

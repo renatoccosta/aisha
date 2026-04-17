@@ -91,6 +91,17 @@
             <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
 
             <div class="table-actions">
+                <span
+                    class="selection-counter"
+                    aria-live="polite">
+                    <i data-lucide="list-checks" aria-hidden="true"></i>
+                    <span
+                        data-selected-count-display
+                        th:attr="data-label-singular=#{selection.counter.template.singular},data-label-plural=#{selection.counter.template.plural}"
+                        th:text="#{selection.counter.plural(0)}">
+                        0 registros selecionados
+                    </span>
+                </span>
                 <button class="btn btn-danger" type="submit">
                     <i data-lucide="trash-2" aria-hidden="true"></i>
                     <span th:text="#{categories.list.action.bulkDelete}"></span>

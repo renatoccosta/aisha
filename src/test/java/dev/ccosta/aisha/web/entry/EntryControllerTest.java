@@ -267,6 +267,28 @@ class EntryControllerTest {
             .isEqualTo("O lançamento selecionado não pode ser associado: o lançamento selecionado não foi encontrado");
     }
 
+    @Test
+    void shouldConfirmCategorySuggestionsInBulkAndRefreshListingForHtmx() {
+        ConcurrentModel model = new ConcurrentModel();
+        stubListingDependencies();
+
+        String view = entryController.bulkConfirmCategorySuggestions(
+            List.of(1L, 2L),
+            baseDateFilter(),
+            3L,
+            4L,
+            "mercado",
+            true,
+            2,
+            25,
+            htmxRequest(),
+            model
+        );
+
+        assertThat(view).isEqualTo("entries/list :: listing");
+        verify(entryService).bulkConfirmCategorySuggestions(List.of(1L, 2L));
+    }
+
     private void stubListingDependencies() {
         when(accountService.listVisibleForEntryFilter(any())).thenReturn(List.of());
         when(categoryService.listHierarchyOptions()).thenReturn(List.of());
