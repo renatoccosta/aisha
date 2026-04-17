@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.context.MessageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -69,6 +70,7 @@ public class EntryController {
     private final EntryTransferService entryTransferService;
     private final EntryStatementImportService entryStatementImportService;
     private final EntryImportJobCoordinator entryImportJobCoordinator;
+    private final MessageSource messageSource;
 
     public EntryController(
         EntryService entryService,
@@ -77,7 +79,8 @@ public class EntryController {
         EntryCategorySuggestionService entryCategorySuggestionService,
         EntryTransferService entryTransferService,
         EntryStatementImportService entryStatementImportService,
-        EntryImportJobCoordinator entryImportJobCoordinator
+        EntryImportJobCoordinator entryImportJobCoordinator,
+        MessageSource messageSource
     ) {
         this.entryService = entryService;
         this.accountService = accountService;
@@ -86,6 +89,7 @@ public class EntryController {
         this.entryTransferService = entryTransferService;
         this.entryStatementImportService = entryStatementImportService;
         this.entryImportJobCoordinator = entryImportJobCoordinator;
+        this.messageSource = messageSource;
     }
 
     @GetMapping
@@ -430,47 +434,62 @@ public class EntryController {
         }
     }
 
-    @GetMapping("/{id}/transfer-link")
-    public String linkTransferForm(
-        @PathVariable Long id,
-        @RequestParam(name = "returnTo", required = false) String returnTo,
-        Model model
-    ) {
-        Entry entry = entryService.findById(id);
-        TransferLinkForm form = new TransferLinkForm();
-        form.setSourceEntryId(id);
-        model.addAttribute("form", form);
-        fillSourceEntrySummary(model, entry);
-        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-        return "entries/transfer-link-form";
-    }
-
     @PostMapping("/{id}/transfer-link")
-    public String linkTransfer(
+    public String linkTransferFromSelection(
         @PathVariable Long id,
-        @Valid @ModelAttribute("form") TransferLinkForm form,
-        BindingResult bindingResult,
-        @RequestParam(name = "returnTo", required = false) String returnTo,
+        @RequestParam(name = "ids", required = false) List<Long> selectedIds,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        @RequestParam(name = "accountId", required = false) Long accountId,
+        @RequestParam(name = "categoryId", required = false) Long categoryId,
+        @RequestParam(name = "description", required = false) String description,
+        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
+        @RequestParam(name = "page", required = false) Integer page,
+        @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
         Model model
     ) {
-        Entry sourceEntry = entryService.findById(id);
-        if (form.getCounterpartEntryId() != null && form.getCounterpartEntryId().equals(id)) {
-            bindingResult.rejectValue("counterpartEntryId", "transferLinkForm.counterpartEntryId.distinct");
-        }
-        if (bindingResult.hasErrors()) {
-            fillSourceEntrySummary(model, sourceEntry);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-link-form";
+        List<Long> counterpartIds = selectedIds == null
+            ? List.of()
+            : selectedIds.stream()
+                .filter(selectedId -> selectedId != null && !selectedId.equals(id))
+                .distinct()
+                .toList();
+
+        if (counterpartIds.size() != 1) {
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            addToast(model, "entries.list.toast.transfer.link.selection.single", "error");
+            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
         }
 
         try {
-            entryTransferService.linkExistingEntries(id, form.getCounterpartEntryId());
-            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
+            entryTransferService.linkExistingEntries(id, counterpartIds.get(0));
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            addToast(model, "entries.list.toast.transfer.link.success", "success");
+            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
+        } catch (EntryNotFoundException ex) {
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            addResolvedToast(
+                model,
+                messageSource.getMessage(
+                    "entries.list.toast.transfer.link.incompatible",
+                    new Object[] {translateTransferLinkSelectionError("selected entry was not found")},
+                    org.springframework.context.i18n.LocaleContextHolder.getLocale()
+                ),
+                "error"
+            );
+            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
         } catch (IllegalArgumentException ex) {
-            bindingResult.reject("transferLinkForm.invalid", new Object[] {ex.getMessage()}, null);
-            fillSourceEntrySummary(model, sourceEntry);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-link-form";
+            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            addResolvedToast(
+                model,
+                messageSource.getMessage(
+                    "entries.list.toast.transfer.link.incompatible",
+                    new Object[] {translateTransferLinkSelectionError(ex.getMessage())},
+                    org.springframework.context.i18n.LocaleContextHolder.getLocale()
+                ),
+                "error"
+            );
+            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
         }
     }
 
@@ -920,6 +939,38 @@ public class EntryController {
         model.addAttribute("sourceEntryAmount", entry.getAmount());
         model.addAttribute("sourceEntryAmountSign", entry.getAmount().signum());
         model.addAttribute("sourceEntryAccountTitle", accountService.findById(entry.getAccount().getId()).getTitle());
+    }
+
+    private String translateTransferLinkSelectionError(String message) {
+        if (message == null) {
+            return "motivo não identificado";
+        }
+        return switch (message) {
+            case "selected entry was not found" -> "o lançamento selecionado não foi encontrado";
+            case "Entry is already part of a transfer" -> "o lançamento selecionado já faz parte de uma transferência";
+            case "A transfer requires two distinct entries" -> "o lançamento complementar deve ser diferente do lançamento base";
+            case "Both entries must belong to an account" -> "ambos os lançamentos devem pertencer a uma conta";
+            case "Transfer entries must belong to different accounts" -> "os lançamentos devem pertencer a contas diferentes";
+            case "Transfer entries must have non-zero amounts" -> "os lançamentos devem ter valores diferentes de zero";
+            case "Transfer entries must have opposite signs" -> "os lançamentos devem ter sinais opostos";
+            case "Transfer entries must have the same absolute amount" -> "os lançamentos devem ter o mesmo valor absoluto";
+            case "Transfer entries must have matching movement and settlement dates" ->
+                "os lançamentos devem ter as mesmas datas de movimentação e liquidação";
+            default -> message;
+        };
+    }
+
+    private void addToast(Model model, String messageKey, String level) {
+        model.addAttribute(
+            "toastMessage",
+            messageSource.getMessage(messageKey, null, org.springframework.context.i18n.LocaleContextHolder.getLocale())
+        );
+        model.addAttribute("toastLevel", level);
+    }
+
+    private void addResolvedToast(Model model, String message, String level) {
+        model.addAttribute("toastMessage", message);
+        model.addAttribute("toastLevel", level);
     }
 
     private void fillStatementImportOptions(Model model) {

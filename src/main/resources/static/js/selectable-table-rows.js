@@ -6,6 +6,8 @@
     const selectedClassName = "is-selected";
     const selectableClassName = "is-selectable";
     let selectionAnchor = null;
+    let preservedScrollPosition = null;
+    let shouldRestorePreservedScroll = false;
 
     function findRowCheckbox(row) {
         return row.querySelector(checkboxSelector);
@@ -155,6 +157,62 @@
         tables.forEach(syncTableState);
     }
 
+    function scheduleToastDismiss(root) {
+        const scope = root || document;
+        const toasts = scope.matches && scope.matches(".toast-notification[data-auto-dismiss]")
+            ? [scope]
+            : Array.from(scope.querySelectorAll(".toast-notification[data-auto-dismiss]"));
+
+        toasts.forEach(function (toast) {
+            if (toast.dataset.dismissScheduled === "true") {
+                return;
+            }
+
+            toast.dataset.dismissScheduled = "true";
+            window.setTimeout(function () {
+                toast.classList.add("is-hiding");
+                window.setTimeout(function () {
+                    toast.remove();
+                }, 220);
+            }, 4000);
+        });
+    }
+
+    function preserveScrollPosition() {
+        preservedScrollPosition = {
+            x: window.scrollX,
+            y: window.scrollY
+        };
+        shouldRestorePreservedScroll = true;
+    }
+
+    function restorePreservedScrollPosition() {
+        if (!preservedScrollPosition || !shouldRestorePreservedScroll) {
+            return;
+        }
+
+        const scrollPosition = preservedScrollPosition;
+        const restore = function () {
+            window.scrollTo(scrollPosition.x, scrollPosition.y);
+        };
+
+        window.requestAnimationFrame(function () {
+            restore();
+            window.requestAnimationFrame(restore);
+            window.setTimeout(restore, 0);
+        });
+    }
+
+    function clearPreservedScrollPosition() {
+        preservedScrollPosition = null;
+        shouldRestorePreservedScroll = false;
+    }
+
+    function shouldPreserveScrollForEvent(event) {
+        const trigger = event.detail && event.detail.elt;
+        return Boolean(trigger && trigger.closest("[data-preserve-scroll='true']"));
+    }
+
     document.addEventListener("click", function (event) {
         const selectAllToggle = event.target.closest(selectAllToggleSelector);
         if (selectAllToggle) {
@@ -228,12 +286,33 @@
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
             syncAllTables(document);
+            scheduleToastDismiss(document);
         });
     } else {
         syncAllTables(document);
+        scheduleToastDismiss(document);
     }
+
+    document.addEventListener("htmx:beforeRequest", function (event) {
+        if (!shouldPreserveScrollForEvent(event)) {
+            return;
+        }
+
+        preserveScrollPosition();
+
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    });
 
     document.addEventListener("htmx:afterSwap", function (event) {
         syncAllTables(event.target);
+        scheduleToastDismiss(event.target);
+        restorePreservedScrollPosition();
+    });
+
+    document.addEventListener("htmx:afterSettle", function () {
+        restorePreservedScrollPosition();
+        window.setTimeout(clearPreservedScrollPosition, 0);
     });
 }());

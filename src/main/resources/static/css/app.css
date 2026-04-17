@@ -562,6 +562,69 @@ p {
   margin-top: 0;
 }
 
+.toast-stack {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  left: auto;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  width: min(calc(100vw - 2rem), 28rem);
+  pointer-events: none;
+}
+
+.toast-notification {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 14px 28px var(--color-card-shadow);
+  color: var(--text);
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast-notification.toast-success {
+  border-color: color-mix(in srgb, var(--color-success) 48%, var(--color-border-strong));
+}
+
+.toast-notification.toast-success .lucide {
+  color: var(--color-success);
+}
+
+.toast-notification.toast-error {
+  border-color: color-mix(in srgb, var(--color-danger) 48%, var(--color-border-strong));
+}
+
+.toast-notification.toast-error .lucide {
+  color: var(--color-danger);
+}
+
+.toast-notification.is-hiding {
+  opacity: 0;
+  transform: translateY(-0.35rem);
+}
+
+@media (max-width: 640px) {
+  .toast-stack {
+    top: auto;
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    width: min(calc(100vw - 2rem), 28rem);
+  }
+
+  .toast-notification.is-hiding {
+    transform: translateY(0.35rem);
+  }
+}
+
 .table-wrap {
   width: 100%;
   overflow-x: auto;
