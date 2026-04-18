@@ -167,6 +167,68 @@ class OfxStatementParserTest {
         assertThat(records.getFirst().notes()).isEqualTo("Descrição com acentuação");
     }
 
+    @Test
+    void shouldParseUtf8EncodedStatementWithMultipleAccentedDescriptionsWhenHeaderDeclaresWindows1252() {
+        String ofx1Content = """
+            OFXHEADER:100
+            DATA:OFXSGML
+            VERSION:102
+            SECURITY:NONE
+            ENCODING:USASCII
+            CHARSET:1252
+            COMPRESSION:NONE
+            OLDFILEUID:NONE
+            NEWFILEUID:NONE
+
+            <OFX>
+              <BANKMSGSRSV1>
+                <STMTTRNRS>
+                  <STMTRS>
+                    <BANKTRANLIST>
+                      <STMTTRN>
+                        <DTPOSTED>20260201000000[-3:BRT]
+                        <TRNAMT>1500.00
+                        <FITID>id-1
+                        <NAME>Crédito de Férias
+                        <MEMO>Código: 0118 | Quantidade: 12
+                      </STMTTRN>
+                      <STMTTRN>
+                        <DTPOSTED>20260201000000[-3:BRT]
+                        <TRNAMT>320.50
+                        <FITID>id-2
+                        <NAME>Gratificação Férias
+                        <MEMO>Código: 0119 | Quantidade: 12
+                      </STMTTRN>
+                      <STMTTRN>
+                        <DTPOSTED>20260201000000[-3:BRT]
+                        <TRNAMT>-210.75
+                        <FITID>id-3
+                        <NAME>Imp Renda Férias
+                        <MEMO>Código: 0926 | Quantidade: 27,5
+                      </STMTTRN>
+                      <STMTTRN>
+                        <DTPOSTED>20260201000000[-3:BRT]
+                        <TRNAMT>-89.99
+                        <FITID>id-4
+                        <NAME>Liquidação automática
+                        <MEMO>Resumo do cálculo fictício
+                      </STMTTRN>
+                    </BANKTRANLIST>
+                  </STMTRS>
+                </STMTTRNRS>
+              </BANKMSGSRSV1>
+            </OFX>
+            """;
+
+        List<EntryStatementImportRecord> records = parser.parse(ofx1Content.getBytes(StandardCharsets.UTF_8));
+
+        assertThat(records).hasSize(4);
+        assertThat(records.get(2).description()).isEqualTo("Imp Renda Férias");
+        assertThat(records.get(2).notes()).isEqualTo("Código: 0926 | Quantidade: 27,5");
+        assertThat(records.getFirst().description()).isEqualTo("Crédito de Férias");
+        assertThat(records.get(1).description()).isEqualTo("Gratificação Férias");
+    }
+
     private byte[] readFixture(String path) throws IOException {
         return Files.readAllBytes(Path.of(path));
     }

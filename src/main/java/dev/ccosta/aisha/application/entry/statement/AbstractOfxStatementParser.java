@@ -43,7 +43,7 @@ public abstract class AbstractOfxStatementParser implements EntryStatementParser
         Pattern.CASE_INSENSITIVE
     );
     private static final Pattern HEADER_LINE_PATTERN = Pattern.compile("(?m)^([A-Z]+)\\s*:\\s*(.+?)\\s*$");
-    private static final Pattern LIKELY_MOJIBAKE_PATTERN = Pattern.compile("[ÃÂ][\\p{L}\\p{Punct}]");
+    private static final Pattern LIKELY_MOJIBAKE_PATTERN = Pattern.compile("[ÃÂâ][^\\p{ASCII}\\r\\n<]");
     private static final int MAX_DESCRIPTION_LENGTH = 200;
     private static final int MAX_NOTES_LENGTH = 1000;
     private static final int MAX_EXTERNAL_ID_LENGTH = 255;
