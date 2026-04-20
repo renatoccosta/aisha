@@ -2,6 +2,7 @@ package dev.ccosta.aisha.application.dashboard;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
+import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -89,7 +91,8 @@ public class DashboardService {
         return new DashboardSummary(
             metric(currentBalance, previousBalance),
             metric(currentExpenses, previousExpenses),
-            metric(currentRevenues, previousRevenues)
+            metric(currentRevenues, previousRevenues),
+            buildAccountTypeBalances(accounts, entries, endDate)
         );
     }
 
@@ -348,6 +351,52 @@ public class DashboardService {
             buckets,
             series
         );
+    }
+
+
+    private List<DashboardAccountTypeBalance> buildAccountTypeBalances(List<Account> accounts, List<Entry> entries, LocalDate endDate) {
+        Map<Long, BigDecimal> balanceByAccountId = new HashMap<>();
+        Map<Long, AccountType> typeByAccountId = new HashMap<>();
+
+        for (Account account : accounts) {
+            if (account.getId() == null) {
+                continue;
+            }
+            if (account.getInitialBalance() == null || account.getInitialBalanceDate() == null || account.getInitialBalanceDate().isAfter(endDate)) {
+                balanceByAccountId.put(account.getId(), BigDecimal.ZERO);
+            } else {
+                balanceByAccountId.put(account.getId(), account.getInitialBalance());
+            }
+            typeByAccountId.put(account.getId(), account.getAccountType() == null ? AccountType.OTHER : account.getAccountType());
+        }
+
+        for (Entry entry : entries) {
+            if (entry.getAccount() == null || entry.getAccount().getId() == null) {
+                continue;
+            }
+            Long accountId = entry.getAccount().getId();
+            if (!balanceByAccountId.containsKey(accountId)) {
+                continue;
+            }
+            if (entry.getSettlementDate().isAfter(endDate) || mustIgnoreEntryByAccountStartingPoint(entry)) {
+                continue;
+            }
+            balanceByAccountId.merge(accountId, entry.getAmount(), BigDecimal::add);
+        }
+
+        EnumMap<AccountType, BigDecimal> balanceByType = new EnumMap<>(AccountType.class);
+        for (AccountType accountType : AccountType.values()) {
+            balanceByType.put(accountType, BigDecimal.ZERO);
+        }
+
+        for (Map.Entry<Long, BigDecimal> entry : balanceByAccountId.entrySet()) {
+            AccountType accountType = typeByAccountId.getOrDefault(entry.getKey(), AccountType.OTHER);
+            balanceByType.merge(accountType, entry.getValue(), BigDecimal::add);
+        }
+
+        return java.util.Arrays.stream(AccountType.values())
+            .map(accountType -> new DashboardAccountTypeBalance(accountType, balanceByType.getOrDefault(accountType, BigDecimal.ZERO)))
+            .toList();
     }
 
     private DashboardMetric metric(BigDecimal currentValue, BigDecimal previousValue) {

@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
+import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -73,6 +74,35 @@ class DashboardServiceTest {
 
         assertThat(summary.totalRevenues().variationPercent()).isNull();
         assertThat(summary.totalExpenses().variationPercent()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+
+    @Test
+    void shouldBuildAccountTypeBalancesInSummary() {
+        Account checking = newAccount("Conta Corrente", "100.00", LocalDate.of(2026, 1, 1));
+        setId(checking, 1L, Account.class);
+        checking.setAccountType(AccountType.CHECKING);
+
+        Account credit = newAccount("Cartão", "-50.00", LocalDate.of(2026, 1, 1));
+        setId(credit, 2L, Account.class);
+        credit.setAccountType(AccountType.CREDIT);
+
+        when(accountRepository.findAllOrdered()).thenReturn(List.of(checking, credit));
+
+        Entry checkingEntry = newEntry(LocalDate.of(2026, 1, 10), "25.00");
+        checkingEntry.setAccount(checking);
+        Entry creditEntry = newEntry(LocalDate.of(2026, 1, 10), "-10.00");
+        creditEntry.setAccount(credit);
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(checkingEntry, creditEntry));
+
+        DashboardSummary summary = dashboardService.buildSummary(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+
+        assertThat(summary.accountTypeBalances()).extracting(item -> item.accountType().name())
+            .containsExactly("CHECKING", "CREDIT", "INVESTMENT", "FOOD", "OTHER");
+        assertThat(summary.accountTypeBalances().get(0).balance()).isEqualByComparingTo("125.00");
+        assertThat(summary.accountTypeBalances().get(1).balance()).isEqualByComparingTo("-60.00");
+        assertThat(summary.accountTypeBalances().get(4).balance()).isEqualByComparingTo("0.00");
     }
 
     @Test
