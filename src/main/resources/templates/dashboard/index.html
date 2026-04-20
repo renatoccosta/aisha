@@ -47,6 +47,40 @@
         </article>
     </section>
 
+    <section class="card chart-card loading" id="account-type-balances-card">
+        <div class="chart-card-head">
+            <div>
+                <h2 th:text="#{dashboard.accountTypeBalances.title}"></h2>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="balances-table">
+                <thead>
+                <tr>
+                    <th>
+                        <span class="table-heading-label">
+                            <i data-lucide="badge-check" aria-hidden="true"></i>
+                            <span th:text="#{accounts.list.table.accountType}"></span>
+                        </span>
+                    </th>
+                    <th class="amount-cell">
+                        <span class="table-heading-label">
+                            <i data-lucide="wallet" aria-hidden="true"></i>
+                            <span th:text="#{dashboard.card.currentBalance}"></span>
+                        </span>
+                    </th>
+                </tr>
+                </thead>
+                <tbody id="account-type-balances-body">
+                <tr>
+                    <td colspan="2" th:text="#{dashboard.loading}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
     <section class="card chart-card loading" id="balance-chart-card">
         <div class="chart-card-head">
             <div>
@@ -134,6 +168,8 @@
         chartSeriesPeriod: /*[[#{dashboard.chart.series.period}]]*/ "Movimentação no período",
         chartLoadError: /*[[#{dashboard.chart.error}]]*/ "Não foi possível carregar o gráfico.",
         summaryLoadError: /*[[#{dashboard.summary.error}]]*/ "Não foi possível carregar este indicador.",
+        accountTypeBalancesLoadError: /*[[#{dashboard.accountTypeBalances.error}]]*/ "Não foi possível carregar os saldos por tipo de conta.",
+        accountTypeBalancesEmpty: /*[[#{dashboard.accountTypeBalances.empty}]]*/ "Sem contas para exibir saldos por tipo.",
         revenueExpenseChartSeriesRevenue: /*[[#{dashboard.revenueExpenseChart.series.revenues}]]*/ "Receitas",
         revenueExpenseChartSeriesExpense: /*[[#{dashboard.revenueExpenseChart.series.expenses}]]*/ "Despesas",
         revenueExpenseChartLoadError: /*[[#{dashboard.revenueExpenseChart.error}]]*/ "Não foi possível carregar o gráfico de receitas vs despesas.",
@@ -145,7 +181,12 @@
         categoryTotalsChartEmpty: /*[[#{dashboard.categoryTotalsChart.empty}]]*/ "Sem dados no período",
         categoryTotalsChartLevelRoot: /*[[#{dashboard.categoryTotalsChart.level.root}]]*/ "Nível: categorias raiz",
         categoryTotalsChartLevelChild: /*[[#{dashboard.categoryTotalsChart.level.child}]]*/ "Nível: subcategorias de {0}",
-        chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}"
+        chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}",
+        accountTypeChecking: /*[[#{account.type.checking}]]*/ "Corrente",
+        accountTypeCredit: /*[[#{account.type.credit}]]*/ "Crédito",
+        accountTypeInvestment: /*[[#{account.type.investment}]]*/ "Investimento",
+        accountTypeFood: /*[[#{account.type.food}]]*/ "Alimentação",
+        accountTypeOther: /*[[#{account.type.other}]]*/ "Outros"
     };
 
     const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -194,6 +235,39 @@
             grid: getThemeColor("--color-border-default", "#d7e0e8"),
             surface: getThemeColor("--color-bg-card", "#ffffff")
         };
+    }
+
+    function accountTypeLabel(accountType) {
+        const key = (accountType || "OTHER").toUpperCase();
+        switch (key) {
+            case "CHECKING": return i18n.accountTypeChecking;
+            case "CREDIT": return i18n.accountTypeCredit;
+            case "INVESTMENT": return i18n.accountTypeInvestment;
+            case "FOOD": return i18n.accountTypeFood;
+            default: return i18n.accountTypeOther;
+        }
+    }
+
+    function renderAccountTypeBalances(items) {
+        const card = document.getElementById("account-type-balances-card");
+        const tbody = document.getElementById("account-type-balances-body");
+        if (!card || !tbody) {
+            return;
+        }
+
+        card.classList.remove("loading");
+        tbody.innerHTML = "";
+        const rows = Array.isArray(items) ? items : [];
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="2">${i18n.accountTypeBalancesEmpty || i18n.loading}</td></tr>`;
+            return;
+        }
+
+        rows.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td><strong>${accountTypeLabel(item.accountType)}</strong></td><td class="amount-cell">${formatCurrency(item.balance)}</td>`;
+            tbody.appendChild(tr);
+        });
     }
 
     function renderMetric(cardId, metric) {
@@ -248,7 +322,14 @@
             renderMetric("summary-current-balance", data.currentBalance);
             renderMetric("summary-total-expenses", data.totalExpenses);
             renderMetric("summary-total-revenues", data.totalRevenues);
+            renderAccountTypeBalances(data.accountTypeBalances);
         } catch (error) {
+            const balancesBody = document.getElementById("account-type-balances-body");
+            const balancesCard = document.getElementById("account-type-balances-card");
+            if (balancesBody && balancesCard) {
+                balancesCard.classList.remove("loading");
+                balancesBody.innerHTML = `<tr><td colspan="2">${i18n.accountTypeBalancesLoadError}</td></tr>`;
+            }
             cards.forEach((card) => {
                 if (!card) {
                     return;

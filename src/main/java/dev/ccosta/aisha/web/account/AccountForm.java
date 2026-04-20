@@ -1,5 +1,6 @@
 package dev.ccosta.aisha.web.account;
 
+import dev.ccosta.aisha.domain.account.AccountType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
@@ -27,6 +28,9 @@ public class AccountForm {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate deactivationDate;
+
+    @NotNull(message = "{accountForm.accountType.notNull}")
+    private AccountType accountType = AccountType.OTHER;
 
     public String getTitle() {
         return title;
@@ -58,6 +62,14 @@ public class AccountForm {
 
     public void setInitialBalanceDate(LocalDate initialBalanceDate) {
         this.initialBalanceDate = initialBalanceDate;
+    }
+
+    public AccountType getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(AccountType accountType) {
+        this.accountType = accountType;
     }
 
     public LocalDate getDeactivationDate() {

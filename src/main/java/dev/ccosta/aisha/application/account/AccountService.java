@@ -2,6 +2,7 @@ package dev.ccosta.aisha.application.account;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
+import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.domain.shared.PagedResult;
@@ -73,6 +74,9 @@ public class AccountService {
     @Transactional
     public Account create(Account account) {
         validateDeactivationDate(account.getDeactivationDate(), null);
+        if (account.getAccountType() == null) {
+            account.setAccountType(AccountType.OTHER);
+        }
         return accountRepository.save(account);
     }
 
@@ -91,6 +95,7 @@ public class AccountService {
                 account.setInitialBalance(null);
                 account.setInitialBalanceDate(null);
                 account.setDeactivationDate(null);
+                account.setAccountType(AccountType.OTHER);
                 return accountRepository.save(account);
             });
     }
@@ -104,6 +109,7 @@ public class AccountService {
         existing.setInitialBalance(updatedData.getInitialBalance());
         existing.setInitialBalanceDate(updatedData.getInitialBalanceDate());
         existing.setDeactivationDate(updatedData.getDeactivationDate());
+        existing.setAccountType(updatedData.getAccountType() == null ? AccountType.OTHER : updatedData.getAccountType());
         return accountRepository.save(existing);
     }
 
