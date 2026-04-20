@@ -6,6 +6,7 @@ import dev.ccosta.aisha.domain.entry.EntryRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,20 +41,28 @@ public class AccountBalanceReportService {
 
         Map<Long, BigDecimal> previousBalancesByAccount = new HashMap<>();
         Map<Long, Map<LocalDate, BigDecimal>> periodBalancesByAccount = new HashMap<>();
+        Map<Long, LocalDate> oldestEntryDateByAccount = new HashMap<>();
+        List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
 
         for (Account account : accounts) {
             applyInitialBalance(account, startDate, endDate, granularity, previousBalancesByAccount, periodBalancesByAccount);
         }
 
-        for (Entry entry : entryRepository.listAllBySettlementDateLessThanEqual(endDate)) {
+        for (Entry entry : entries) {
             Long accountId = entry.getAccount().getId();
             Account account = accountById.get(accountId);
             if (account == null) {
                 continue;
             }
 
-            BigDecimal amount = entry.getAmount();
             LocalDate settlementDate = entry.getSettlementDate();
+            oldestEntryDateByAccount.merge(
+                accountId,
+                settlementDate,
+                (currentOldest, candidate) -> candidate.isBefore(currentOldest) ? candidate : currentOldest
+            );
+
+            BigDecimal amount = entry.getAmount();
             if (mustIgnoreEntry(settlementDate, account)) {
                 continue;
             }
@@ -74,17 +83,30 @@ public class AccountBalanceReportService {
             Map<LocalDate, BigDecimal> accountBuckets = periodBalancesByAccount.getOrDefault(account.getId(), Map.of());
             BigDecimal previousPeriodBalance = previousBalancesByAccount.getOrDefault(account.getId(), BigDecimal.ZERO);
             List<BigDecimal> periodBalances = new ArrayList<>(buckets.size());
+            LocalDate activationDate = resolveActivationDate(account, oldestEntryDateByAccount.get(account.getId()));
             BigDecimal runningBalance = previousPeriodBalance;
             for (AccountBalanceBucket bucket : buckets) {
+                if (!isAccountActiveInBucket(account, activationDate, bucket)) {
+                    periodBalances.add(null);
+                    continue;
+                }
                 runningBalance = runningBalance.add(accountBuckets.getOrDefault(bucket.startDate(), BigDecimal.ZERO));
                 periodBalances.add(runningBalance);
+            }
+
+            BigDecimal displayedPreviousPeriodBalance = isAccountActiveAtStartDate(account, activationDate, startDate)
+                ? previousPeriodBalance
+                : null;
+
+            if (!hasAnyNonZeroBalanceInPeriod(periodBalances)) {
+                continue;
             }
 
             rows.add(new AccountBalanceRow(
                 account.getId(),
                 account.getTitle(),
                 account.getDescription(),
-                previousPeriodBalance,
+                displayedPreviousPeriodBalance,
                 periodBalances
             ));
         }
@@ -182,6 +204,36 @@ public class AccountBalanceReportService {
     private boolean mustIgnoreEntry(LocalDate settlementDate, Account account) {
         LocalDate initialBalanceDate = account.getInitialBalanceDate();
         return initialBalanceDate != null && settlementDate.isBefore(initialBalanceDate);
+    }
+
+    private LocalDate resolveActivationDate(Account account, LocalDate oldestEntryDate) {
+        return java.util.stream.Stream.of(account.getInitialBalanceDate(), oldestEntryDate)
+            .filter(java.util.Objects::nonNull)
+            .min(Comparator.naturalOrder())
+            .orElse(null);
+    }
+
+    private boolean isAccountActiveAtStartDate(Account account, LocalDate activationDate, LocalDate startDate) {
+        if (activationDate != null && activationDate.isAfter(startDate.minusDays(1))) {
+            return false;
+        }
+        LocalDate deactivationDate = account.getDeactivationDate();
+        return deactivationDate == null || !deactivationDate.isBefore(startDate);
+    }
+
+    private boolean isAccountActiveInBucket(Account account, LocalDate activationDate, AccountBalanceBucket bucket) {
+        if (activationDate != null && activationDate.isAfter(bucket.endDate())) {
+            return false;
+        }
+        LocalDate deactivationDate = account.getDeactivationDate();
+        return deactivationDate == null || !deactivationDate.isBefore(bucket.startDate());
+    }
+
+    private boolean hasAnyNonZeroBalanceInPeriod(List<BigDecimal> periodBalances) {
+        return periodBalances
+            .stream()
+            .filter(java.util.Objects::nonNull)
+            .anyMatch(balance -> balance.signum() != 0);
     }
 
 }

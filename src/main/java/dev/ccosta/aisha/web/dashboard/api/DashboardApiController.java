@@ -113,6 +113,33 @@ public class DashboardApiController {
         );
     }
 
+    @GetMapping("/revenues-by-category")
+    public DashboardExpenseCategoryBreakdownResponse revenuesByCategory(
+        HttpSession session,
+        @RequestParam(required = false) Long parentCategoryId
+    ) {
+        DateFilterState filter = dateFilterSessionService.getOrCreate(session);
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildRevenueCategoryBreakdown(
+            filter.getStartDate(),
+            filter.getEndDate(),
+            parentCategoryId
+        );
+
+        List<DashboardExpenseCategoryBreakdownResponse.DashboardExpenseCategoryItemResponse> items = breakdown.items()
+            .stream()
+            .map(this::toExpenseCategoryItem)
+            .toList();
+
+        return new DashboardExpenseCategoryBreakdownResponse(
+            breakdown.startDate(),
+            breakdown.endDate(),
+            breakdown.currentParentCategoryId(),
+            breakdown.currentParentCategoryName(),
+            breakdown.drillUpParentCategoryId(),
+            items
+        );
+    }
+
     @GetMapping("/category-totals")
     public DashboardCategoryTotalsEvolutionResponse categoryTotals(
         HttpSession session,

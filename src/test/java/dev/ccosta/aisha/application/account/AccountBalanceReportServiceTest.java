@@ -55,8 +55,8 @@ class AccountBalanceReportServiceTest {
         assertThat(checkingRow.periodBalances().get(2)).isEqualByComparingTo("529.50");
 
         AccountBalanceRow cashRow = report.rows().get(1);
-        assertThat(cashRow.previousPeriodBalance()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(cashRow.periodBalances().get(0)).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(cashRow.previousPeriodBalance()).isNull();
+        assertThat(cashRow.periodBalances().get(0)).isNull();
         assertThat(cashRow.periodBalances().get(1)).isEqualByComparingTo("60.00");
         assertThat(cashRow.periodBalances().get(10)).isEqualByComparingTo("60.00");
     }
@@ -88,6 +88,25 @@ class AccountBalanceReportServiceTest {
             new BigDecimal("275.00"),
             new BigDecimal("275.00")
         );
+    }
+
+    @Test
+    void shouldHideAccountsWithoutNonZeroBalancesInPeriod() {
+        Account zeroed = newAccount(3L, "Conta Zerada", "0.00", LocalDate.of(2026, 1, 1));
+        Account activeWithBalance = newAccount(4L, "Conta Com Saldo", "10.00", LocalDate.of(2026, 1, 1));
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            newEntry(4L, LocalDate.of(2026, 1, 5), "5.00")
+        ));
+
+        AccountBalanceReport report = accountBalanceReportService.buildReport(
+            List.of(zeroed, activeWithBalance),
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31)
+        );
+
+        assertThat(report.rows()).hasSize(1);
+        assertThat(report.rows().getFirst().accountTitle()).isEqualTo("Conta Com Saldo");
     }
 
     private Account newAccount(Long id, String title, String initialBalance, LocalDate initialBalanceDate) {

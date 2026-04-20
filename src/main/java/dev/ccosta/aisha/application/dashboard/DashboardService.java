@@ -200,6 +200,24 @@ public class DashboardService {
         LocalDate endDate,
         Long parentCategoryId
     ) {
+        return buildCategoryBreakdown(startDate, endDate, parentCategoryId, -1);
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardExpenseCategoryBreakdown buildRevenueCategoryBreakdown(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long parentCategoryId
+    ) {
+        return buildCategoryBreakdown(startDate, endDate, parentCategoryId, 1);
+    }
+
+    private DashboardExpenseCategoryBreakdown buildCategoryBreakdown(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long parentCategoryId,
+        int expectedBalanceSign
+    ) {
         validateRange(startDate, endDate);
 
         List<Category> categories = categoryRepository.findAllOrdered();
@@ -216,7 +234,7 @@ public class DashboardService {
         }
 
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
-        Map<Long, BigDecimal> expenseByCategoryId = new HashMap<>();
+        Map<Long, BigDecimal> balanceByCategoryId = new HashMap<>();
 
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
@@ -230,25 +248,26 @@ public class DashboardService {
                 continue;
             }
 
-            BigDecimal amount = entry.getAmount();
-            if (amount.signum() >= 0) {
-                continue;
-            }
-
             Long categoryId = entry.getCategory().getId();
-            expenseByCategoryId.merge(categoryId, amount.abs(), BigDecimal::add);
+            balanceByCategoryId.merge(categoryId, entry.getAmount(), BigDecimal::add);
         }
 
         Map<Long, BigDecimal> subtreeExpenseByCategory = new HashMap<>();
         for (Long categoryId : categoryById.keySet()) {
-            subtreeExpense(categoryId, childrenByParentId, expenseByCategoryId, subtreeExpenseByCategory);
+            subtreeExpense(categoryId, childrenByParentId, balanceByCategoryId, subtreeExpenseByCategory);
         }
 
         List<Long> visibleCategoryIds = childrenByParentId.getOrDefault(parentCategoryId, List.of());
         List<DashboardExpenseCategoryItem> items = visibleCategoryIds
             .stream()
-            .map(categoryId -> toItem(categoryId, categoryById, childrenByParentId, subtreeExpenseByCategory))
-            .filter(item -> item.amount().signum() > 0)
+            .map(categoryId -> toItem(
+                categoryId,
+                categoryById,
+                childrenByParentId,
+                subtreeExpenseByCategory,
+                expectedBalanceSign
+            ))
+            .filter(java.util.Objects::nonNull)
             .sorted(Comparator.comparing(DashboardExpenseCategoryItem::amount).reversed())
             .toList();
 
@@ -551,13 +570,18 @@ public class DashboardService {
         Long categoryId,
         Map<Long, Category> categoryById,
         Map<Long, List<Long>> childrenByParentId,
-        Map<Long, BigDecimal> subtreeExpenseByCategory
+        Map<Long, BigDecimal> subtreeExpenseByCategory,
+        int expectedBalanceSign
     ) {
         Category category = categoryById.get(categoryId);
+        BigDecimal totalBalance = subtreeExpenseByCategory.getOrDefault(categoryId, BigDecimal.ZERO);
+        if (totalBalance.signum() != expectedBalanceSign) {
+            return null;
+        }
         return new DashboardExpenseCategoryItem(
             categoryId,
             category == null ? "" : category.getTitle(),
-            subtreeExpenseByCategory.getOrDefault(categoryId, BigDecimal.ZERO),
+            totalBalance.abs(),
             !childrenByParentId.getOrDefault(categoryId, List.of()).isEmpty()
         );
     }

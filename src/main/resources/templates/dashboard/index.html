@@ -134,6 +134,23 @@
                 <canvas id="expense-category-chart" th:attr="aria-label=#{dashboard.expenseCategoryChart.title}"></canvas>
             </div>
         </article>
+
+        <article class="card chart-card loading" id="revenue-category-chart-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 th:text="#{dashboard.revenueCategoryChart.title}"></h2>
+                    <p th:text="#{dashboard.revenueCategoryChart.subtitle}"></p>
+                </div>
+                <button class="btn btn-secondary" id="revenue-category-drill-up" type="button" disabled>
+                    <i data-lucide="arrow-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.revenueCategoryChart.drillUp}"></span>
+                </button>
+            </div>
+            <p class="chart-meta" id="revenue-category-chart-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap">
+                <canvas id="revenue-category-chart" th:attr="aria-label=#{dashboard.revenueCategoryChart.title}"></canvas>
+            </div>
+        </article>
     </section>
 
     <section class="card chart-card loading" id="category-totals-chart-card">
@@ -177,6 +194,10 @@
         expenseCategoryChartEmpty: /*[[#{dashboard.expenseCategoryChart.empty}]]*/ "Sem despesas no período",
         expenseCategoryChartLevelRoot: /*[[#{dashboard.expenseCategoryChart.level.root}]]*/ "Nível: categorias raiz",
         expenseCategoryChartLevelChild: /*[[#{dashboard.expenseCategoryChart.level.child}]]*/ "Nível: subcategorias de {0}",
+        revenueCategoryChartLoadError: /*[[#{dashboard.revenueCategoryChart.error}]]*/ "Não foi possível carregar o gráfico de recebimentos por categoria.",
+        revenueCategoryChartEmpty: /*[[#{dashboard.revenueCategoryChart.empty}]]*/ "Sem recebimentos no período",
+        revenueCategoryChartLevelRoot: /*[[#{dashboard.revenueCategoryChart.level.root}]]*/ "Nível: categorias raiz",
+        revenueCategoryChartLevelChild: /*[[#{dashboard.revenueCategoryChart.level.child}]]*/ "Nível: subcategorias de {0}",
         categoryTotalsChartLoadError: /*[[#{dashboard.categoryTotalsChart.error}]]*/ "Não foi possível carregar o gráfico de totais por categoria.",
         categoryTotalsChartEmpty: /*[[#{dashboard.categoryTotalsChart.empty}]]*/ "Sem dados no período",
         categoryTotalsChartLevelRoot: /*[[#{dashboard.categoryTotalsChart.level.root}]]*/ "Nível: categorias raiz",
@@ -200,6 +221,9 @@
     let expenseCategoryChart = null;
     let expenseCategoryPayload = null;
     let expenseCategoryDrillUpParentId = null;
+    let revenueCategoryChart = null;
+    let revenueCategoryPayload = null;
+    let revenueCategoryDrillUpParentId = null;
     let categoryTotalsChart = null;
     let categoryTotalsPayload = null;
     let categoryTotalsDrillUpParentId = null;
@@ -645,6 +669,79 @@
         });
     }
 
+    function renderRevenueCategoryChart() {
+        if (!revenueCategoryPayload) {
+            return;
+        }
+        const chartTheme = getChartTheme();
+
+        const canvas = document.getElementById("revenue-category-chart");
+        if (!canvas) {
+            return;
+        }
+
+        const hasItems = revenueCategoryPayload.items.length > 0;
+        const labels = hasItems
+            ? revenueCategoryPayload.items.map((item) => item.categoryName)
+            : [i18n.revenueCategoryChartEmpty];
+        const data = hasItems
+            ? revenueCategoryPayload.items.map((item) => Number(item.amount))
+            : [1];
+        const colors = hasItems
+            ? ["#22bf96", "#42e2b8", "#19647e", "#07004d", "#f0ec57", "#8cb7c7"]
+            : ["#d7e0e8"];
+
+        if (revenueCategoryChart) {
+            revenueCategoryChart.destroy();
+        }
+
+        revenueCategoryChart = new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderColor: chartTheme.surface,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                if (!hasItems) {
+                                    return context.label;
+                                }
+                                return `${context.label}: ${formatCurrency(context.raw)}`;
+                            }
+                        }
+                    }
+                },
+                onClick: (_, elements) => {
+                    if (!hasItems || elements.length === 0) {
+                        return;
+                    }
+                    const index = elements[0].index;
+                    const selectedItem = revenueCategoryPayload.items[index];
+                    if (!selectedItem || !selectedItem.hasChildren) {
+                        return;
+                    }
+                    loadRevenueCategoryBreakdown(selectedItem.categoryId);
+                }
+            }
+        });
+    }
+
     async function loadExpenseCategoryBreakdown(parentCategoryId = null) {
         const card = document.getElementById("expense-category-chart-card");
         const meta = document.getElementById("expense-category-chart-meta");
@@ -684,6 +781,51 @@
         } catch (error) {
             card.classList.remove("loading");
             meta.textContent = i18n.expenseCategoryChartLoadError;
+            if (drillUpButton) {
+                drillUpButton.disabled = true;
+            }
+        }
+    }
+
+    async function loadRevenueCategoryBreakdown(parentCategoryId = null) {
+        const card = document.getElementById("revenue-category-chart-card");
+        const meta = document.getElementById("revenue-category-chart-meta");
+        const drillUpButton = document.getElementById("revenue-category-drill-up");
+        if (!card || !meta) {
+            return;
+        }
+
+        try {
+            const url = new URL("/api/dashboard/revenues-by-category", window.location.origin);
+            if (parentCategoryId !== null) {
+                url.searchParams.set("parentCategoryId", String(parentCategoryId));
+            }
+
+            const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("revenue-category-chart-failed");
+            }
+            revenueCategoryPayload = await response.json();
+            card.classList.remove("loading");
+
+            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
+                formatDate(revenueCategoryPayload.startDate),
+                formatDate(revenueCategoryPayload.endDate)
+            ]);
+            const levelLabel = revenueCategoryPayload.currentParentCategoryName
+                ? i18n.revenueCategoryChartLevelChild.replace("{0}", revenueCategoryPayload.currentParentCategoryName)
+                : i18n.revenueCategoryChartLevelRoot;
+            meta.textContent = `${periodLabel} • ${levelLabel}`;
+
+            revenueCategoryDrillUpParentId = revenueCategoryPayload.drillUpParentCategoryId;
+            if (drillUpButton) {
+                drillUpButton.disabled = revenueCategoryPayload.currentParentCategoryId === null;
+            }
+
+            renderRevenueCategoryChart();
+        } catch (error) {
+            card.classList.remove("loading");
+            meta.textContent = i18n.revenueCategoryChartLoadError;
             if (drillUpButton) {
                 drillUpButton.disabled = true;
             }
@@ -836,6 +978,7 @@
         loadBalanceEvolution();
         loadRevenueExpenseEvolution();
         loadExpenseCategoryBreakdown();
+        loadRevenueCategoryBreakdown();
         loadCategoryTotalsEvolution();
 
         const drillUpButton = document.getElementById("expense-category-drill-up");
@@ -849,6 +992,13 @@
         if (categoryTotalsDrillUpButton) {
             categoryTotalsDrillUpButton.addEventListener("click", () => {
                 loadCategoryTotalsEvolution(categoryTotalsDrillUpParentId);
+            });
+        }
+
+        const revenueCategoryDrillUpButton = document.getElementById("revenue-category-drill-up");
+        if (revenueCategoryDrillUpButton) {
+            revenueCategoryDrillUpButton.addEventListener("click", () => {
+                loadRevenueCategoryBreakdown(revenueCategoryDrillUpParentId);
             });
         }
 
@@ -867,6 +1017,7 @@
             renderChart(mode);
             renderRevenueExpenseChart();
             renderExpenseCategoryChart();
+            renderRevenueCategoryChart();
             renderCategoryTotalsChart();
         });
     });

@@ -246,8 +246,15 @@
                     <td>
                         <strong th:text="${row.accountTitle}"></strong>
                     </td>
-                    <td class="amount-cell" th:text="${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
-                    <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td
+                        class="amount-cell"
+                        th:text="${row.previousPeriodBalance != null ? #numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA') : '-'}">
+                    </td>
+                    <td
+                        class="amount-cell"
+                        th:each="periodBalance : ${row.periodBalances}"
+                        th:text="${periodBalance != null ? #numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA') : '-'}">
+                    </td>
                 </tr>
                 </tbody>
             </table>
