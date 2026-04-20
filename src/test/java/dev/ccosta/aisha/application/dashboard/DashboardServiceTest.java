@@ -379,6 +379,52 @@ class DashboardServiceTest {
     }
 
     @Test
+    void shouldUseNegativeCategoryBalanceForExpenseBreakdown() {
+        Category rootSalary = newCategory(40L, "Salário", null);
+        Category rootBills = newCategory(41L, "Contas", null);
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootSalary, rootBills));
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 10), "100.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 11), "-40.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 12), "-50.00", rootBills)
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            null
+        );
+
+        assertThat(breakdown.items()).hasSize(1);
+        assertThat(breakdown.items().getFirst().categoryName()).isEqualTo("Contas");
+        assertThat(breakdown.items().getFirst().amount()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    void shouldBuildRevenueCategoryBreakdownFromPositiveBalances() {
+        Category rootSalary = newCategory(50L, "Salário", null);
+        Category rootBills = newCategory(51L, "Contas", null);
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootSalary, rootBills));
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 10), "200.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 11), "-20.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 12), "-50.00", rootBills)
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildRevenueCategoryBreakdown(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            null
+        );
+
+        assertThat(breakdown.items()).hasSize(1);
+        assertThat(breakdown.items().getFirst().categoryName()).isEqualTo("Salário");
+        assertThat(breakdown.items().getFirst().amount()).isEqualByComparingTo("180.00");
+    }
+
+    @Test
     void shouldDrillDownIntoSelectedRootCategory() {
         Category rootFood = newCategory(20L, "Alimentação", null);
         Category rootHealth = newCategory(21L, "Saúde", null);

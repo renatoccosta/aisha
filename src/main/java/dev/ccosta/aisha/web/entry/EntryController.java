@@ -132,8 +132,11 @@ public class EntryController {
     }
 
     @GetMapping("/statement-import")
-    public String statementImportPage(Model model) {
-        fillStatementImportOptions(model);
+    public String statementImportPage(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        Model model
+    ) {
+        fillStatementImportOptions(model, globalDateFilter);
         model.addAttribute("mode", "idle");
         return "entries/statement-import";
     }
@@ -174,9 +177,10 @@ public class EntryController {
         @RequestParam(name = "file", required = false) MultipartFile file,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "formatId", required = false) String formatId,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         Model model
     ) {
-        fillStatementImportOptions(model);
+        fillStatementImportOptions(model, globalDateFilter);
         try {
             String jobId = entryImportJobCoordinator.startStatementJob(file, accountId, formatId);
             fillImportJobModel(model, entryImportJobCoordinator.getSnapshot(jobId));
@@ -203,8 +207,12 @@ public class EntryController {
     }
 
     @GetMapping("/statement-import/jobs/{jobId}")
-    public String statementImportStatus(@PathVariable String jobId, Model model) {
-        fillStatementImportOptions(model);
+    public String statementImportStatus(
+        @PathVariable String jobId,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        Model model
+    ) {
+        fillStatementImportOptions(model, globalDateFilter);
         EntryImportJobSnapshot snapshot = entryImportJobCoordinator.getSnapshot(jobId);
         if (snapshot == null) {
             model.addAttribute("mode", "failed");
@@ -994,8 +1002,9 @@ public class EntryController {
         model.addAttribute("toastLevel", level);
     }
 
-    private void fillStatementImportOptions(Model model) {
-        model.addAttribute("statementAccountOptions", accountService.listAllActiveOrdered());
+    private void fillStatementImportOptions(Model model, DateFilterState globalDateFilter) {
+        DateFilterState effectiveDateFilter = resolveGlobalDateFilter(model, globalDateFilter);
+        model.addAttribute("statementAccountOptions", accountService.listVisibleForEntryFilter(effectiveDateFilter.getStartDate()));
         List<EntryStatementFormat> formats = entryStatementImportService.listAvailableFormats();
         model.addAttribute("statementFormats", formats);
     }
