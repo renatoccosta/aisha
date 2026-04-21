@@ -29,6 +29,14 @@
                 <p class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
             </div>
 
+            <div class="field">
+                <label for="accountType" th:text="#{accounts.form.field.accountType.required}"></label>
+                <select id="accountType" th:field="*{accountType}" required>
+                    <option th:each="accountType : ${accountTypes}" th:value="${accountType}" th:text="#{${'account.type.' + accountType.name().toLowerCase()}}"></option>
+                </select>
+                <p class="error" th:if="${#fields.hasErrors('accountType')}" th:errors="*{accountType}"></p>
+            </div>
+
             <div class="grid-2">
                 <div class="field">
                     <label for="initialBalance" th:text="#{accounts.form.field.initialBalance.required}"></label>
@@ -43,7 +51,7 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field field-half">
                 <label for="deactivationDate" th:text="#{accounts.form.field.deactivationDate}"></label>
                 <input id="deactivationDate" type="date" th:field="*{deactivationDate}">
                 <p class="error" th:if="${#fields.hasErrors('deactivationDate')}" th:errors="*{deactivationDate}"></p>

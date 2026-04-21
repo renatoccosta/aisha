@@ -47,43 +47,57 @@
         </article>
     </section>
 
-    <section class="card chart-card loading" id="balance-chart-card">
+    <section class="dashboard-balance-grid">
+        <article class="card chart-card loading" id="account-type-balances-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 th:text="#{dashboard.accountTypeBalances.title}"></h2>
+                </div>
+            </div>
+            <p class="chart-meta" id="account-type-balances-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap chart-wrap-donut">
+                <canvas id="account-type-balances-chart" th:attr="aria-label=#{dashboard.accountTypeBalances.title}"></canvas>
+            </div>
+        </article>
+
+        <article class="card chart-card loading" id="balance-chart-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 th:text="#{dashboard.chart.title}"></h2>
+                    <p th:text="#{dashboard.chart.subtitle}"></p>
+                </div>
+                <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
+                    <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated">
+                        <i data-lucide="trending-up" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.chart.mode.accumulated}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="button" data-mode="period">
+                        <i data-lucide="bar-chart-2" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.chart.mode.period}"></span>
+                    </button>
+                </div>
+            </div>
+            <p class="chart-meta" id="balance-chart-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap">
+                <canvas id="balance-evolution-chart" th:attr="aria-label=#{dashboard.chart.title}"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="card chart-card loading" id="revenues-expenses-chart-card">
         <div class="chart-card-head">
             <div>
-                <h2 th:text="#{dashboard.chart.title}"></h2>
-                <p th:text="#{dashboard.chart.subtitle}"></p>
-            </div>
-            <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
-                <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated">
-                    <i data-lucide="trending-up" aria-hidden="true"></i>
-                    <span th:text="#{dashboard.chart.mode.accumulated}"></span>
-                </button>
-                <button class="btn btn-secondary" type="button" data-mode="period">
-                    <i data-lucide="bar-chart-2" aria-hidden="true"></i>
-                    <span th:text="#{dashboard.chart.mode.period}"></span>
-                </button>
+                <h2 th:text="#{dashboard.revenueExpenseChart.title}"></h2>
+                <p th:text="#{dashboard.revenueExpenseChart.subtitle}"></p>
             </div>
         </div>
-        <p class="chart-meta" id="balance-chart-meta" th:text="#{dashboard.loading}"></p>
+        <p class="chart-meta" id="revenues-expenses-chart-meta" th:text="#{dashboard.loading}"></p>
         <div class="chart-wrap">
-            <canvas id="balance-evolution-chart" th:attr="aria-label=#{dashboard.chart.title}"></canvas>
+            <canvas id="revenues-expenses-chart" th:attr="aria-label=#{dashboard.revenueExpenseChart.title}"></canvas>
         </div>
     </section>
 
     <section class="dashboard-chart-grid">
-        <article class="card chart-card loading" id="revenues-expenses-chart-card">
-            <div class="chart-card-head">
-                <div>
-                    <h2 th:text="#{dashboard.revenueExpenseChart.title}"></h2>
-                    <p th:text="#{dashboard.revenueExpenseChart.subtitle}"></p>
-                </div>
-            </div>
-            <p class="chart-meta" id="revenues-expenses-chart-meta" th:text="#{dashboard.loading}"></p>
-            <div class="chart-wrap">
-                <canvas id="revenues-expenses-chart" th:attr="aria-label=#{dashboard.revenueExpenseChart.title}"></canvas>
-            </div>
-        </article>
-
         <article class="card chart-card loading" id="expense-category-chart-card">
             <div class="chart-card-head">
                 <div>
@@ -98,6 +112,23 @@
             <p class="chart-meta" id="expense-category-chart-meta" th:text="#{dashboard.loading}"></p>
             <div class="chart-wrap">
                 <canvas id="expense-category-chart" th:attr="aria-label=#{dashboard.expenseCategoryChart.title}"></canvas>
+            </div>
+        </article>
+
+        <article class="card chart-card loading" id="revenue-category-chart-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 th:text="#{dashboard.revenueCategoryChart.title}"></h2>
+                    <p th:text="#{dashboard.revenueCategoryChart.subtitle}"></p>
+                </div>
+                <button class="btn btn-secondary" id="revenue-category-drill-up" type="button" disabled>
+                    <i data-lucide="arrow-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.revenueCategoryChart.drillUp}"></span>
+                </button>
+            </div>
+            <p class="chart-meta" id="revenue-category-chart-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap">
+                <canvas id="revenue-category-chart" th:attr="aria-label=#{dashboard.revenueCategoryChart.title}"></canvas>
             </div>
         </article>
     </section>
@@ -134,6 +165,8 @@
         chartSeriesPeriod: /*[[#{dashboard.chart.series.period}]]*/ "Movimentação no período",
         chartLoadError: /*[[#{dashboard.chart.error}]]*/ "Não foi possível carregar o gráfico.",
         summaryLoadError: /*[[#{dashboard.summary.error}]]*/ "Não foi possível carregar este indicador.",
+        accountTypeBalancesLoadError: /*[[#{dashboard.accountTypeBalances.error}]]*/ "Não foi possível carregar os saldos por tipo de conta.",
+        accountTypeBalancesEmpty: /*[[#{dashboard.accountTypeBalances.empty}]]*/ "Sem contas para exibir saldos por tipo.",
         revenueExpenseChartSeriesRevenue: /*[[#{dashboard.revenueExpenseChart.series.revenues}]]*/ "Receitas",
         revenueExpenseChartSeriesExpense: /*[[#{dashboard.revenueExpenseChart.series.expenses}]]*/ "Despesas",
         revenueExpenseChartLoadError: /*[[#{dashboard.revenueExpenseChart.error}]]*/ "Não foi possível carregar o gráfico de receitas vs despesas.",
@@ -141,17 +174,28 @@
         expenseCategoryChartEmpty: /*[[#{dashboard.expenseCategoryChart.empty}]]*/ "Sem despesas no período",
         expenseCategoryChartLevelRoot: /*[[#{dashboard.expenseCategoryChart.level.root}]]*/ "Nível: categorias raiz",
         expenseCategoryChartLevelChild: /*[[#{dashboard.expenseCategoryChart.level.child}]]*/ "Nível: subcategorias de {0}",
+        revenueCategoryChartLoadError: /*[[#{dashboard.revenueCategoryChart.error}]]*/ "Não foi possível carregar o gráfico de recebimentos por categoria.",
+        revenueCategoryChartEmpty: /*[[#{dashboard.revenueCategoryChart.empty}]]*/ "Sem recebimentos no período",
+        revenueCategoryChartLevelRoot: /*[[#{dashboard.revenueCategoryChart.level.root}]]*/ "Nível: categorias raiz",
+        revenueCategoryChartLevelChild: /*[[#{dashboard.revenueCategoryChart.level.child}]]*/ "Nível: subcategorias de {0}",
         categoryTotalsChartLoadError: /*[[#{dashboard.categoryTotalsChart.error}]]*/ "Não foi possível carregar o gráfico de totais por categoria.",
         categoryTotalsChartEmpty: /*[[#{dashboard.categoryTotalsChart.empty}]]*/ "Sem dados no período",
         categoryTotalsChartLevelRoot: /*[[#{dashboard.categoryTotalsChart.level.root}]]*/ "Nível: categorias raiz",
         categoryTotalsChartLevelChild: /*[[#{dashboard.categoryTotalsChart.level.child}]]*/ "Nível: subcategorias de {0}",
-        chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}"
+        chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}",
+        accountTypeChecking: /*[[#{account.type.checking}]]*/ "Corrente",
+        accountTypeCredit: /*[[#{account.type.credit}]]*/ "Crédito",
+        accountTypeInvestment: /*[[#{account.type.investment}]]*/ "Investimento",
+        accountTypeFood: /*[[#{account.type.food}]]*/ "Alimentação",
+        accountTypeOther: /*[[#{account.type.other}]]*/ "Outros"
     };
 
     const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
     const PERCENT_FORMATTER = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR");
     const MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" });
+    let accountTypeBalancesChart = null;
+    let accountTypeBalancesPayload = [];
     let balanceChart = null;
     let chartPayload = null;
     let revenueExpenseChart = null;
@@ -159,6 +203,9 @@
     let expenseCategoryChart = null;
     let expenseCategoryPayload = null;
     let expenseCategoryDrillUpParentId = null;
+    let revenueCategoryChart = null;
+    let revenueCategoryPayload = null;
+    let revenueCategoryDrillUpParentId = null;
     let categoryTotalsChart = null;
     let categoryTotalsPayload = null;
     let categoryTotalsDrillUpParentId = null;
@@ -194,6 +241,83 @@
             grid: getThemeColor("--color-border-default", "#d7e0e8"),
             surface: getThemeColor("--color-bg-card", "#ffffff")
         };
+    }
+
+    function accountTypeLabel(accountType) {
+        const key = (accountType || "OTHER").toUpperCase();
+        switch (key) {
+            case "CHECKING": return i18n.accountTypeChecking;
+            case "CREDIT": return i18n.accountTypeCredit;
+            case "INVESTMENT": return i18n.accountTypeInvestment;
+            case "FOOD": return i18n.accountTypeFood;
+            default: return i18n.accountTypeOther;
+        }
+    }
+
+    function renderAccountTypeBalances(items) {
+        const card = document.getElementById("account-type-balances-card");
+        const meta = document.getElementById("account-type-balances-meta");
+        const canvas = document.getElementById("account-type-balances-chart");
+        if (!card || !meta || !canvas) {
+            return;
+        }
+
+        const chartTheme = getChartTheme();
+        card.classList.remove("loading");
+        const rows = Array.isArray(items) ? items : [];
+        accountTypeBalancesPayload = rows;
+        const hasBalances = rows.some((item) => Math.abs(Number(item.balance ?? 0)) > 0);
+        const labels = hasBalances
+            ? rows.map((item) => accountTypeLabel(item.accountType))
+            : [i18n.accountTypeBalancesEmpty];
+        const data = hasBalances
+            ? rows.map((item) => Math.abs(Number(item.balance ?? 0)))
+            : [1];
+        const colors = hasBalances
+            ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7"]
+            : ["#d7e0e8"];
+
+        meta.textContent = hasBalances ? "" : i18n.accountTypeBalancesEmpty;
+
+        if (accountTypeBalancesChart) {
+            accountTypeBalancesChart.destroy();
+        }
+
+        accountTypeBalancesChart = new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderColor: chartTheme.surface,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                if (!hasBalances) {
+                                    return context.label;
+                                }
+                                const item = rows[context.dataIndex];
+                                return `${context.label}: ${formatCurrency(item?.balance)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function renderMetric(cardId, metric) {
@@ -248,7 +372,14 @@
             renderMetric("summary-current-balance", data.currentBalance);
             renderMetric("summary-total-expenses", data.totalExpenses);
             renderMetric("summary-total-revenues", data.totalRevenues);
+            renderAccountTypeBalances(data.accountTypeBalances);
         } catch (error) {
+            const balancesMeta = document.getElementById("account-type-balances-meta");
+            const balancesCard = document.getElementById("account-type-balances-card");
+            if (balancesMeta && balancesCard) {
+                balancesCard.classList.remove("loading");
+                balancesMeta.textContent = i18n.accountTypeBalancesLoadError;
+            }
             cards.forEach((card) => {
                 if (!card) {
                     return;
@@ -564,6 +695,79 @@
         });
     }
 
+    function renderRevenueCategoryChart() {
+        if (!revenueCategoryPayload) {
+            return;
+        }
+        const chartTheme = getChartTheme();
+
+        const canvas = document.getElementById("revenue-category-chart");
+        if (!canvas) {
+            return;
+        }
+
+        const hasItems = revenueCategoryPayload.items.length > 0;
+        const labels = hasItems
+            ? revenueCategoryPayload.items.map((item) => item.categoryName)
+            : [i18n.revenueCategoryChartEmpty];
+        const data = hasItems
+            ? revenueCategoryPayload.items.map((item) => Number(item.amount))
+            : [1];
+        const colors = hasItems
+            ? ["#22bf96", "#42e2b8", "#19647e", "#07004d", "#f0ec57", "#8cb7c7"]
+            : ["#d7e0e8"];
+
+        if (revenueCategoryChart) {
+            revenueCategoryChart.destroy();
+        }
+
+        revenueCategoryChart = new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderColor: chartTheme.surface,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                if (!hasItems) {
+                                    return context.label;
+                                }
+                                return `${context.label}: ${formatCurrency(context.raw)}`;
+                            }
+                        }
+                    }
+                },
+                onClick: (_, elements) => {
+                    if (!hasItems || elements.length === 0) {
+                        return;
+                    }
+                    const index = elements[0].index;
+                    const selectedItem = revenueCategoryPayload.items[index];
+                    if (!selectedItem || !selectedItem.hasChildren) {
+                        return;
+                    }
+                    loadRevenueCategoryBreakdown(selectedItem.categoryId);
+                }
+            }
+        });
+    }
+
     async function loadExpenseCategoryBreakdown(parentCategoryId = null) {
         const card = document.getElementById("expense-category-chart-card");
         const meta = document.getElementById("expense-category-chart-meta");
@@ -603,6 +807,51 @@
         } catch (error) {
             card.classList.remove("loading");
             meta.textContent = i18n.expenseCategoryChartLoadError;
+            if (drillUpButton) {
+                drillUpButton.disabled = true;
+            }
+        }
+    }
+
+    async function loadRevenueCategoryBreakdown(parentCategoryId = null) {
+        const card = document.getElementById("revenue-category-chart-card");
+        const meta = document.getElementById("revenue-category-chart-meta");
+        const drillUpButton = document.getElementById("revenue-category-drill-up");
+        if (!card || !meta) {
+            return;
+        }
+
+        try {
+            const url = new URL("/api/dashboard/revenues-by-category", window.location.origin);
+            if (parentCategoryId !== null) {
+                url.searchParams.set("parentCategoryId", String(parentCategoryId));
+            }
+
+            const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("revenue-category-chart-failed");
+            }
+            revenueCategoryPayload = await response.json();
+            card.classList.remove("loading");
+
+            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
+                formatDate(revenueCategoryPayload.startDate),
+                formatDate(revenueCategoryPayload.endDate)
+            ]);
+            const levelLabel = revenueCategoryPayload.currentParentCategoryName
+                ? i18n.revenueCategoryChartLevelChild.replace("{0}", revenueCategoryPayload.currentParentCategoryName)
+                : i18n.revenueCategoryChartLevelRoot;
+            meta.textContent = `${periodLabel} • ${levelLabel}`;
+
+            revenueCategoryDrillUpParentId = revenueCategoryPayload.drillUpParentCategoryId;
+            if (drillUpButton) {
+                drillUpButton.disabled = revenueCategoryPayload.currentParentCategoryId === null;
+            }
+
+            renderRevenueCategoryChart();
+        } catch (error) {
+            card.classList.remove("loading");
+            meta.textContent = i18n.revenueCategoryChartLoadError;
             if (drillUpButton) {
                 drillUpButton.disabled = true;
             }
@@ -755,6 +1004,7 @@
         loadBalanceEvolution();
         loadRevenueExpenseEvolution();
         loadExpenseCategoryBreakdown();
+        loadRevenueCategoryBreakdown();
         loadCategoryTotalsEvolution();
 
         const drillUpButton = document.getElementById("expense-category-drill-up");
@@ -771,6 +1021,13 @@
             });
         }
 
+        const revenueCategoryDrillUpButton = document.getElementById("revenue-category-drill-up");
+        if (revenueCategoryDrillUpButton) {
+            revenueCategoryDrillUpButton.addEventListener("click", () => {
+                loadRevenueCategoryBreakdown(revenueCategoryDrillUpParentId);
+            });
+        }
+
         const selectorButtons = Array.from(document.querySelectorAll(".chart-mode-selector [data-mode]"));
         selectorButtons.forEach((button) => {
             button.addEventListener("click", () => {
@@ -783,9 +1040,11 @@
         window.addEventListener("aisha-theme-changed", () => {
             const activeModeButton = document.querySelector(".chart-mode-selector .btn-active");
             const mode = activeModeButton?.dataset.mode ?? "accumulated";
+            renderAccountTypeBalances(accountTypeBalancesPayload);
             renderChart(mode);
             renderRevenueExpenseChart();
             renderExpenseCategoryChart();
+            renderRevenueCategoryChart();
             renderCategoryTotalsChart();
         });
     });

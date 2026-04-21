@@ -2,6 +2,8 @@ package dev.ccosta.aisha.domain.account;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,6 +33,10 @@ public class Account {
 
     @Column(name = "deactivation_date")
     private LocalDate deactivationDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_type", nullable = false, length = 30)
+    private AccountType accountType = AccountType.OTHER;
 
     public Long getId() {
         return id;
@@ -66,6 +72,14 @@ public class Account {
 
     public void setInitialBalanceDate(LocalDate initialBalanceDate) {
         this.initialBalanceDate = initialBalanceDate;
+    }
+
+    public AccountType getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(AccountType accountType) {
+        this.accountType = accountType;
     }
 
     public LocalDate getDeactivationDate() {

@@ -2,6 +2,7 @@ package dev.ccosta.aisha.application.dashboard;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
+import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -89,7 +91,8 @@ public class DashboardService {
         return new DashboardSummary(
             metric(currentBalance, previousBalance),
             metric(currentExpenses, previousExpenses),
-            metric(currentRevenues, previousRevenues)
+            metric(currentRevenues, previousRevenues),
+            buildAccountTypeBalances(accounts, entries, endDate)
         );
     }
 
@@ -197,6 +200,24 @@ public class DashboardService {
         LocalDate endDate,
         Long parentCategoryId
     ) {
+        return buildCategoryBreakdown(startDate, endDate, parentCategoryId, -1);
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardExpenseCategoryBreakdown buildRevenueCategoryBreakdown(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long parentCategoryId
+    ) {
+        return buildCategoryBreakdown(startDate, endDate, parentCategoryId, 1);
+    }
+
+    private DashboardExpenseCategoryBreakdown buildCategoryBreakdown(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long parentCategoryId,
+        int expectedBalanceSign
+    ) {
         validateRange(startDate, endDate);
 
         List<Category> categories = categoryRepository.findAllOrdered();
@@ -213,7 +234,7 @@ public class DashboardService {
         }
 
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
-        Map<Long, BigDecimal> expenseByCategoryId = new HashMap<>();
+        Map<Long, BigDecimal> balanceByCategoryId = new HashMap<>();
 
         for (Entry entry : entries) {
             LocalDate settlementDate = entry.getSettlementDate();
@@ -227,25 +248,26 @@ public class DashboardService {
                 continue;
             }
 
-            BigDecimal amount = entry.getAmount();
-            if (amount.signum() >= 0) {
-                continue;
-            }
-
             Long categoryId = entry.getCategory().getId();
-            expenseByCategoryId.merge(categoryId, amount.abs(), BigDecimal::add);
+            balanceByCategoryId.merge(categoryId, entry.getAmount(), BigDecimal::add);
         }
 
         Map<Long, BigDecimal> subtreeExpenseByCategory = new HashMap<>();
         for (Long categoryId : categoryById.keySet()) {
-            subtreeExpense(categoryId, childrenByParentId, expenseByCategoryId, subtreeExpenseByCategory);
+            subtreeExpense(categoryId, childrenByParentId, balanceByCategoryId, subtreeExpenseByCategory);
         }
 
         List<Long> visibleCategoryIds = childrenByParentId.getOrDefault(parentCategoryId, List.of());
         List<DashboardExpenseCategoryItem> items = visibleCategoryIds
             .stream()
-            .map(categoryId -> toItem(categoryId, categoryById, childrenByParentId, subtreeExpenseByCategory))
-            .filter(item -> item.amount().signum() > 0)
+            .map(categoryId -> toItem(
+                categoryId,
+                categoryById,
+                childrenByParentId,
+                subtreeExpenseByCategory,
+                expectedBalanceSign
+            ))
+            .filter(java.util.Objects::nonNull)
             .sorted(Comparator.comparing(DashboardExpenseCategoryItem::amount).reversed())
             .toList();
 
@@ -348,6 +370,52 @@ public class DashboardService {
             buckets,
             series
         );
+    }
+
+
+    private List<DashboardAccountTypeBalance> buildAccountTypeBalances(List<Account> accounts, List<Entry> entries, LocalDate endDate) {
+        Map<Long, BigDecimal> balanceByAccountId = new HashMap<>();
+        Map<Long, AccountType> typeByAccountId = new HashMap<>();
+
+        for (Account account : accounts) {
+            if (account.getId() == null) {
+                continue;
+            }
+            if (account.getInitialBalance() == null || account.getInitialBalanceDate() == null || account.getInitialBalanceDate().isAfter(endDate)) {
+                balanceByAccountId.put(account.getId(), BigDecimal.ZERO);
+            } else {
+                balanceByAccountId.put(account.getId(), account.getInitialBalance());
+            }
+            typeByAccountId.put(account.getId(), account.getAccountType() == null ? AccountType.OTHER : account.getAccountType());
+        }
+
+        for (Entry entry : entries) {
+            if (entry.getAccount() == null || entry.getAccount().getId() == null) {
+                continue;
+            }
+            Long accountId = entry.getAccount().getId();
+            if (!balanceByAccountId.containsKey(accountId)) {
+                continue;
+            }
+            if (entry.getSettlementDate().isAfter(endDate) || mustIgnoreEntryByAccountStartingPoint(entry)) {
+                continue;
+            }
+            balanceByAccountId.merge(accountId, entry.getAmount(), BigDecimal::add);
+        }
+
+        EnumMap<AccountType, BigDecimal> balanceByType = new EnumMap<>(AccountType.class);
+        for (AccountType accountType : AccountType.values()) {
+            balanceByType.put(accountType, BigDecimal.ZERO);
+        }
+
+        for (Map.Entry<Long, BigDecimal> entry : balanceByAccountId.entrySet()) {
+            AccountType accountType = typeByAccountId.getOrDefault(entry.getKey(), AccountType.OTHER);
+            balanceByType.merge(accountType, entry.getValue(), BigDecimal::add);
+        }
+
+        return java.util.Arrays.stream(AccountType.values())
+            .map(accountType -> new DashboardAccountTypeBalance(accountType, balanceByType.getOrDefault(accountType, BigDecimal.ZERO)))
+            .toList();
     }
 
     private DashboardMetric metric(BigDecimal currentValue, BigDecimal previousValue) {
@@ -502,13 +570,18 @@ public class DashboardService {
         Long categoryId,
         Map<Long, Category> categoryById,
         Map<Long, List<Long>> childrenByParentId,
-        Map<Long, BigDecimal> subtreeExpenseByCategory
+        Map<Long, BigDecimal> subtreeExpenseByCategory,
+        int expectedBalanceSign
     ) {
         Category category = categoryById.get(categoryId);
+        BigDecimal totalBalance = subtreeExpenseByCategory.getOrDefault(categoryId, BigDecimal.ZERO);
+        if (totalBalance.signum() != expectedBalanceSign) {
+            return null;
+        }
         return new DashboardExpenseCategoryItem(
             categoryId,
             category == null ? "" : category.getTitle(),
-            subtreeExpenseByCategory.getOrDefault(categoryId, BigDecimal.ZERO),
+            totalBalance.abs(),
             !childrenByParentId.getOrDefault(categoryId, List.of()).isEmpty()
         );
     }

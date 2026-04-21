@@ -145,6 +145,12 @@
                         </th>
                         <th>
                             <span class="table-heading-label">
+                                <i data-lucide="badge-check" aria-hidden="true"></i>
+                                <span th:text="#{accounts.list.table.accountType}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
                                 <i data-lucide="calendar-x-2" aria-hidden="true"></i>
                                 <span th:text="#{accounts.list.table.deactivationDate}"></span>
                             </span>
@@ -159,7 +165,7 @@
                     </thead>
                     <tbody>
                     <tr th:if="${#lists.isEmpty(accounts)}" class="empty-row">
-                        <td colspan="5" class="empty" th:text="#{accounts.list.empty}"></td>
+                        <td colspan="6" class="empty" th:text="#{accounts.list.empty}"></td>
                     </tr>
                     <tr th:each="account : ${accounts}">
                         <td class="cell-select" th:attr="data-label=#{accounts.list.table.select}">
@@ -167,6 +173,7 @@
                         </td>
                         <td th:attr="data-label=#{accounts.list.table.title}" th:text="${account.title}"></td>
                         <td th:attr="data-label=#{accounts.list.table.description}" th:text="${account.description}"></td>
+                        <td th:attr="data-label=#{accounts.list.table.accountType}" th:text="#{${'account.type.' + (account.accountType != null ? account.accountType.name().toLowerCase() : 'other')}}"></td>
                         <td
                             th:attr="data-label=#{accounts.list.table.deactivationDate}"
                             th:text="${account.deactivationDate != null ? #temporals.format(account.deactivationDate, 'dd/MM/yyyy') : '-'}">
@@ -239,8 +246,15 @@
                     <td>
                         <strong th:text="${row.accountTitle}"></strong>
                     </td>
-                    <td class="amount-cell" th:text="${#numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
-                    <td class="amount-cell" th:each="periodBalance : ${row.periodBalances}" th:text="${#numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA')}"></td>
+                    <td
+                        class="amount-cell"
+                        th:text="${row.previousPeriodBalance != null ? #numbers.formatDecimal(row.previousPeriodBalance, 1, 'POINT', 2, 'COMMA') : '-'}">
+                    </td>
+                    <td
+                        class="amount-cell"
+                        th:each="periodBalance : ${row.periodBalances}"
+                        th:text="${periodBalance != null ? #numbers.formatDecimal(periodBalance, 1, 'POINT', 2, 'COMMA') : '-'}">
+                    </td>
                 </tr>
                 </tbody>
             </table>

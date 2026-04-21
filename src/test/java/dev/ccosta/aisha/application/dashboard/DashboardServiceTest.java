@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
+import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -73,6 +74,35 @@ class DashboardServiceTest {
 
         assertThat(summary.totalRevenues().variationPercent()).isNull();
         assertThat(summary.totalExpenses().variationPercent()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+
+    @Test
+    void shouldBuildAccountTypeBalancesInSummary() {
+        Account checking = newAccount("Conta Corrente", "100.00", LocalDate.of(2026, 1, 1));
+        setId(checking, 1L, Account.class);
+        checking.setAccountType(AccountType.CHECKING);
+
+        Account credit = newAccount("Cartão", "-50.00", LocalDate.of(2026, 1, 1));
+        setId(credit, 2L, Account.class);
+        credit.setAccountType(AccountType.CREDIT);
+
+        when(accountRepository.findAllOrdered()).thenReturn(List.of(checking, credit));
+
+        Entry checkingEntry = newEntry(LocalDate.of(2026, 1, 10), "25.00");
+        checkingEntry.setAccount(checking);
+        Entry creditEntry = newEntry(LocalDate.of(2026, 1, 10), "-10.00");
+        creditEntry.setAccount(credit);
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(checkingEntry, creditEntry));
+
+        DashboardSummary summary = dashboardService.buildSummary(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+
+        assertThat(summary.accountTypeBalances()).extracting(item -> item.accountType().name())
+            .containsExactly("CHECKING", "CREDIT", "INVESTMENT", "FOOD", "OTHER");
+        assertThat(summary.accountTypeBalances().get(0).balance()).isEqualByComparingTo("125.00");
+        assertThat(summary.accountTypeBalances().get(1).balance()).isEqualByComparingTo("-60.00");
+        assertThat(summary.accountTypeBalances().get(4).balance()).isEqualByComparingTo("0.00");
     }
 
     @Test
@@ -346,6 +376,52 @@ class DashboardServiceTest {
         assertThat(breakdown.items()).hasSize(1);
         assertThat(breakdown.items().getFirst().categoryName()).isEqualTo("Casa");
         assertThat(breakdown.items().getFirst().amount()).isEqualByComparingTo("12.00");
+    }
+
+    @Test
+    void shouldUseNegativeCategoryBalanceForExpenseBreakdown() {
+        Category rootSalary = newCategory(40L, "Salário", null);
+        Category rootBills = newCategory(41L, "Contas", null);
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootSalary, rootBills));
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 10), "100.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 11), "-40.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 12), "-50.00", rootBills)
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildExpenseCategoryBreakdown(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            null
+        );
+
+        assertThat(breakdown.items()).hasSize(1);
+        assertThat(breakdown.items().getFirst().categoryName()).isEqualTo("Contas");
+        assertThat(breakdown.items().getFirst().amount()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    void shouldBuildRevenueCategoryBreakdownFromPositiveBalances() {
+        Category rootSalary = newCategory(50L, "Salário", null);
+        Category rootBills = newCategory(51L, "Contas", null);
+        when(categoryRepository.findAllOrdered()).thenReturn(List.of(rootSalary, rootBills));
+
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 1, 31))).thenReturn(List.of(
+            newEntry(LocalDate.of(2026, 1, 10), "200.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 11), "-20.00", rootSalary),
+            newEntry(LocalDate.of(2026, 1, 12), "-50.00", rootBills)
+        ));
+
+        DashboardExpenseCategoryBreakdown breakdown = dashboardService.buildRevenueCategoryBreakdown(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            null
+        );
+
+        assertThat(breakdown.items()).hasSize(1);
+        assertThat(breakdown.items().getFirst().categoryName()).isEqualTo("Salário");
+        assertThat(breakdown.items().getFirst().amount()).isEqualByComparingTo("180.00");
     }
 
     @Test

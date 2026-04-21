@@ -6,6 +6,7 @@ import dev.ccosta.aisha.application.account.AccountNotFoundException;
 import dev.ccosta.aisha.application.account.AccountBalanceReportService;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
@@ -68,6 +69,7 @@ public class AccountController {
     @GetMapping("/new")
     public String createForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
         model.addAttribute("form", new AccountForm());
+        model.addAttribute("accountTypes", AccountType.values());
         model.addAttribute("mode", "create");
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
         return "accounts/form";
@@ -82,6 +84,7 @@ public class AccountController {
     ) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("mode", "create");
+            model.addAttribute("accountTypes", AccountType.values());
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
         }
@@ -96,6 +99,7 @@ public class AccountController {
                 null
             );
             model.addAttribute("mode", "create");
+            model.addAttribute("accountTypes", AccountType.values());
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
         }
@@ -111,6 +115,7 @@ public class AccountController {
         Account account = accountService.findById(id);
         model.addAttribute("form", fromDomain(account));
         model.addAttribute("accountId", id);
+        model.addAttribute("accountTypes", AccountType.values());
         model.addAttribute("mode", "edit");
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
         return "accounts/form";
@@ -126,6 +131,7 @@ public class AccountController {
     ) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("accountId", id);
+            model.addAttribute("accountTypes", AccountType.values());
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
@@ -141,6 +147,7 @@ public class AccountController {
                 null
             );
             model.addAttribute("accountId", id);
+            model.addAttribute("accountTypes", AccountType.values());
             model.addAttribute("mode", "edit");
             model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/accounts"));
             return "accounts/form";
@@ -264,6 +271,7 @@ public class AccountController {
         account.setInitialBalance(form.getInitialBalance());
         account.setInitialBalanceDate(form.getInitialBalanceDate());
         account.setDeactivationDate(form.getDeactivationDate());
+        account.setAccountType(form.getAccountType());
         return account;
     }
 
@@ -274,6 +282,7 @@ public class AccountController {
         form.setInitialBalance(account.getInitialBalance());
         form.setInitialBalanceDate(account.getInitialBalanceDate());
         form.setDeactivationDate(account.getDeactivationDate());
+        form.setAccountType(account.getAccountType());
         return form;
     }
 }
