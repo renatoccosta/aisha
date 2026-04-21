@@ -92,7 +92,8 @@ public class DashboardService {
             metric(currentBalance, previousBalance),
             metric(currentExpenses, previousExpenses),
             metric(currentRevenues, previousRevenues),
-            buildAccountTypeBalances(accounts, entries, endDate)
+            buildAccountTypeBalances(accounts, entries, endDate),
+            buildAccountBalances(accounts, entries, endDate)
         );
     }
 
@@ -415,6 +416,46 @@ public class DashboardService {
 
         return java.util.Arrays.stream(AccountType.values())
             .map(accountType -> new DashboardAccountTypeBalance(accountType, balanceByType.getOrDefault(accountType, BigDecimal.ZERO)))
+            .toList();
+    }
+
+    private List<DashboardAccountBalance> buildAccountBalances(List<Account> accounts, List<Entry> entries, LocalDate endDate) {
+        Map<Long, BigDecimal> balanceByAccountId = new HashMap<>();
+
+        for (Account account : accounts) {
+            if (account.getId() == null) {
+                continue;
+            }
+
+            if (account.getInitialBalance() == null || account.getInitialBalanceDate() == null || account.getInitialBalanceDate().isAfter(endDate)) {
+                balanceByAccountId.put(account.getId(), BigDecimal.ZERO);
+            } else {
+                balanceByAccountId.put(account.getId(), account.getInitialBalance());
+            }
+        }
+
+        for (Entry entry : entries) {
+            if (entry.getAccount() == null || entry.getAccount().getId() == null) {
+                continue;
+            }
+            Long accountId = entry.getAccount().getId();
+            if (!balanceByAccountId.containsKey(accountId)) {
+                continue;
+            }
+            if (entry.getSettlementDate().isAfter(endDate) || mustIgnoreEntryByAccountStartingPoint(entry)) {
+                continue;
+            }
+            balanceByAccountId.merge(accountId, entry.getAmount(), BigDecimal::add);
+        }
+
+        return accounts.stream()
+            .filter(account -> account.getId() != null)
+            .map(account -> new DashboardAccountBalance(
+                account.getId(),
+                account.getTitle(),
+                account.getAccountType() == null ? AccountType.OTHER : account.getAccountType(),
+                balanceByAccountId.getOrDefault(account.getId(), BigDecimal.ZERO)
+            ))
             .toList();
     }
 

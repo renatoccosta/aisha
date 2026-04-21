@@ -103,6 +103,10 @@ class DashboardServiceTest {
         assertThat(summary.accountTypeBalances().get(0).balance()).isEqualByComparingTo("125.00");
         assertThat(summary.accountTypeBalances().get(1).balance()).isEqualByComparingTo("-60.00");
         assertThat(summary.accountTypeBalances().get(4).balance()).isEqualByComparingTo("0.00");
+        assertThat(summary.accountBalances()).extracting(item -> item.accountTitle())
+            .containsExactly("Conta Corrente", "Cartão");
+        assertThat(summary.accountBalances().get(0).balance()).isEqualByComparingTo("125.00");
+        assertThat(summary.accountBalances().get(1).balance()).isEqualByComparingTo("-60.00");
     }
 
     @Test
