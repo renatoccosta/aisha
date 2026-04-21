@@ -8,11 +8,20 @@ public record DashboardSummaryResponse(
     DashboardMetricResponse currentBalance,
     DashboardMetricResponse totalExpenses,
     DashboardMetricResponse totalRevenues,
-    List<DashboardAccountTypeBalanceResponse> accountTypeBalances
+    List<DashboardAccountTypeBalanceResponse> accountTypeBalances,
+    List<DashboardAccountBalanceResponse> accountBalances
 ) {
     public record DashboardMetricResponse(BigDecimal currentValue, BigDecimal previousValue, BigDecimal variationPercent) {
     }
 
     public record DashboardAccountTypeBalanceResponse(AccountType accountType, BigDecimal balance) {
+    }
+
+    public record DashboardAccountBalanceResponse(
+        Long accountId,
+        String accountTitle,
+        AccountType accountType,
+        BigDecimal balance
+    ) {
     }
 }

@@ -51,8 +51,15 @@
         <article class="card chart-card loading" id="account-type-balances-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.accountTypeBalances.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="wallet-cards" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.accountTypeBalances.title}"></span>
+                    </h2>
                 </div>
+                <button class="btn btn-secondary" id="account-type-balances-drill-up" type="button" disabled>
+                    <i data-lucide="arrow-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.accountTypeBalances.drillUp}"></span>
+                </button>
             </div>
             <p class="chart-meta" id="account-type-balances-meta" th:text="#{dashboard.loading}"></p>
             <div class="chart-wrap chart-wrap-donut">
@@ -63,7 +70,10 @@
         <article class="card chart-card loading" id="balance-chart-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.chart.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="line-chart" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.chart.title}"></span>
+                    </h2>
                     <p th:text="#{dashboard.chart.subtitle}"></p>
                 </div>
                 <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
@@ -87,7 +97,10 @@
     <section class="card chart-card loading" id="revenues-expenses-chart-card">
         <div class="chart-card-head">
             <div>
-                <h2 th:text="#{dashboard.revenueExpenseChart.title}"></h2>
+                <h2 class="chart-title">
+                    <i data-lucide="bar-chart-3" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.revenueExpenseChart.title}"></span>
+                </h2>
                 <p th:text="#{dashboard.revenueExpenseChart.subtitle}"></p>
             </div>
         </div>
@@ -101,7 +114,10 @@
         <article class="card chart-card loading" id="expense-category-chart-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.expenseCategoryChart.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="pie-chart" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.expenseCategoryChart.title}"></span>
+                    </h2>
                     <p th:text="#{dashboard.expenseCategoryChart.subtitle}"></p>
                 </div>
                 <button class="btn btn-secondary" id="expense-category-drill-up" type="button" disabled>
@@ -118,7 +134,10 @@
         <article class="card chart-card loading" id="revenue-category-chart-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.revenueCategoryChart.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="chart-pie" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.revenueCategoryChart.title}"></span>
+                    </h2>
                     <p th:text="#{dashboard.revenueCategoryChart.subtitle}"></p>
                 </div>
                 <button class="btn btn-secondary" id="revenue-category-drill-up" type="button" disabled>
@@ -136,7 +155,10 @@
     <section class="card chart-card loading" id="category-totals-chart-card">
         <div class="chart-card-head">
             <div>
-                <h2 th:text="#{dashboard.categoryTotalsChart.title}"></h2>
+                <h2 class="chart-title">
+                    <i data-lucide="chart-column-stacked" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.categoryTotalsChart.title}"></span>
+                </h2>
                 <p th:text="#{dashboard.categoryTotalsChart.subtitle}"></p>
             </div>
             <button class="btn btn-secondary" id="category-totals-drill-up" type="button" disabled>
@@ -158,15 +180,17 @@
         variationUp: /*[[#{dashboard.variation.up}]]*/ "acima do período anterior",
         variationDown: /*[[#{dashboard.variation.down}]]*/ "abaixo do período anterior",
         variationStable: /*[[#{dashboard.variation.stable}]]*/ "igual ao período anterior",
-        chartMeta: /*[[#{dashboard.chart.meta}]]*/ "Período: {0} até {1} ({2})",
         chartGranularityDay: /*[[#{dashboard.chart.granularity.day}]]*/ "diário",
         chartGranularityMonth: /*[[#{dashboard.chart.granularity.month}]]*/ "mensal",
+        chartMetaGranularity: /*[[#{dashboard.chart.metaGranularity}]]*/ "Granularidade: {0}",
         chartSeriesAccumulated: /*[[#{dashboard.chart.series.accumulated}]]*/ "Saldo acumulado",
         chartSeriesPeriod: /*[[#{dashboard.chart.series.period}]]*/ "Movimentação no período",
         chartLoadError: /*[[#{dashboard.chart.error}]]*/ "Não foi possível carregar o gráfico.",
         summaryLoadError: /*[[#{dashboard.summary.error}]]*/ "Não foi possível carregar este indicador.",
         accountTypeBalancesLoadError: /*[[#{dashboard.accountTypeBalances.error}]]*/ "Não foi possível carregar os saldos por tipo de conta.",
         accountTypeBalancesEmpty: /*[[#{dashboard.accountTypeBalances.empty}]]*/ "Sem contas para exibir saldos por tipo.",
+        accountTypeBalancesLevelRoot: /*[[#{dashboard.accountTypeBalances.level.root}]]*/ "Nível: tipos de conta",
+        accountTypeBalancesLevelChild: /*[[#{dashboard.accountTypeBalances.level.child}]]*/ "Nível: contas do tipo {0}",
         revenueExpenseChartSeriesRevenue: /*[[#{dashboard.revenueExpenseChart.series.revenues}]]*/ "Receitas",
         revenueExpenseChartSeriesExpense: /*[[#{dashboard.revenueExpenseChart.series.expenses}]]*/ "Despesas",
         revenueExpenseChartLoadError: /*[[#{dashboard.revenueExpenseChart.error}]]*/ "Não foi possível carregar o gráfico de receitas vs despesas.",
@@ -182,7 +206,6 @@
         categoryTotalsChartEmpty: /*[[#{dashboard.categoryTotalsChart.empty}]]*/ "Sem dados no período",
         categoryTotalsChartLevelRoot: /*[[#{dashboard.categoryTotalsChart.level.root}]]*/ "Nível: categorias raiz",
         categoryTotalsChartLevelChild: /*[[#{dashboard.categoryTotalsChart.level.child}]]*/ "Nível: subcategorias de {0}",
-        chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}",
         accountTypeChecking: /*[[#{account.type.checking}]]*/ "Corrente",
         accountTypeCredit: /*[[#{account.type.credit}]]*/ "Crédito",
         accountTypeInvestment: /*[[#{account.type.investment}]]*/ "Investimento",
@@ -196,6 +219,8 @@
     const MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" });
     let accountTypeBalancesChart = null;
     let accountTypeBalancesPayload = [];
+    let accountBalancesPayload = [];
+    let accountTypeBalancesDrillDownType = null;
     let balanceChart = null;
     let chartPayload = null;
     let revenueExpenseChart = null;
@@ -220,14 +245,6 @@
 
     function formatMonth(isoDate) {
         return MONTH_FORMATTER.format(new Date(`${isoDate}T00:00:00`));
-    }
-
-    function replaceMeta(text, values) {
-        return text.replace("{0}", values[0]).replace("{1}", values[1]).replace("{2}", values[2]);
-    }
-
-    function replaceMetaRange(text, values) {
-        return text.replace("{0}", values[0]).replace("{1}", values[1]);
     }
 
     function getThemeColor(variableName, fallback) {
@@ -258,6 +275,7 @@
         const card = document.getElementById("account-type-balances-card");
         const meta = document.getElementById("account-type-balances-meta");
         const canvas = document.getElementById("account-type-balances-chart");
+        const drillUpButton = document.getElementById("account-type-balances-drill-up");
         if (!card || !meta || !canvas) {
             return;
         }
@@ -266,18 +284,32 @@
         card.classList.remove("loading");
         const rows = Array.isArray(items) ? items : [];
         accountTypeBalancesPayload = rows;
-        const hasBalances = rows.some((item) => Math.abs(Number(item.balance ?? 0)) > 0);
+        const accountRows = Array.isArray(accountBalancesPayload)
+            ? accountBalancesPayload.filter((item) => item.accountType === accountTypeBalancesDrillDownType)
+            : [];
+        const isDrillDown = accountTypeBalancesDrillDownType !== null;
+        const sourceRows = isDrillDown ? accountRows : rows;
+        const hasBalances = sourceRows.some((item) => Math.abs(Number(item.balance ?? 0)) > 0);
         const labels = hasBalances
-            ? rows.map((item) => accountTypeLabel(item.accountType))
+            ? sourceRows.map((item) => isDrillDown ? item.accountTitle : accountTypeLabel(item.accountType))
             : [i18n.accountTypeBalancesEmpty];
         const data = hasBalances
-            ? rows.map((item) => Math.abs(Number(item.balance ?? 0)))
+            ? sourceRows.map((item) => Math.abs(Number(item.balance ?? 0)))
             : [1];
         const colors = hasBalances
             ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7"]
             : ["#d7e0e8"];
 
-        meta.textContent = hasBalances ? "" : i18n.accountTypeBalancesEmpty;
+        if (!hasBalances) {
+            meta.textContent = i18n.accountTypeBalancesEmpty;
+        } else if (isDrillDown) {
+            meta.textContent = i18n.accountTypeBalancesLevelChild.replace("{0}", accountTypeLabel(accountTypeBalancesDrillDownType));
+        } else {
+            meta.textContent = i18n.accountTypeBalancesLevelRoot;
+        }
+        if (drillUpButton) {
+            drillUpButton.disabled = !isDrillDown;
+        }
 
         if (accountTypeBalancesChart) {
             accountTypeBalancesChart.destroy();
@@ -310,11 +342,27 @@
                                 if (!hasBalances) {
                                     return context.label;
                                 }
-                                const item = rows[context.dataIndex];
+                                const item = sourceRows[context.dataIndex];
                                 return `${context.label}: ${formatCurrency(item?.balance)}`;
                             }
                         }
                     }
+                },
+                onClick: (_, elements) => {
+                    if (!hasBalances || isDrillDown || elements.length === 0) {
+                        return;
+                    }
+                    const selectedItem = rows[elements[0].index];
+                    if (!selectedItem) {
+                        return;
+                    }
+                    const selectedType = selectedItem.accountType;
+                    const hasTypeAccounts = accountBalancesPayload.some((item) => item.accountType === selectedType);
+                    if (!hasTypeAccounts) {
+                        return;
+                    }
+                    accountTypeBalancesDrillDownType = selectedType;
+                    renderAccountTypeBalances(accountTypeBalancesPayload);
                 }
             }
         });
@@ -372,6 +420,8 @@
             renderMetric("summary-current-balance", data.currentBalance);
             renderMetric("summary-total-expenses", data.totalExpenses);
             renderMetric("summary-total-revenues", data.totalRevenues);
+            accountBalancesPayload = Array.isArray(data.accountBalances) ? data.accountBalances : [];
+            accountTypeBalancesDrillDownType = null;
             renderAccountTypeBalances(data.accountTypeBalances);
         } catch (error) {
             const balancesMeta = document.getElementById("account-type-balances-meta");
@@ -487,15 +537,8 @@
             chartPayload = await response.json();
             card.classList.remove("loading");
 
-            const granularityLabel = chartPayload.granularity === "MONTH"
-                ? i18n.chartGranularityMonth
-                : i18n.chartGranularityDay;
-
-            meta.textContent = replaceMeta(i18n.chartMeta, [
-                formatDate(chartPayload.startDate),
-                formatDate(chartPayload.endDate),
-                granularityLabel
-            ]);
+            const granularityLabel = chartPayload.granularity === "MONTH" ? i18n.chartGranularityMonth : i18n.chartGranularityDay;
+            meta.textContent = i18n.chartMetaGranularity.replace("{0}", granularityLabel);
 
             renderChart("accumulated");
         } catch (error) {
@@ -605,15 +648,8 @@
             revenueExpensePayload = await response.json();
             card.classList.remove("loading");
 
-            const granularityLabel = revenueExpensePayload.granularity === "MONTH"
-                ? i18n.chartGranularityMonth
-                : i18n.chartGranularityDay;
-
-            meta.textContent = replaceMeta(i18n.chartMeta, [
-                formatDate(revenueExpensePayload.startDate),
-                formatDate(revenueExpensePayload.endDate),
-                granularityLabel
-            ]);
+            const granularityLabel = revenueExpensePayload.granularity === "MONTH" ? i18n.chartGranularityMonth : i18n.chartGranularityDay;
+            meta.textContent = i18n.chartMetaGranularity.replace("{0}", granularityLabel);
 
             renderRevenueExpenseChart();
         } catch (error) {
@@ -789,14 +825,10 @@
             expenseCategoryPayload = await response.json();
             card.classList.remove("loading");
 
-            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
-                formatDate(expenseCategoryPayload.startDate),
-                formatDate(expenseCategoryPayload.endDate)
-            ]);
             const levelLabel = expenseCategoryPayload.currentParentCategoryName
                 ? i18n.expenseCategoryChartLevelChild.replace("{0}", expenseCategoryPayload.currentParentCategoryName)
                 : i18n.expenseCategoryChartLevelRoot;
-            meta.textContent = `${periodLabel} • ${levelLabel}`;
+            meta.textContent = levelLabel;
 
             expenseCategoryDrillUpParentId = expenseCategoryPayload.drillUpParentCategoryId;
             if (drillUpButton) {
@@ -834,14 +866,10 @@
             revenueCategoryPayload = await response.json();
             card.classList.remove("loading");
 
-            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
-                formatDate(revenueCategoryPayload.startDate),
-                formatDate(revenueCategoryPayload.endDate)
-            ]);
             const levelLabel = revenueCategoryPayload.currentParentCategoryName
                 ? i18n.revenueCategoryChartLevelChild.replace("{0}", revenueCategoryPayload.currentParentCategoryName)
                 : i18n.revenueCategoryChartLevelRoot;
-            meta.textContent = `${periodLabel} • ${levelLabel}`;
+            meta.textContent = levelLabel;
 
             revenueCategoryDrillUpParentId = revenueCategoryPayload.drillUpParentCategoryId;
             if (drillUpButton) {
@@ -972,17 +1000,13 @@
             categoryTotalsPayload = await response.json();
             card.classList.remove("loading");
 
-            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
-                formatDate(categoryTotalsPayload.startDate),
-                formatDate(categoryTotalsPayload.endDate)
-            ]);
             const levelLabel = categoryTotalsPayload.currentParentCategoryName
                 ? i18n.categoryTotalsChartLevelChild.replace("{0}", categoryTotalsPayload.currentParentCategoryName)
                 : i18n.categoryTotalsChartLevelRoot;
             const granularityLabel = categoryTotalsPayload.granularity === "MONTH"
                 ? i18n.chartGranularityMonth
                 : i18n.chartGranularityDay;
-            meta.textContent = `${periodLabel} • ${levelLabel} • ${granularityLabel}`;
+            meta.textContent = `${levelLabel} • ${i18n.chartMetaGranularity.replace("{0}", granularityLabel)}`;
 
             categoryTotalsDrillUpParentId = categoryTotalsPayload.drillUpParentCategoryId;
             if (drillUpButton) {
@@ -1047,6 +1071,14 @@
             renderRevenueCategoryChart();
             renderCategoryTotalsChart();
         });
+
+        const accountTypeDrillUpButton = document.getElementById("account-type-balances-drill-up");
+        if (accountTypeDrillUpButton) {
+            accountTypeDrillUpButton.addEventListener("click", () => {
+                accountTypeBalancesDrillDownType = null;
+                renderAccountTypeBalances(accountTypeBalancesPayload);
+            });
+        }
     });
 </script>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>

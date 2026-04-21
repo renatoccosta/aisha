@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.web.dashboard.api;
 
 import dev.ccosta.aisha.application.dashboard.DashboardAccountTypeBalance;
+import dev.ccosta.aisha.application.dashboard.DashboardAccountBalance;
 import dev.ccosta.aisha.application.dashboard.DashboardBalanceEvolution;
 import dev.ccosta.aisha.application.dashboard.DashboardBalancePoint;
 import dev.ccosta.aisha.application.dashboard.DashboardCategoryTotalsEvolution;
@@ -42,7 +43,8 @@ public class DashboardApiController {
             toMetric(summary.currentBalance()),
             toMetric(summary.totalExpenses()),
             toMetric(summary.totalRevenues()),
-            summary.accountTypeBalances().stream().map(this::toAccountTypeBalance).toList()
+            summary.accountTypeBalances().stream().map(this::toAccountTypeBalance).toList(),
+            summary.accountBalances().stream().map(this::toAccountBalance).toList()
         );
     }
 
@@ -179,6 +181,15 @@ public class DashboardApiController {
 
     private DashboardSummaryResponse.DashboardAccountTypeBalanceResponse toAccountTypeBalance(DashboardAccountTypeBalance item) {
         return new DashboardSummaryResponse.DashboardAccountTypeBalanceResponse(item.accountType(), item.balance());
+    }
+
+    private DashboardSummaryResponse.DashboardAccountBalanceResponse toAccountBalance(DashboardAccountBalance item) {
+        return new DashboardSummaryResponse.DashboardAccountBalanceResponse(
+            item.accountId(),
+            item.accountTitle(),
+            item.accountType(),
+            item.balance()
+        );
     }
 
     private DashboardBalanceEvolutionResponse.DashboardBalancePointResponse toPoint(DashboardBalancePoint point) {

@@ -1387,6 +1387,17 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
   flex-wrap: wrap;
 }
 
+.chart-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-title .lucide {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 .chart-mode-selector {
   display: inline-flex;
   gap: 0.45rem;
