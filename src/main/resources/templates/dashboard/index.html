@@ -47,77 +47,57 @@
         </article>
     </section>
 
-    <section class="card chart-card loading" id="account-type-balances-card">
-        <div class="chart-card-head">
-            <div>
-                <h2 th:text="#{dashboard.accountTypeBalances.title}"></h2>
+    <section class="dashboard-balance-grid">
+        <article class="card chart-card loading" id="account-type-balances-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 th:text="#{dashboard.accountTypeBalances.title}"></h2>
+                </div>
             </div>
-        </div>
-        <div class="table-wrap">
-            <table class="balances-table">
-                <thead>
-                <tr>
-                    <th>
-                        <span class="table-heading-label">
-                            <i data-lucide="badge-check" aria-hidden="true"></i>
-                            <span th:text="#{accounts.list.table.accountType}"></span>
-                        </span>
-                    </th>
-                    <th class="amount-cell">
-                        <span class="table-heading-label">
-                            <i data-lucide="wallet" aria-hidden="true"></i>
-                            <span th:text="#{dashboard.card.currentBalance}"></span>
-                        </span>
-                    </th>
-                </tr>
-                </thead>
-                <tbody id="account-type-balances-body">
-                <tr>
-                    <td colspan="2" th:text="#{dashboard.loading}"></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+            <p class="chart-meta" id="account-type-balances-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap chart-wrap-donut">
+                <canvas id="account-type-balances-chart" th:attr="aria-label=#{dashboard.accountTypeBalances.title}"></canvas>
+            </div>
+        </article>
+
+        <article class="card chart-card loading" id="balance-chart-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 th:text="#{dashboard.chart.title}"></h2>
+                    <p th:text="#{dashboard.chart.subtitle}"></p>
+                </div>
+                <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
+                    <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated">
+                        <i data-lucide="trending-up" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.chart.mode.accumulated}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="button" data-mode="period">
+                        <i data-lucide="bar-chart-2" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.chart.mode.period}"></span>
+                    </button>
+                </div>
+            </div>
+            <p class="chart-meta" id="balance-chart-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap">
+                <canvas id="balance-evolution-chart" th:attr="aria-label=#{dashboard.chart.title}"></canvas>
+            </div>
+        </article>
     </section>
 
-
-    <section class="card chart-card loading" id="balance-chart-card">
+    <section class="card chart-card loading" id="revenues-expenses-chart-card">
         <div class="chart-card-head">
             <div>
-                <h2 th:text="#{dashboard.chart.title}"></h2>
-                <p th:text="#{dashboard.chart.subtitle}"></p>
-            </div>
-            <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
-                <button class="btn btn-secondary btn-active" type="button" data-mode="accumulated">
-                    <i data-lucide="trending-up" aria-hidden="true"></i>
-                    <span th:text="#{dashboard.chart.mode.accumulated}"></span>
-                </button>
-                <button class="btn btn-secondary" type="button" data-mode="period">
-                    <i data-lucide="bar-chart-2" aria-hidden="true"></i>
-                    <span th:text="#{dashboard.chart.mode.period}"></span>
-                </button>
+                <h2 th:text="#{dashboard.revenueExpenseChart.title}"></h2>
+                <p th:text="#{dashboard.revenueExpenseChart.subtitle}"></p>
             </div>
         </div>
-        <p class="chart-meta" id="balance-chart-meta" th:text="#{dashboard.loading}"></p>
+        <p class="chart-meta" id="revenues-expenses-chart-meta" th:text="#{dashboard.loading}"></p>
         <div class="chart-wrap">
-            <canvas id="balance-evolution-chart" th:attr="aria-label=#{dashboard.chart.title}"></canvas>
+            <canvas id="revenues-expenses-chart" th:attr="aria-label=#{dashboard.revenueExpenseChart.title}"></canvas>
         </div>
     </section>
 
     <section class="dashboard-chart-grid">
-        <article class="card chart-card loading" id="revenues-expenses-chart-card">
-            <div class="chart-card-head">
-                <div>
-                    <h2 th:text="#{dashboard.revenueExpenseChart.title}"></h2>
-                    <p th:text="#{dashboard.revenueExpenseChart.subtitle}"></p>
-                </div>
-            </div>
-            <p class="chart-meta" id="revenues-expenses-chart-meta" th:text="#{dashboard.loading}"></p>
-            <div class="chart-wrap">
-                <canvas id="revenues-expenses-chart" th:attr="aria-label=#{dashboard.revenueExpenseChart.title}"></canvas>
-            </div>
-        </article>
-
         <article class="card chart-card loading" id="expense-category-chart-card">
             <div class="chart-card-head">
                 <div>
@@ -214,6 +194,8 @@
     const PERCENT_FORMATTER = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR");
     const MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" });
+    let accountTypeBalancesChart = null;
+    let accountTypeBalancesPayload = [];
     let balanceChart = null;
     let chartPayload = null;
     let revenueExpenseChart = null;
@@ -274,23 +256,67 @@
 
     function renderAccountTypeBalances(items) {
         const card = document.getElementById("account-type-balances-card");
-        const tbody = document.getElementById("account-type-balances-body");
-        if (!card || !tbody) {
+        const meta = document.getElementById("account-type-balances-meta");
+        const canvas = document.getElementById("account-type-balances-chart");
+        if (!card || !meta || !canvas) {
             return;
         }
 
+        const chartTheme = getChartTheme();
         card.classList.remove("loading");
-        tbody.innerHTML = "";
         const rows = Array.isArray(items) ? items : [];
-        if (rows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="2">${i18n.accountTypeBalancesEmpty || i18n.loading}</td></tr>`;
-            return;
+        accountTypeBalancesPayload = rows;
+        const hasBalances = rows.some((item) => Math.abs(Number(item.balance ?? 0)) > 0);
+        const labels = hasBalances
+            ? rows.map((item) => accountTypeLabel(item.accountType))
+            : [i18n.accountTypeBalancesEmpty];
+        const data = hasBalances
+            ? rows.map((item) => Math.abs(Number(item.balance ?? 0)))
+            : [1];
+        const colors = hasBalances
+            ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7"]
+            : ["#d7e0e8"];
+
+        meta.textContent = hasBalances ? "" : i18n.accountTypeBalancesEmpty;
+
+        if (accountTypeBalancesChart) {
+            accountTypeBalancesChart.destroy();
         }
 
-        rows.forEach((item) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `<td><strong>${accountTypeLabel(item.accountType)}</strong></td><td class="amount-cell">${formatCurrency(item.balance)}</td>`;
-            tbody.appendChild(tr);
+        accountTypeBalancesChart = new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderColor: chartTheme.surface,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                if (!hasBalances) {
+                                    return context.label;
+                                }
+                                const item = rows[context.dataIndex];
+                                return `${context.label}: ${formatCurrency(item?.balance)}`;
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -348,11 +374,11 @@
             renderMetric("summary-total-revenues", data.totalRevenues);
             renderAccountTypeBalances(data.accountTypeBalances);
         } catch (error) {
-            const balancesBody = document.getElementById("account-type-balances-body");
+            const balancesMeta = document.getElementById("account-type-balances-meta");
             const balancesCard = document.getElementById("account-type-balances-card");
-            if (balancesBody && balancesCard) {
+            if (balancesMeta && balancesCard) {
                 balancesCard.classList.remove("loading");
-                balancesBody.innerHTML = `<tr><td colspan="2">${i18n.accountTypeBalancesLoadError}</td></tr>`;
+                balancesMeta.textContent = i18n.accountTypeBalancesLoadError;
             }
             cards.forEach((card) => {
                 if (!card) {
@@ -1014,6 +1040,7 @@
         window.addEventListener("aisha-theme-changed", () => {
             const activeModeButton = document.querySelector(".chart-mode-selector .btn-active");
             const mode = activeModeButton?.dataset.mode ?? "accumulated";
+            renderAccountTypeBalances(accountTypeBalancesPayload);
             renderChart(mode);
             renderRevenueExpenseChart();
             renderExpenseCategoryChart();

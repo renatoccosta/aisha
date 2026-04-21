@@ -51,7 +51,7 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field field-half">
                 <label for="deactivationDate" th:text="#{accounts.form.field.deactivationDate}"></label>
                 <input id="deactivationDate" type="date" th:field="*{deactivationDate}">
                 <p class="error" th:if="${#fields.hasErrors('deactivationDate')}" th:errors="*{deactivationDate}"></p>

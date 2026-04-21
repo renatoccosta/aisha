@@ -889,6 +889,10 @@ th {
   margin-top: 1rem;
 }
 
+.field-half {
+  width: 100%;
+}
+
 .field-checkbox {
   margin-top: 1.25rem;
 }
@@ -1231,6 +1235,12 @@ body.import-drag-active .import-drop-overlay {
   grid-template-columns: 1fr;
 }
 
+.dashboard-balance-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
 .summary-card {
   position: relative;
   overflow: hidden;
@@ -1394,6 +1404,10 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
   height: min(54vh, 340px);
 }
 
+.chart-wrap-donut {
+  height: min(46vh, 300px);
+}
+
 .loading::after {
   content: "";
   position: absolute;
@@ -1447,6 +1461,10 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
     grid-template-columns: 1fr 1fr;
   }
 
+  .field-half {
+    width: calc(50% - 0.5rem);
+  }
+
   .grid-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1462,6 +1480,10 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
 }
 
 @media (min-width: 980px) {
+  .dashboard-balance-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+
   .dashboard-chart-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
