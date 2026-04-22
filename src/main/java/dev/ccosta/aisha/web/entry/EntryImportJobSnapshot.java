@@ -1,7 +1,7 @@
 package dev.ccosta.aisha.web.entry;
 
-import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
-import dev.ccosta.aisha.application.entry.EntryImportSummary;
+import dev.ccosta.aisha.application.entry.importing.EntryImportFailureCause;
+import dev.ccosta.aisha.application.entry.importing.EntryImportSummary;
 
 public record EntryImportJobSnapshot(
     String jobId,

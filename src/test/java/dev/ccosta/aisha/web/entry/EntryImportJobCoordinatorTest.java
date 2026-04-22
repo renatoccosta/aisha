@@ -6,12 +6,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingCoordinator;
-import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingTrigger;
-import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
-import dev.ccosta.aisha.application.entry.EntryCsvImportService;
-import dev.ccosta.aisha.application.entry.EntryImportSummary;
-import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
+import dev.ccosta.aisha.application.entry.categorization.model.EntryCategoryModelTrainingCoordinator;
+import dev.ccosta.aisha.application.entry.categorization.model.EntryCategoryModelTrainingTrigger;
+import dev.ccosta.aisha.application.entry.importing.EntryCsvImportOptions;
+import dev.ccosta.aisha.application.entry.importing.EntryCsvImportService;
+import dev.ccosta.aisha.application.entry.importing.EntryImportSummary;
+import dev.ccosta.aisha.application.entry.importing.statement.EntryStatementImportService;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -2,6 +2,7 @@ package dev.ccosta.aisha.domain.entry;
 
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Column;

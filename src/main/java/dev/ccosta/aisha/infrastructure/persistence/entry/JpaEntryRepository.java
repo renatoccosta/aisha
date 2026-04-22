@@ -1,8 +1,8 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
-import dev.ccosta.aisha.domain.entry.EntryCategoryTrainingExample;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategoryTrainingExample;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -89,7 +89,7 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
 
     @Query(
         """
-        select new dev.ccosta.aisha.domain.entry.EntryCategoryTrainingExample(
+        select new dev.ccosta.aisha.domain.entry.categorization.EntryCategoryTrainingExample(
             e.account.id,
             e.description,
             e.amount,
@@ -98,7 +98,7 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
         from Entry e
         where e.category is not null
           and e.entryType = dev.ccosta.aisha.domain.entry.EntryType.REGULAR
-          and e.categorySuggestionStatus <> dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus.PENDING
+          and e.categorySuggestionStatus <> dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus.PENDING
         order by e.id asc
         """
     )

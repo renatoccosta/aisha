@@ -1,11 +1,12 @@
 package dev.ccosta.aisha.domain.entry;
 
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategoryTrainingExample;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import dev.ccosta.aisha.domain.shared.PagedResult;
 
 public interface EntryRepository {
 

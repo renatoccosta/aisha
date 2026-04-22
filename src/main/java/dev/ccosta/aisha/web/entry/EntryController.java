@@ -6,18 +6,18 @@ import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
-import dev.ccosta.aisha.application.entry.EntryCategorySuggestion;
-import dev.ccosta.aisha.application.entry.EntryCategorySuggestionRequest;
-import dev.ccosta.aisha.application.entry.EntryCategorySuggestionService;
-import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
-import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
-import dev.ccosta.aisha.application.entry.EntryTransferCounterpartRequest;
-import dev.ccosta.aisha.application.entry.EntryTransferCreationRequest;
-import dev.ccosta.aisha.application.entry.EntryTransferService;
-import dev.ccosta.aisha.application.entry.EntryTransferView;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
+import dev.ccosta.aisha.application.entry.importing.EntryCsvImportOptions;
+import dev.ccosta.aisha.application.entry.importing.EntryImportFailureCause;
+import dev.ccosta.aisha.application.entry.transfer.EntryTransferCounterpartRequest;
+import dev.ccosta.aisha.application.entry.transfer.EntryTransferCreationRequest;
+import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
+import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
-import dev.ccosta.aisha.application.entry.statement.EntryStatementFormat;
-import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
+import dev.ccosta.aisha.application.entry.importing.statement.EntryStatementFormat;
+import dev.ccosta.aisha.application.entry.importing.statement.EntryStatementImportService;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.account.Account;
@@ -1171,7 +1171,7 @@ public class EntryController {
         );
     }
 
-    private EntryTransferCreationRequest toTransferCreationRequest(dev.ccosta.aisha.domain.entry.EntryTransfer entryTransfer) {
+    private EntryTransferCreationRequest toTransferCreationRequest(dev.ccosta.aisha.domain.entry.transfer.EntryTransfer entryTransfer) {
         Entry originEntry = entryTransfer.getOriginEntry();
         Entry destinationEntry = entryTransfer.getDestinationEntry();
         return new EntryTransferCreationRequest(
