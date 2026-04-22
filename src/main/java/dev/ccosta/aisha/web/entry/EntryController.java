@@ -9,29 +9,20 @@ import dev.ccosta.aisha.application.entry.EntryCategorySelection;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
-import dev.ccosta.aisha.application.entry.transfer.EntryTransferCounterpartRequest;
-import dev.ccosta.aisha.application.entry.transfer.EntryTransferCreationRequest;
 import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
-import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
-import dev.ccosta.aisha.web.pagination.PaginationSupport;
-import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.math.BigDecimal;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.context.MessageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +46,6 @@ public class EntryController {
 
     private static final Logger log = LoggerFactory.getLogger(EntryController.class);
 
-    private static final long UNCATEGORIZED_FILTER_VALUE = -1L;
     private static final long NEW_CATEGORY_OPTION_VALUE = -2L;
 
     private final EntryService entryService;
@@ -63,6 +53,7 @@ public class EntryController {
     private final CategoryService categoryService;
     private final EntryCategorySuggestionService entryCategorySuggestionService;
     private final EntryTransferService entryTransferService;
+    private final EntryListingModelAssembler listingModelAssembler;
     private final MessageSource messageSource;
 
     public EntryController(
@@ -71,6 +62,7 @@ public class EntryController {
         CategoryService categoryService,
         EntryCategorySuggestionService entryCategorySuggestionService,
         EntryTransferService entryTransferService,
+        EntryListingModelAssembler listingModelAssembler,
         MessageSource messageSource
     ) {
         this.entryService = entryService;
@@ -78,6 +70,7 @@ public class EntryController {
         this.categoryService = categoryService;
         this.entryCategorySuggestionService = entryCategorySuggestionService;
         this.entryTransferService = entryTransferService;
+        this.listingModelAssembler = listingModelAssembler;
         this.messageSource = messageSource;
     }
 
@@ -92,7 +85,7 @@ public class EntryController {
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+        listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
         return "entries/list";
     }
 
@@ -109,7 +102,7 @@ public class EntryController {
         HttpServletResponse response,
         Model model
     ) {
-        fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+        listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
         setCanonicalEntriesPushUrl(request, response);
         return "entries/list :: listing";
     }
@@ -125,278 +118,6 @@ public class EntryController {
         model.addAttribute("mode", "create");
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
         return "entries/form";
-    }
-
-    @GetMapping("/transfers/new")
-    public String createTransferForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
-        model.addAttribute("form", TransferForm.newWithCurrentDates());
-        fillTransferFormAccountOptions(model, null, null);
-        model.addAttribute("mode", "create");
-        model.addAttribute("transferFormAction", "/entries/transfers");
-        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-        return "entries/transfer-form";
-    }
-
-    @PostMapping("/transfers")
-    public String createTransfer(
-        @Valid @ModelAttribute("form") TransferForm form,
-        BindingResult bindingResult,
-        @RequestParam(name = "returnTo", required = false) String returnTo,
-        Model model
-    ) {
-        validateDistinctAccounts(form.getOriginAccountId(), form.getDestinationAccountId(), "destinationAccountId", bindingResult);
-        validatePositiveAmount(form.getAmount(), "amount", bindingResult);
-        if (bindingResult.hasErrors()) {
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("mode", "create");
-            model.addAttribute("transferFormAction", "/entries/transfers");
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        }
-
-        try {
-            entryTransferService.createTransfer(toTransferCreationRequest(form));
-            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
-        } catch (AccountNotFoundException ex) {
-            bindingResult.rejectValue("originAccountId", "transferForm.originAccountId.notNull");
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("mode", "create");
-            model.addAttribute("transferFormAction", "/entries/transfers");
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        } catch (EntrySettlementAfterAccountDeactivationException ex) {
-            bindingResult.rejectValue(
-                "settlementDate",
-                "entryForm.settlementDate.afterAccountDeactivation",
-                new Object[] {ex.getAccountDeactivationDate()},
-                null
-            );
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("mode", "create");
-            model.addAttribute("transferFormAction", "/entries/transfers");
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        } catch (IllegalArgumentException ex) {
-            bindingResult.reject("transferForm.invalid", new Object[] {ex.getMessage()}, null);
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("mode", "create");
-            model.addAttribute("transferFormAction", "/entries/transfers");
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        }
-    }
-
-    @GetMapping("/{id}/transfer/edit")
-    public String editTransferForm(
-        @PathVariable Long id,
-        @RequestParam(name = "returnTo", required = false) String returnTo,
-        Model model
-    ) {
-        EntryTransferCreationRequest request = toTransferCreationRequest(entryTransferService.findTransferByAnyEntryId(id));
-        TransferForm form = new TransferForm();
-        form.setOriginAccountId(request.originAccountId());
-        form.setDestinationAccountId(request.destinationAccountId());
-        form.setMovementDate(request.movementDate());
-        form.setSettlementDate(request.settlementDate());
-        form.setDescription(request.description());
-        form.setAmount(request.amount());
-        form.setNotes(request.notes());
-        model.addAttribute("form", form);
-        fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-        model.addAttribute("entryId", id);
-        model.addAttribute("mode", "edit");
-        model.addAttribute("transferFormAction", "/entries/transfers/" + id);
-        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-        return "entries/transfer-form";
-    }
-
-    @PostMapping("/transfers/{id}")
-    public String updateTransfer(
-        @PathVariable Long id,
-        @Valid @ModelAttribute("form") TransferForm form,
-        BindingResult bindingResult,
-        @RequestParam(name = "returnTo", required = false) String returnTo,
-        Model model
-    ) {
-        validateDistinctAccounts(form.getOriginAccountId(), form.getDestinationAccountId(), "destinationAccountId", bindingResult);
-        validatePositiveAmount(form.getAmount(), "amount", bindingResult);
-        if (bindingResult.hasErrors()) {
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("entryId", id);
-            model.addAttribute("mode", "edit");
-            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        }
-
-        try {
-            entryTransferService.updateTransferByEntryId(id, toTransferCreationRequest(form));
-            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
-        } catch (AccountNotFoundException ex) {
-            bindingResult.rejectValue("originAccountId", "transferForm.originAccountId.notNull");
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("entryId", id);
-            model.addAttribute("mode", "edit");
-            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        } catch (EntrySettlementAfterAccountDeactivationException ex) {
-            bindingResult.rejectValue(
-                "settlementDate",
-                "entryForm.settlementDate.afterAccountDeactivation",
-                new Object[] {ex.getAccountDeactivationDate()},
-                null
-            );
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("entryId", id);
-            model.addAttribute("mode", "edit");
-            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        } catch (IllegalArgumentException ex) {
-            bindingResult.reject("transferForm.invalid", new Object[] {ex.getMessage()}, null);
-            fillTransferFormAccountOptions(model, form.getOriginAccountId(), form.getDestinationAccountId());
-            model.addAttribute("entryId", id);
-            model.addAttribute("mode", "edit");
-            model.addAttribute("transferFormAction", "/entries/transfers/" + id);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-form";
-        }
-    }
-
-    @GetMapping("/{id}/transfer-counterpart")
-    public String createTransferCounterpartForm(
-        @PathVariable Long id,
-        @RequestParam(name = "returnTo", required = false) String returnTo,
-        Model model
-    ) {
-        Entry entry = entryService.findById(id);
-        TransferForm form = new TransferForm();
-        form.setMovementDate(entry.getMovementDate());
-        form.setSettlementDate(entry.getSettlementDate());
-        form.setDescription(entry.getDescription());
-        form.setNotes(entry.getNotes());
-        form.setAmount(entry.getAmount().abs());
-        if (entry.getAmount().signum() < 0) {
-            form.setOriginAccountId(entry.getAccount().getId());
-        } else {
-            form.setDestinationAccountId(entry.getAccount().getId());
-        }
-
-        model.addAttribute("form", form);
-        fillSourceEntrySummary(model, entry);
-        fillEntryFormAccountOptions(model, entry.getAccount().getId());
-        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-        return "entries/transfer-counterpart-form";
-    }
-
-    @PostMapping("/{id}/transfer-counterpart")
-    public String createTransferCounterpart(
-        @PathVariable Long id,
-        @Valid @ModelAttribute("form") TransferForm form,
-        BindingResult bindingResult,
-        @RequestParam(name = "returnTo", required = false) String returnTo,
-        Model model
-    ) {
-        Entry sourceEntry = entryService.findById(id);
-        Long fixedAccountId = sourceEntry.getAccount().getId();
-        Long counterpartAccountId = sourceEntry.getAmount().signum() < 0 ? form.getDestinationAccountId() : form.getOriginAccountId();
-        validateDistinctAccounts(fixedAccountId, counterpartAccountId, sourceEntry.getAmount().signum() < 0 ? "destinationAccountId" : "originAccountId", bindingResult);
-        validatePositiveAmount(form.getAmount(), "amount", bindingResult);
-        if (form.getAmount() != null && sourceEntry.getAmount() != null && form.getAmount().compareTo(sourceEntry.getAmount().abs()) != 0) {
-            bindingResult.rejectValue("amount", "transferForm.amount.mustMatchSource");
-        }
-        if (bindingResult.hasErrors()) {
-            fillSourceEntrySummary(model, sourceEntry);
-            fillEntryFormAccountOptions(model, fixedAccountId);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-counterpart-form";
-        }
-
-        try {
-            entryTransferService.createCounterpartFromEntry(id, new EntryTransferCounterpartRequest(
-                counterpartAccountId,
-                form.getMovementDate(),
-                form.getSettlementDate(),
-                form.getDescription(),
-                form.getNotes()
-            ));
-            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
-        } catch (IllegalArgumentException ex) {
-            bindingResult.reject("transferForm.invalid", new Object[] {ex.getMessage()}, null);
-            fillSourceEntrySummary(model, sourceEntry);
-            fillEntryFormAccountOptions(model, fixedAccountId);
-            model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
-            return "entries/transfer-counterpart-form";
-        }
-    }
-
-    @PostMapping("/{id}/transfer-link")
-    public String linkTransferFromSelection(
-        @PathVariable Long id,
-        @RequestParam(name = "ids", required = false) List<Long> selectedIds,
-        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
-        @RequestParam(name = "accountId", required = false) Long accountId,
-        @RequestParam(name = "categoryId", required = false) Long categoryId,
-        @RequestParam(name = "description", required = false) String description,
-        @RequestParam(name = "pendingSuggestions", defaultValue = "false") boolean pendingSuggestions,
-        @RequestParam(name = "page", required = false) Integer page,
-        @RequestParam(name = "size", required = false) Integer size,
-        HttpServletRequest request,
-        Model model
-    ) {
-        List<Long> counterpartIds = selectedIds == null
-            ? List.of()
-            : selectedIds.stream()
-                .filter(selectedId -> selectedId != null && !selectedId.equals(id))
-                .distinct()
-                .toList();
-
-        if (counterpartIds.size() != 1) {
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
-            addToast(model, "entries.list.toast.transfer.link.selection.single", "error");
-            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
-        }
-
-        try {
-            entryTransferService.linkExistingEntries(id, counterpartIds.get(0));
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
-            addToast(model, "entries.list.toast.transfer.link.success", "success");
-            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
-        } catch (EntryNotFoundException ex) {
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
-            addResolvedToast(
-                model,
-                messageSource.getMessage(
-                    "entries.list.toast.transfer.link.incompatible",
-                    new Object[] {translateTransferLinkSelectionError("selected entry was not found")},
-                    org.springframework.context.i18n.LocaleContextHolder.getLocale()
-                ),
-                "error"
-            );
-            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
-        } catch (IllegalArgumentException ex) {
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
-            addResolvedToast(
-                model,
-                messageSource.getMessage(
-                    "entries.list.toast.transfer.link.incompatible",
-                    new Object[] {translateTransferLinkSelectionError(ex.getMessage())},
-                    org.springframework.context.i18n.LocaleContextHolder.getLocale()
-                ),
-                "error"
-            );
-            return isHtmx(request) ? "entries/list :: listing" : "redirect:/entries";
-        }
-    }
-
-    @PostMapping("/{id}/transfer-unlink")
-    public String unlinkTransfer(
-        @PathVariable Long id,
-        @RequestParam(name = "returnTo", required = false) String returnTo
-    ) {
-        entryTransferService.unlinkTransferByEntryId(id);
-        return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
     }
 
     @GetMapping("/fragments/category-suggestion")
@@ -482,7 +203,11 @@ public class EntryController {
     ) {
         Entry entry = entryService.findById(id);
         if (entry.isTransfer()) {
-            return editTransferForm(id, returnTo, model);
+            return "redirect:" + ReturnPathSupport.buildReturnPath(
+                "/entries/" + id + "/transfer/edit",
+                "returnTo",
+                ReturnPathSupport.resolveReturnPath(returnTo, "/entries")
+            );
         }
         EntryForm form = fromDomain(entry);
         prepareFormForRendering(form);
@@ -600,7 +325,7 @@ public class EntryController {
     ) {
         entryService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -621,7 +346,7 @@ public class EntryController {
     ) {
         entryService.confirmCategorySuggestion(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -642,7 +367,7 @@ public class EntryController {
     ) {
         entryService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -663,7 +388,7 @@ public class EntryController {
     ) {
         entryService.bulkConfirmCategorySuggestions(ids);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -685,100 +410,6 @@ public class EntryController {
         return "errors/404";
     }
 
-    private void fillListing(
-        Model model,
-        DateFilterState globalDateFilter,
-        Long accountId,
-        Long categoryId,
-        String description,
-        boolean pendingSuggestions,
-        Integer page,
-        Integer size
-    ) {
-        DateFilterState effectiveDateFilter = resolveGlobalDateFilter(model, globalDateFilter);
-        List<Account> accountOptions = accountService.listVisibleForEntryFilter(effectiveDateFilter.getStartDate());
-        Long effectiveAccountId = accountId;
-        Long requestedAccountId = accountId;
-        if (requestedAccountId != null && accountOptions.stream().noneMatch(account -> account.getId().equals(requestedAccountId))) {
-            effectiveAccountId = null;
-        }
-
-        int requestedPage = PaginationSupport.sanitizePage(page);
-        int pageSize = PaginationSupport.sanitizePageSize(size);
-
-        PagedResult<Entry> pageResult = entryService.listMostRecentBySettlementDateBetweenAndFilters(
-            effectiveDateFilter.getStartDate(),
-            effectiveDateFilter.getEndDate(),
-            effectiveAccountId,
-            toEffectiveCategoryId(categoryId),
-            normalizeDescriptionFilter(description),
-            isWithoutCategoryFilter(categoryId),
-            pendingSuggestions,
-            requestedPage,
-            pageSize
-        );
-        int effectivePage = PaginationSupport.clampPageIndex(requestedPage, pageResult.totalPages());
-        if (effectivePage != requestedPage) {
-            pageResult = entryService.listMostRecentBySettlementDateBetweenAndFilters(
-                effectiveDateFilter.getStartDate(),
-                effectiveDateFilter.getEndDate(),
-                effectiveAccountId,
-                toEffectiveCategoryId(categoryId),
-                normalizeDescriptionFilter(description),
-                isWithoutCategoryFilter(categoryId),
-                pendingSuggestions,
-                effectivePage,
-                pageSize
-            );
-        }
-
-        PaginationView pagination = PaginationSupport.toView(pageResult);
-        model.addAttribute("transferViewsByEntryId", buildTransferViewsByEntryId(pageResult.items()));
-        model.addAttribute("entries", pageResult.items());
-        model.addAttribute("selectedAccountId", effectiveAccountId);
-        model.addAttribute("selectedCategoryId", categoryId);
-        model.addAttribute("selectedDescription", normalizeDescriptionFilter(description));
-        model.addAttribute("selectedPendingSuggestions", pendingSuggestions);
-        model.addAttribute("accountOptions", accountOptions);
-        model.addAttribute("pagination", pagination);
-        model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
-        model.addAttribute(
-            "returnTo",
-            ReturnPathSupport.buildReturnPath(
-                "/entries",
-                "accountId",
-                effectiveAccountId,
-                "categoryId",
-                categoryId,
-                "description",
-                normalizeDescriptionFilter(description),
-                "pendingSuggestions",
-                pendingSuggestions,
-                "page",
-                pagination.page(),
-                "size",
-                pagination.pageSize()
-            )
-        );
-        fillCategoryOptions(model);
-    }
-
-    private DateFilterState resolveGlobalDateFilter(Model model, DateFilterState globalDateFilter) {
-        if (globalDateFilter != null) {
-            return globalDateFilter;
-        }
-
-        Object modelAttribute = model.getAttribute("globalDateFilter");
-        if (modelAttribute instanceof DateFilterState state) {
-            return state;
-        }
-
-        DateFilterState fallback = DateFilterState.defaultState(java.time.Clock.systemDefaultZone());
-        model.addAttribute("globalDateFilter", fallback);
-        log.warn("Global date filter was missing in entries listing flow. Falling back to default current-month range.");
-        return fallback;
-    }
-
     private boolean isHtmx(HttpServletRequest request) {
         return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
     }
@@ -794,21 +425,6 @@ public class EntryController {
             canonicalPath += "?" + queryString;
         }
         response.setHeader("HX-Push-Url", canonicalPath);
-    }
-
-    private boolean isWithoutCategoryFilter(Long categoryId) {
-        return categoryId != null && categoryId == UNCATEGORIZED_FILTER_VALUE;
-    }
-
-    private Long toEffectiveCategoryId(Long categoryId) {
-        if (isWithoutCategoryFilter(categoryId)) {
-            return null;
-        }
-        return categoryId;
-    }
-
-    private String normalizeDescriptionFilter(String description) {
-        return StringUtils.hasText(description) ? description.trim() : null;
     }
 
     private Entry toDomain(EntryForm form) {
@@ -852,59 +468,8 @@ public class EntryController {
         model.addAttribute("transferView", entryTransferService.findTransferViewByEntryId(entry.getId()).orElse(null));
     }
 
-    private void fillSourceEntrySummary(Model model, Entry entry) {
-        model.addAttribute("sourceEntryId", entry.getId());
-        model.addAttribute("sourceEntryAmount", entry.getAmount());
-        model.addAttribute("sourceEntryAmountSign", entry.getAmount().signum());
-        model.addAttribute("sourceEntryAccountTitle", accountService.findById(entry.getAccount().getId()).getTitle());
-    }
-
-    private String translateTransferLinkSelectionError(String message) {
-        if (message == null) {
-            return "motivo não identificado";
-        }
-        return switch (message) {
-            case "selected entry was not found" -> "o lançamento selecionado não foi encontrado";
-            case "Entry is already part of a transfer" -> "o lançamento selecionado já faz parte de uma transferência";
-            case "A transfer requires two distinct entries" -> "o lançamento complementar deve ser diferente do lançamento base";
-            case "Both entries must belong to an account" -> "ambos os lançamentos devem pertencer a uma conta";
-            case "Transfer entries must belong to different accounts" -> "os lançamentos devem pertencer a contas diferentes";
-            case "Transfer entries must have non-zero amounts" -> "os lançamentos devem ter valores diferentes de zero";
-            case "Transfer entries must have opposite signs" -> "os lançamentos devem ter sinais opostos";
-            case "Transfer entries must have the same absolute amount" -> "os lançamentos devem ter o mesmo valor absoluto";
-            case "Transfer entries must have matching movement and settlement dates" ->
-                "os lançamentos devem ter as mesmas datas de movimentação e liquidação";
-            default -> message;
-        };
-    }
-
-    private void addToast(Model model, String messageKey, String level) {
-        model.addAttribute(
-            "toastMessage",
-            messageSource.getMessage(messageKey, null, org.springframework.context.i18n.LocaleContextHolder.getLocale())
-        );
-        model.addAttribute("toastLevel", level);
-    }
-
-    private void addResolvedToast(Model model, String message, String level) {
-        model.addAttribute("toastMessage", message);
-        model.addAttribute("toastLevel", level);
-    }
-
     private void fillEntryFormAccountOptions(Model model, Long selectedAccountId) {
         List<Account> accounts = accountService.listAvailableForEntryForm(selectedAccountId);
-        model.addAttribute("accountOptions", accounts);
-    }
-
-    private void fillTransferFormAccountOptions(Model model, Long originAccountId, Long destinationAccountId) {
-        List<Account> accounts = accountService.listAllOrdered()
-            .stream()
-            .filter(account ->
-                account.getDeactivationDate() == null
-                    || (originAccountId != null && originAccountId.equals(account.getId()))
-                    || (destinationAccountId != null && destinationAccountId.equals(account.getId()))
-            )
-            .toList();
         model.addAttribute("accountOptions", accounts);
     }
 
@@ -1039,53 +604,6 @@ public class EntryController {
             return null;
         }
         return form == null ? null : form.getCategoryId();
-    }
-
-    private EntryTransferCreationRequest toTransferCreationRequest(TransferForm form) {
-        return new EntryTransferCreationRequest(
-            form.getOriginAccountId(),
-            form.getDestinationAccountId(),
-            form.getMovementDate(),
-            form.getSettlementDate(),
-            form.getDescription(),
-            form.getAmount(),
-            form.getNotes()
-        );
-    }
-
-    private EntryTransferCreationRequest toTransferCreationRequest(dev.ccosta.aisha.domain.entry.transfer.EntryTransfer entryTransfer) {
-        Entry originEntry = entryTransfer.getOriginEntry();
-        Entry destinationEntry = entryTransfer.getDestinationEntry();
-        return new EntryTransferCreationRequest(
-            originEntry.getAccount().getId(),
-            destinationEntry.getAccount().getId(),
-            originEntry.getMovementDate(),
-            originEntry.getSettlementDate(),
-            originEntry.getDescription(),
-            originEntry.getAmount().abs(),
-            originEntry.getNotes()
-        );
-    }
-
-    private void validateDistinctAccounts(Long firstAccountId, Long secondAccountId, String fieldName, BindingResult bindingResult) {
-        if (firstAccountId != null && firstAccountId.equals(secondAccountId)) {
-            bindingResult.rejectValue(fieldName, "transferForm.accounts.mustBeDifferent");
-        }
-    }
-
-    private void validatePositiveAmount(BigDecimal amount, String fieldName, BindingResult bindingResult) {
-        if (amount != null && amount.signum() <= 0) {
-            bindingResult.rejectValue(fieldName, "transferForm.amount.positive");
-        }
-    }
-
-    private Map<Long, EntryTransferView> buildTransferViewsByEntryId(List<Entry> entries) {
-        Map<Long, EntryTransferView> transferViewsByEntryId = new LinkedHashMap<>();
-        for (Entry entry : entries) {
-            entryTransferService.findTransferViewByEntryId(entry.getId())
-                .ifPresent(transferView -> transferViewsByEntryId.put(entry.getId(), transferView));
-        }
-        return transferViewsByEntryId;
     }
 
 }
