@@ -5,6 +5,7 @@ import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.text.Normalizer;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Optional;
@@ -32,6 +33,8 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
 
     @Override
     public PagedResult<InvestmentOperation> findPageOrdered(
+        LocalDate startDate,
+        LocalDate endDate,
         String assetFilter,
         Long accountId,
         InvestmentOperationType operationType,
@@ -39,6 +42,8 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
         int pageSize
     ) {
         Page<InvestmentOperation> result = jpaInvestmentOperationRepository.searchByFilters(
+            startDate,
+            endDate,
             normalizeTextFilter(assetFilter),
             accountId,
             operationType,

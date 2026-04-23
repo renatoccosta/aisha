@@ -17,6 +17,7 @@ import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -111,28 +112,69 @@ class InvestmentOperationControllerTest {
 
     @Test
     void shouldBulkDeleteAndRefreshListingForHtmx() {
-        when(operationService.listPageOrdered(null, null, null, 0, 25)).thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
+        DateFilterState globalDateFilter = baseDateFilter();
+        when(operationService.listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25))
+            .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
 
-        String view = operationController.bulkDelete(List.of(1L, 2L), null, null, null, null, null, htmxRequest(), new ConcurrentModel());
+        String view = operationController.bulkDelete(
+            globalDateFilter,
+            List.of(1L, 2L),
+            null,
+            null,
+            null,
+            null,
+            null,
+            htmxRequest(),
+            new ConcurrentModel()
+        );
 
         assertThat(view).isEqualTo("investments/operations/list :: table");
         verify(operationService).bulkDelete(List.of(1L, 2L));
-        verify(operationService).listPageOrdered(null, null, null, 0, 25);
+        verify(operationService).listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25);
     }
 
     @Test
     void shouldApplyListingFilters() {
-        when(operationService.listPageOrdered("Petróleo", 20L, InvestmentOperationType.BUY, 0, 25))
+        DateFilterState globalDateFilter = baseDateFilter();
+        when(operationService.listPageOrdered(
+            globalDateFilter.getStartDate(),
+            globalDateFilter.getEndDate(),
+            "Petróleo",
+            20L,
+            InvestmentOperationType.BUY,
+            0,
+            25
+        ))
             .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
 
         ConcurrentModel model = new ConcurrentModel();
-        String view = operationController.table(" Petróleo ", 20L, InvestmentOperationType.BUY, null, null, model);
+        String view = operationController.table(globalDateFilter, " Petróleo ", 20L, InvestmentOperationType.BUY, null, null, model);
 
         assertThat(view).isEqualTo("investments/operations/list :: table");
         assertThat(model.getAttribute("selectedAsset")).isEqualTo("Petróleo");
         assertThat(model.getAttribute("selectedAccountId")).isEqualTo(20L);
         assertThat(model.getAttribute("selectedOperationType")).isEqualTo(InvestmentOperationType.BUY);
-        verify(operationService).listPageOrdered("Petróleo", 20L, InvestmentOperationType.BUY, 0, 25);
+        verify(operationService).listPageOrdered(
+            globalDateFilter.getStartDate(),
+            globalDateFilter.getEndDate(),
+            "Petróleo",
+            20L,
+            InvestmentOperationType.BUY,
+            0,
+            25
+        );
+    }
+
+    @Test
+    void shouldApplyGlobalDateFilterToOperationListing() {
+        DateFilterState globalDateFilter = baseDateFilter();
+        when(operationService.listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25))
+            .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
+
+        String view = operationController.list(globalDateFilter, null, null, null, null, null, new ConcurrentModel());
+
+        assertThat(view).isEqualTo("investments/operations/list");
+        verify(operationService).listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25);
     }
 
     private InvestmentOperationForm baseForm() {
@@ -154,5 +196,11 @@ class InvestmentOperationControllerTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("HX-Request", "true");
         return request;
+    }
+
+    private DateFilterState baseDateFilter() {
+        DateFilterState state = new DateFilterState();
+        state.applyCustom(LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30));
+        return state;
     }
 }

@@ -17,6 +17,7 @@ import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository
 import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -111,6 +112,44 @@ class InvestmentOperationServiceTest {
         );
 
         verify(linkRepository).save(any(InvestmentOperationEntryLink.class));
+    }
+
+    @Test
+    void shouldListOperationsInsideSettlementRange() {
+        LocalDate startDate = LocalDate.of(2026, 4, 1);
+        LocalDate endDate = LocalDate.of(2026, 4, 30);
+        PagedResult<InvestmentOperation> page = new PagedResult<>(List.of(), 0, 25, 0, 0);
+
+        when(investmentOperationRepository.findPageOrdered(
+            startDate,
+            endDate,
+            "PETR4",
+            20L,
+            InvestmentOperationType.BUY,
+            0,
+            25
+        )).thenReturn(page);
+
+        PagedResult<InvestmentOperation> result = investmentOperationService.listPageOrdered(
+            startDate,
+            endDate,
+            "PETR4",
+            20L,
+            InvestmentOperationType.BUY,
+            0,
+            25
+        );
+
+        assertThat(result).isSameAs(page);
+        verify(investmentOperationRepository).findPageOrdered(
+            startDate,
+            endDate,
+            "PETR4",
+            20L,
+            InvestmentOperationType.BUY,
+            0,
+            25
+        );
     }
 
     private void setId(InvestmentOperation operation, Long id) {

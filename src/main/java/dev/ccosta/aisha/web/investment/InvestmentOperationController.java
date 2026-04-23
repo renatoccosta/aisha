@@ -9,7 +9,6 @@ import dev.ccosta.aisha.application.investment.InvestmentOperationEntryLinkReque
 import dev.ccosta.aisha.application.investment.InvestmentOperationNotFoundException;
 import dev.ccosta.aisha.application.investment.InvestmentOperationService;
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
@@ -19,6 +18,7 @@ import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
+import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -80,6 +80,7 @@ public class InvestmentOperationController {
      */
     @GetMapping
     public String list(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "operationType", required = false) InvestmentOperationType operationType,
@@ -87,7 +88,7 @@ public class InvestmentOperationController {
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, asset, accountId, operationType, page, size);
+        fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
         return "investments/operations/list";
     }
 
@@ -101,6 +102,7 @@ public class InvestmentOperationController {
      */
     @GetMapping("/fragments/table")
     public String table(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "operationType", required = false) InvestmentOperationType operationType,
@@ -108,7 +110,7 @@ public class InvestmentOperationController {
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, asset, accountId, operationType, page, size);
+        fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
         return "investments/operations/list :: table";
     }
 
@@ -247,6 +249,7 @@ public class InvestmentOperationController {
      */
     @PostMapping("/{id}/delete")
     public String delete(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @PathVariable Long id,
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
@@ -258,7 +261,7 @@ public class InvestmentOperationController {
     ) {
         operationService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, asset, accountId, operationType, page, size);
+            fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
             return "investments/operations/list :: table";
         }
         return "redirect:/investments/operations";
@@ -276,6 +279,7 @@ public class InvestmentOperationController {
      */
     @PostMapping("/bulk-delete")
     public String bulkDelete(
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
         @RequestParam(name = "ids", required = false) List<Long> ids,
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
@@ -287,7 +291,7 @@ public class InvestmentOperationController {
     ) {
         operationService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, asset, accountId, operationType, page, size);
+            fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
             return "investments/operations/list :: table";
         }
         return "redirect:/investments/operations";
@@ -309,11 +313,21 @@ public class InvestmentOperationController {
         return "errors/404";
     }
 
-    private void fillListing(Model model, String asset, Long accountId, InvestmentOperationType operationType, Integer page, Integer size) {
+    private void fillListing(
+        Model model,
+        DateFilterState globalDateFilter,
+        String asset,
+        Long accountId,
+        InvestmentOperationType operationType,
+        Integer page,
+        Integer size
+    ) {
         int requestedPage = PaginationSupport.sanitizePage(page);
         int pageSize = PaginationSupport.sanitizePageSize(size);
         String selectedAsset = normalizeFilter(asset);
         PagedResult<InvestmentOperation> pageResult = operationService.listPageOrdered(
+            globalDateFilter.getStartDate(),
+            globalDateFilter.getEndDate(),
             selectedAsset,
             accountId,
             operationType,
@@ -322,7 +336,15 @@ public class InvestmentOperationController {
         );
         int effectivePage = PaginationSupport.clampPageIndex(requestedPage, pageResult.totalPages());
         if (effectivePage != requestedPage) {
-            pageResult = operationService.listPageOrdered(selectedAsset, accountId, operationType, effectivePage, pageSize);
+            pageResult = operationService.listPageOrdered(
+                globalDateFilter.getStartDate(),
+                globalDateFilter.getEndDate(),
+                selectedAsset,
+                accountId,
+                operationType,
+                effectivePage,
+                pageSize
+            );
         }
 
         PaginationView pagination = PaginationSupport.toView(pageResult);

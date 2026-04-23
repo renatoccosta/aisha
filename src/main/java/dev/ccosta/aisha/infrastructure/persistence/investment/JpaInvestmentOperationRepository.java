@@ -2,6 +2,7 @@ package dev.ccosta.aisha.infrastructure.persistence.investment;
 
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
+import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -19,7 +20,8 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
         """
         select o
         from InvestmentOperation o
-        where (:accountId is null or o.account.id = :accountId)
+        where o.settlementDate between :startDate and :endDate
+          and (:accountId is null or o.account.id = :accountId)
           and (:operationType is null or o.operationType = :operationType)
           and (
                 :assetFilter is null
@@ -37,6 +39,8 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
         """
     )
     Page<InvestmentOperation> searchByFilters(
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
         @Param("assetFilter") String assetFilter,
         @Param("accountId") Long accountId,
         @Param("operationType") InvestmentOperationType operationType,

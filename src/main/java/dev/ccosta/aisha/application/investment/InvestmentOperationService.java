@@ -13,6 +13,7 @@ import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -70,13 +71,21 @@ public class InvestmentOperationService {
      */
     @Transactional(readOnly = true)
     public PagedResult<InvestmentOperation> listPageOrdered(
+        LocalDate startDate,
+        LocalDate endDate,
         String assetFilter,
         Long accountId,
         InvestmentOperationType operationType,
         int page,
         int pageSize
     ) {
-        return investmentOperationRepository.findPageOrdered(assetFilter, accountId, operationType, page, pageSize);
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Start and end dates are required");
+        }
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("End date must be greater than or equal to start date");
+        }
+        return investmentOperationRepository.findPageOrdered(startDate, endDate, assetFilter, accountId, operationType, page, pageSize);
     }
 
     /**
