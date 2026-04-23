@@ -327,6 +327,10 @@ public class AssetController {
         asset.setMaturityDate(form.getMaturityDate());
         asset.setIndexerType(form.getIndexerType());
         asset.setIndexerSpread(form.getIndexerSpread());
+        asset.setOpeningPositionDate(form.getOpeningPositionDate());
+        asset.setOpeningPositionQuantity(form.getOpeningPositionQuantity());
+        asset.setOpeningPositionTotalCost(form.getOpeningPositionTotalCost());
+        asset.setOpeningPositionCurrency(form.getOpeningPositionCurrency());
         return asset;
     }
 
@@ -342,6 +346,10 @@ public class AssetController {
         form.setMaturityDate(asset.getMaturityDate());
         form.setIndexerType(asset.getIndexerType());
         form.setIndexerSpread(asset.getIndexerSpread());
+        form.setOpeningPositionDate(asset.getOpeningPositionDate());
+        form.setOpeningPositionQuantity(asset.getOpeningPositionQuantity());
+        form.setOpeningPositionTotalCost(asset.getOpeningPositionTotalCost());
+        form.setOpeningPositionCurrency(asset.getOpeningPositionCurrency());
         return form;
     }
 

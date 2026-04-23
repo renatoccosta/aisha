@@ -2,10 +2,12 @@ package dev.ccosta.aisha.web.investment;
 
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetType;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -45,6 +47,18 @@ public class AssetForm {
 
     @Size(max = 80, message = "{assetForm.indexerSpread.size}")
     private String indexerSpread;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate openingPositionDate;
+
+    @Digits(integer = 18, fraction = 10, message = "{assetForm.openingPositionQuantity.digits}")
+    private BigDecimal openingPositionQuantity;
+
+    @Digits(integer = 17, fraction = 2, message = "{assetForm.openingPositionTotalCost.digits}")
+    private BigDecimal openingPositionTotalCost;
+
+    @Pattern(regexp = "|[A-Za-z]{3}", message = "{assetForm.openingPositionCurrency.pattern}")
+    private String openingPositionCurrency;
 
     public Long getAccountId() {
         return accountId;
@@ -124,5 +138,37 @@ public class AssetForm {
 
     public void setIndexerSpread(String indexerSpread) {
         this.indexerSpread = indexerSpread;
+    }
+
+    public LocalDate getOpeningPositionDate() {
+        return openingPositionDate;
+    }
+
+    public void setOpeningPositionDate(LocalDate openingPositionDate) {
+        this.openingPositionDate = openingPositionDate;
+    }
+
+    public BigDecimal getOpeningPositionQuantity() {
+        return openingPositionQuantity;
+    }
+
+    public void setOpeningPositionQuantity(BigDecimal openingPositionQuantity) {
+        this.openingPositionQuantity = openingPositionQuantity;
+    }
+
+    public BigDecimal getOpeningPositionTotalCost() {
+        return openingPositionTotalCost;
+    }
+
+    public void setOpeningPositionTotalCost(BigDecimal openingPositionTotalCost) {
+        this.openingPositionTotalCost = openingPositionTotalCost;
+    }
+
+    public String getOpeningPositionCurrency() {
+        return openingPositionCurrency;
+    }
+
+    public void setOpeningPositionCurrency(String openingPositionCurrency) {
+        this.openingPositionCurrency = openingPositionCurrency;
     }
 }

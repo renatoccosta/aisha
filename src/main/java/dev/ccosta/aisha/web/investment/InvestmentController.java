@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class InvestmentController {
 
     /**
-     * Redirects the module entry point to the first implemented investment workflow.
+     * Displays the investment landing page with the available operational sections.
      *
-     * @return redirect to the asset listing
+     * @return the investment landing page template
      */
     @GetMapping("/investments")
     public String index() {
-        return "redirect:/investments/assets";
+        return "investments/index";
     }
 }

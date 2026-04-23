@@ -13,6 +13,8 @@ import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
 import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +58,27 @@ class AssetServiceTest {
     }
 
     @Test
+    void shouldCreateAssetWithOpeningPositionDefaults() {
+        Account account = new Account();
+        Asset asset = new Asset();
+        asset.setName("Tesouro Selic");
+        asset.setCurrency("brl");
+        asset.setOpeningPositionDate(LocalDate.of(2026, 1, 31));
+        asset.setOpeningPositionQuantity(new BigDecimal("15.5000000000"));
+        asset.setOpeningPositionTotalCost(new BigDecimal("1500.25"));
+
+        when(accountService.findById(10L)).thenReturn(account);
+        when(assetRepository.save(asset)).thenReturn(asset);
+
+        Asset created = assetService.create(asset, 10L);
+
+        assertThat(created.getOpeningPositionDate()).isEqualTo(LocalDate.of(2026, 1, 31));
+        assertThat(created.getOpeningPositionQuantity()).isEqualByComparingTo("15.5000000000");
+        assertThat(created.getOpeningPositionTotalCost()).isEqualByComparingTo("1500.25");
+        assertThat(created.getOpeningPositionCurrency()).isEqualTo("BRL");
+    }
+
+    @Test
     void shouldRejectBlankAssetName() {
         Account account = new Account();
         Asset asset = new Asset();
@@ -66,6 +89,22 @@ class AssetServiceTest {
         assertThatThrownBy(() -> assetService.create(asset, 10L))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("name");
+
+        verify(assetRepository, never()).save(asset);
+    }
+
+    @Test
+    void shouldRejectPartialOpeningPosition() {
+        Account account = new Account();
+        Asset asset = new Asset();
+        asset.setName("Tesouro Selic");
+        asset.setOpeningPositionDate(LocalDate.of(2026, 1, 31));
+
+        when(accountService.findById(10L)).thenReturn(account);
+
+        assertThatThrownBy(() -> assetService.create(asset, 10L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Opening position");
 
         verify(assetRepository, never()).save(asset);
     }

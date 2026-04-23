@@ -18,10 +18,6 @@
             <p th:text="#{investments.operations.list.subtitle}"></p>
         </div>
         <div class="actions-inline">
-            <a class="btn btn-secondary" th:href="@{/investments/assets}">
-                <i data-lucide="landmark" aria-hidden="true"></i>
-                <span th:text="#{investments.operations.list.action.assets}"></span>
-            </a>
             <a class="btn btn-primary" th:href="@{/investments/operations/new(returnTo=${returnTo})}">
                 <i data-lucide="plus" aria-hidden="true"></i>
                 <span th:text="#{investments.operations.list.action.new}"></span>

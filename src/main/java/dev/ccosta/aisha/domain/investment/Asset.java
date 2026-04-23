@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.domain.investment;
 
 import dev.ccosta.aisha.domain.account.Account;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,7 +12,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -57,6 +60,9 @@ public class Asset {
 
     @Column(name = "indexer_spread", length = 80)
     private String indexerSpread;
+
+    @OneToOne(mappedBy = "asset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private OpeningPosition openingPosition;
 
     public Long getId() {
         return id;
@@ -140,5 +146,91 @@ public class Asset {
 
     public void setIndexerSpread(String indexerSpread) {
         this.indexerSpread = indexerSpread;
+    }
+
+    public LocalDate getOpeningPositionDate() {
+        return openingPosition == null ? null : openingPosition.getPositionDate();
+    }
+
+    public void setOpeningPositionDate(LocalDate openingPositionDate) {
+        if (openingPositionDate == null
+            && getOpeningPositionQuantity() == null
+            && getOpeningPositionTotalCost() == null
+            && getOpeningPositionCurrency() == null) {
+            setOpeningPosition(null);
+            return;
+        }
+
+        ensureOpeningPosition().setPositionDate(openingPositionDate);
+    }
+
+    public BigDecimal getOpeningPositionQuantity() {
+        return openingPosition == null ? null : openingPosition.getQuantity();
+    }
+
+    public void setOpeningPositionQuantity(BigDecimal openingPositionQuantity) {
+        if (openingPositionQuantity == null
+            && getOpeningPositionDate() == null
+            && getOpeningPositionTotalCost() == null
+            && getOpeningPositionCurrency() == null) {
+            setOpeningPosition(null);
+            return;
+        }
+
+        ensureOpeningPosition().setQuantity(openingPositionQuantity);
+    }
+
+    public BigDecimal getOpeningPositionTotalCost() {
+        return openingPosition == null ? null : openingPosition.getTotalCost();
+    }
+
+    public void setOpeningPositionTotalCost(BigDecimal openingPositionTotalCost) {
+        if (openingPositionTotalCost == null
+            && getOpeningPositionDate() == null
+            && getOpeningPositionQuantity() == null
+            && getOpeningPositionCurrency() == null) {
+            setOpeningPosition(null);
+            return;
+        }
+
+        ensureOpeningPosition().setTotalCost(openingPositionTotalCost);
+    }
+
+    public String getOpeningPositionCurrency() {
+        return openingPosition == null ? null : openingPosition.getCurrency();
+    }
+
+    public void setOpeningPositionCurrency(String openingPositionCurrency) {
+        if (openingPositionCurrency == null
+            && getOpeningPositionDate() == null
+            && getOpeningPositionQuantity() == null
+            && getOpeningPositionTotalCost() == null) {
+            setOpeningPosition(null);
+            return;
+        }
+
+        ensureOpeningPosition().setCurrency(openingPositionCurrency);
+    }
+
+    public OpeningPosition getOpeningPosition() {
+        return openingPosition;
+    }
+
+    public void setOpeningPosition(OpeningPosition openingPosition) {
+        if (this.openingPosition != null) {
+            this.openingPosition.setAsset(null);
+        }
+
+        this.openingPosition = openingPosition;
+        if (openingPosition != null && openingPosition.getAsset() != this) {
+            openingPosition.setAsset(this);
+        }
+    }
+
+    private OpeningPosition ensureOpeningPosition() {
+        if (openingPosition == null) {
+            setOpeningPosition(new OpeningPosition());
+        }
+        return openingPosition;
     }
 }

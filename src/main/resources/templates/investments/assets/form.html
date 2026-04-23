@@ -93,6 +93,38 @@
                 <p class="error" th:if="${#fields.hasErrors('indexerSpread')}" th:errors="*{indexerSpread}"></p>
             </div>
 
+            <section class="card stack-sm">
+                <h3 th:text="#{investments.assets.form.section.openingPosition}"></h3>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="openingPositionDate" th:text="#{investments.assets.form.field.openingPositionDate}"></label>
+                        <input id="openingPositionDate" type="date" th:field="*{openingPositionDate}">
+                        <p class="error" th:if="${#fields.hasErrors('openingPositionDate')}" th:errors="*{openingPositionDate}"></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="openingPositionCurrency" th:text="#{investments.assets.form.field.openingPositionCurrency}"></label>
+                        <input id="openingPositionCurrency" type="text" th:field="*{openingPositionCurrency}" maxlength="3">
+                        <p class="error" th:if="${#fields.hasErrors('openingPositionCurrency')}" th:errors="*{openingPositionCurrency}"></p>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="openingPositionQuantity" th:text="#{investments.assets.form.field.openingPositionQuantity}"></label>
+                        <input id="openingPositionQuantity" type="number" th:field="*{openingPositionQuantity}" step="0.0000000001">
+                        <p class="error" th:if="${#fields.hasErrors('openingPositionQuantity')}" th:errors="*{openingPositionQuantity}"></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="openingPositionTotalCost" th:text="#{investments.assets.form.field.openingPositionTotalCost}"></label>
+                        <input id="openingPositionTotalCost" type="number" th:field="*{openingPositionTotalCost}" step="0.01">
+                        <p class="error" th:if="${#fields.hasErrors('openingPositionTotalCost')}" th:errors="*{openingPositionTotalCost}"></p>
+                    </div>
+                </div>
+            </section>
+
             <div class="actions-inline">
                 <button class="btn btn-primary" type="submit">
                     <i data-lucide="save" aria-hidden="true"></i>

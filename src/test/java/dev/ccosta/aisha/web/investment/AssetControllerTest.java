@@ -12,6 +12,7 @@ import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,10 @@ class AssetControllerTest {
         assertThat(assetCaptor.getValue().getName()).isEqualTo("PETR4");
         assertThat(assetCaptor.getValue().getTicker()).isEqualTo("PETR4");
         assertThat(assetCaptor.getValue().getCurrency()).isEqualTo("BRL");
+        assertThat(assetCaptor.getValue().getOpeningPositionDate()).isEqualTo(LocalDate.of(2026, 1, 31));
+        assertThat(assetCaptor.getValue().getOpeningPositionQuantity()).isEqualByComparingTo("12.5000000000");
+        assertThat(assetCaptor.getValue().getOpeningPositionTotalCost()).isEqualByComparingTo("1234.56");
+        assertThat(assetCaptor.getValue().getOpeningPositionCurrency()).isEqualTo("BRL");
     }
 
     @Test
@@ -124,6 +129,10 @@ class AssetControllerTest {
         form.setCurrency("BRL");
         form.setIndexerType(AssetIndexerType.NONE);
         form.setMaturityDate(LocalDate.of(2029, 1, 1));
+        form.setOpeningPositionDate(LocalDate.of(2026, 1, 31));
+        form.setOpeningPositionQuantity(new BigDecimal("12.5000000000"));
+        form.setOpeningPositionTotalCost(new BigDecimal("1234.56"));
+        form.setOpeningPositionCurrency("BRL");
         return form;
     }
 

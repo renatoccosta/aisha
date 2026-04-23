@@ -8,6 +8,7 @@ import dev.ccosta.aisha.domain.investment.AssetRepository;
 import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -175,6 +176,13 @@ public class AssetService {
         } else {
             asset.setCurrency(asset.getCurrency().trim().toUpperCase());
         }
+        if (hasOpeningPosition(asset)) {
+            if (!StringUtils.hasText(asset.getOpeningPositionCurrency())) {
+                asset.setOpeningPositionCurrency(asset.getCurrency());
+            } else {
+                asset.setOpeningPositionCurrency(asset.getOpeningPositionCurrency().trim().toUpperCase());
+            }
+        }
     }
 
     private void validate(Asset asset) {
@@ -184,11 +192,43 @@ public class AssetService {
         if (asset.getCurrency().length() != 3) {
             throw new IllegalArgumentException("Asset currency must use a 3-letter ISO code");
         }
+        validateOpeningPosition(asset);
     }
 
     private void ensureAssetIsNotInUse(Long id) {
         if (investmentOperationRepository.existsByAssetId(id)) {
             throw new AssetInUseException(id);
         }
+    }
+
+    private void validateOpeningPosition(Asset asset) {
+        boolean hasPositionDate = asset.getOpeningPositionDate() != null;
+        boolean hasQuantity = asset.getOpeningPositionQuantity() != null;
+        boolean hasTotalCost = asset.getOpeningPositionTotalCost() != null;
+        boolean hasCurrency = StringUtils.hasText(asset.getOpeningPositionCurrency());
+
+        if (!hasPositionDate && !hasQuantity && !hasTotalCost && !hasCurrency) {
+            return;
+        }
+
+        if (!hasPositionDate || !hasQuantity || !hasTotalCost || !hasCurrency) {
+            throw new IllegalArgumentException("Opening position must include date, quantity, total cost, and currency");
+        }
+        if (asset.getOpeningPositionCurrency().length() != 3) {
+            throw new IllegalArgumentException("Opening position currency must use a 3-letter ISO code");
+        }
+        if (asset.getOpeningPositionQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Opening position quantity must be greater than zero");
+        }
+        if (asset.getOpeningPositionTotalCost().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Opening position total cost must not be negative");
+        }
+    }
+
+    private boolean hasOpeningPosition(Asset asset) {
+        return asset.getOpeningPositionDate() != null
+            || asset.getOpeningPositionQuantity() != null
+            || asset.getOpeningPositionTotalCost() != null
+            || StringUtils.hasText(asset.getOpeningPositionCurrency());
     }
 }

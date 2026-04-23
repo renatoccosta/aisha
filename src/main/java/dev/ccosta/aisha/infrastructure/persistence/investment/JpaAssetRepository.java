@@ -12,10 +12,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
 
-    @EntityGraph(attributePaths = "account")
+    @EntityGraph(attributePaths = {"account", "openingPosition"})
     Page<Asset> findAllByOrderByAccountTitleAscNameAscTickerAscIdAsc(Pageable pageable);
 
-    @EntityGraph(attributePaths = "account")
+    @EntityGraph(attributePaths = {"account", "openingPosition"})
     @Query(
         """
         select a
@@ -44,8 +44,12 @@ public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
         Pageable pageable
     );
 
-    @EntityGraph(attributePaths = "account")
+    @EntityGraph(attributePaths = {"account", "openingPosition"})
     List<Asset> findAllByAccountIdOrderByNameAscTickerAscIdAsc(Long accountId);
+
+    @Override
+    @EntityGraph(attributePaths = {"account", "openingPosition"})
+    java.util.Optional<Asset> findById(Long id);
 
     boolean existsByAccountId(Long accountId);
 }
