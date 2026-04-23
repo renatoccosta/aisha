@@ -3,6 +3,7 @@ DELETE FROM investment_operations;
 DELETE FROM investment_assets;
 DELETE FROM entry_transfers;
 DELETE FROM entries;
+DELETE FROM opening_balances;
 DELETE FROM accounts;
 DELETE FROM categories;
 
@@ -44,13 +45,19 @@ INSERT INTO categories (title, description, parent_id) VALUES
 ('Uber', 'Corridas por aplicativo', (SELECT id FROM categories WHERE title = 'Transporte Público')),
 ('Exames', 'Exames e diagnósticos médicos', (SELECT id FROM categories WHERE title = 'Saúde'));
 
-INSERT INTO accounts (title, description, initial_balance, initial_balance_date) VALUES
-('Conta Corrente Nubank', 'Conta principal', 2500.00, DATE '2024-12-31'),
-('Cartão Inter', 'Cartão para compras', -350.00, DATE '2024-12-31'),
-('Carteira', 'Dinheiro em espécie', 200.00, DATE '2024-12-31');
+INSERT INTO accounts (title, description) VALUES
+('Conta Corrente Nubank', 'Conta principal'),
+('Cartão Inter', 'Cartão para compras'),
+('Carteira', 'Dinheiro em espécie');
 
-INSERT INTO accounts (title, description, initial_balance, initial_balance_date, account_type) VALUES
-('XP Investimentos', 'Conta de investimentos para renda variável e renda fixa', 10000.00, DATE '2024-12-31', 'INVESTMENT');
+INSERT INTO accounts (title, description, account_type) VALUES
+('XP Investimentos', 'Conta de investimentos para renda variável e renda fixa', 'INVESTMENT');
+
+INSERT INTO opening_balances (account_id, amount, balance_date) VALUES
+((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), 2500.00, DATE '2024-12-31'),
+((SELECT id FROM accounts WHERE title = 'Cartão Inter'), -350.00, DATE '2024-12-31'),
+((SELECT id FROM accounts WHERE title = 'Carteira'), 200.00, DATE '2024-12-31'),
+((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 10000.00, DATE '2024-12-31');
 
 INSERT INTO entries (account_id, movement_date, settlement_date, description, category_id, notes, amount) VALUES
 ((SELECT id FROM accounts WHERE title = 'Conta Corrente Nubank'), DATE '2025-01-01', DATE '2025-01-01', 'Entrada recorrente', (SELECT id FROM categories WHERE title = 'Renda'), 'Carga sintética 001', 3607.37),

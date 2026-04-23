@@ -7,9 +7,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
 
 @Entity
 @Table(name = "accounts")
@@ -25,11 +28,8 @@ public class Account {
     @Column(name = "description", length = 300)
     private String description;
 
-    @Column(name = "initial_balance", precision = 19, scale = 2)
-    private BigDecimal initialBalance;
-
-    @Column(name = "initial_balance_date")
-    private LocalDate initialBalanceDate;
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private OpeningBalance openingBalance;
 
     @Column(name = "deactivation_date")
     private LocalDate deactivationDate;
@@ -59,19 +59,46 @@ public class Account {
     }
 
     public BigDecimal getInitialBalance() {
-        return initialBalance;
+        return openingBalance == null ? null : openingBalance.getAmount();
     }
 
     public void setInitialBalance(BigDecimal initialBalance) {
-        this.initialBalance = initialBalance;
+        if (initialBalance == null && getInitialBalanceDate() == null) {
+            setOpeningBalance(null);
+            return;
+        }
+
+        OpeningBalance resolvedOpeningBalance = ensureOpeningBalance();
+        resolvedOpeningBalance.setAmount(initialBalance);
     }
 
     public LocalDate getInitialBalanceDate() {
-        return initialBalanceDate;
+        return openingBalance == null ? null : openingBalance.getBalanceDate();
     }
 
     public void setInitialBalanceDate(LocalDate initialBalanceDate) {
-        this.initialBalanceDate = initialBalanceDate;
+        if (initialBalanceDate == null && getInitialBalance() == null) {
+            setOpeningBalance(null);
+            return;
+        }
+
+        OpeningBalance resolvedOpeningBalance = ensureOpeningBalance();
+        resolvedOpeningBalance.setBalanceDate(initialBalanceDate);
+    }
+
+    public OpeningBalance getOpeningBalance() {
+        return openingBalance;
+    }
+
+    public void setOpeningBalance(OpeningBalance openingBalance) {
+        if (this.openingBalance != null) {
+            this.openingBalance.setAccount(null);
+        }
+
+        this.openingBalance = openingBalance;
+        if (openingBalance != null && openingBalance.getAccount() != this) {
+            openingBalance.setAccount(this);
+        }
     }
 
     public AccountType getAccountType() {
@@ -88,5 +115,12 @@ public class Account {
 
     public void setDeactivationDate(LocalDate deactivationDate) {
         this.deactivationDate = deactivationDate;
+    }
+
+    private OpeningBalance ensureOpeningBalance() {
+        if (openingBalance == null) {
+            setOpeningBalance(new OpeningBalance());
+        }
+        return openingBalance;
     }
 }
