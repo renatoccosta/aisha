@@ -3,6 +3,7 @@ package dev.ccosta.aisha.domain.investment;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface InvestmentOperationRepository {
@@ -20,6 +21,8 @@ public interface InvestmentOperationRepository {
     );
 
     Optional<InvestmentOperation> findById(Long id);
+
+    List<InvestmentOperation> findAllByAssetIdOrdered(Long assetId);
 
     InvestmentOperation save(InvestmentOperation operation);
 

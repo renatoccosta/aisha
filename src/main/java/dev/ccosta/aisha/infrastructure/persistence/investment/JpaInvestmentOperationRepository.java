@@ -16,6 +16,9 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
     Page<InvestmentOperation> findAllByOrderByTradeDateDescIdDesc(Pageable pageable);
 
     @EntityGraph(attributePaths = {"asset", "asset.account"})
+    java.util.List<InvestmentOperation> findAllByAssetIdOrderByTradeDateAscIdAsc(Long assetId);
+
+    @EntityGraph(attributePaths = {"asset", "asset.account"})
     @Query(
         """
         select o

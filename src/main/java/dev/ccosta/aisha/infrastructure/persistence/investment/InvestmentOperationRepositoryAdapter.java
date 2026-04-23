@@ -7,6 +7,7 @@ import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -55,6 +56,11 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
     @Override
     public Optional<InvestmentOperation> findById(Long id) {
         return jpaInvestmentOperationRepository.findById(id);
+    }
+
+    @Override
+    public List<InvestmentOperation> findAllByAssetIdOrdered(Long assetId) {
+        return jpaInvestmentOperationRepository.findAllByAssetIdOrderByTradeDateAscIdAsc(assetId);
     }
 
     @Override

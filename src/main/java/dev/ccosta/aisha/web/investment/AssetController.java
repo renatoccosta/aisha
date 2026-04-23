@@ -3,6 +3,7 @@ package dev.ccosta.aisha.web.investment;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.investment.AssetInUseException;
 import dev.ccosta.aisha.application.investment.AssetNotFoundException;
+import dev.ccosta.aisha.application.investment.AssetPositionService;
 import dev.ccosta.aisha.application.investment.AssetService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.investment.Asset;
@@ -41,10 +42,12 @@ public class AssetController {
     private static final Logger log = LoggerFactory.getLogger(AssetController.class);
 
     private final AssetService assetService;
+    private final AssetPositionService assetPositionService;
     private final AccountService accountService;
 
-    public AssetController(AssetService assetService, AccountService accountService) {
+    public AssetController(AssetService assetService, AssetPositionService assetPositionService, AccountService accountService) {
         this.assetService = assetService;
+        this.assetPositionService = assetPositionService;
         this.accountService = accountService;
     }
 
@@ -146,6 +149,25 @@ public class AssetController {
         Asset asset = assetService.findById(id);
         fillFormModel(model, fromDomain(asset), "edit", id, returnTo);
         return "investments/assets/form";
+    }
+
+    /**
+     * Displays the details page for one investment asset, including its calculated position.
+     *
+     * @param id asset identifier
+     * @param returnTo optional safe return path
+     * @param model view model
+     * @return asset details template
+     */
+    @GetMapping("/{id}")
+    public String details(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        model.addAttribute("details", assetPositionService.buildDetails(id));
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/investments/assets"));
+        return "investments/assets/details";
     }
 
     /**

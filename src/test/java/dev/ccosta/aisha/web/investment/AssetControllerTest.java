@@ -6,7 +6,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.application.investment.AssetPositionDetails;
+import dev.ccosta.aisha.application.investment.AssetPositionService;
 import dev.ccosta.aisha.application.investment.AssetService;
+import dev.ccosta.aisha.application.investment.AssetCurrentPosition;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
@@ -30,6 +33,9 @@ class AssetControllerTest {
 
     @Mock
     private AssetService assetService;
+
+    @Mock
+    private AssetPositionService assetPositionService;
 
     @Mock
     private AccountService accountService;
@@ -118,6 +124,33 @@ class AssetControllerTest {
         assertThat(model.getAttribute("selectedAssetType")).isEqualTo(AssetType.STOCK);
         assertThat(model.getAttribute("selectedDescription")).isEqualTo("Petróleo");
         verify(assetService).listPageOrdered(10L, AssetType.STOCK, "Petróleo", 0, 25);
+    }
+
+    @Test
+    void shouldOpenAssetDetailsPage() {
+        Asset asset = new Asset();
+        asset.setName("PETR4");
+        AssetPositionDetails details = new AssetPositionDetails(
+            asset,
+            new AssetCurrentPosition(
+                new BigDecimal("12.0000000000"),
+                new BigDecimal("1234.56"),
+                new BigDecimal("102.88000000"),
+                "BRL",
+                LocalDate.of(2026, 2, 20)
+            ),
+            List.of(),
+            List.of()
+        );
+
+        when(assetPositionService.buildDetails(15L)).thenReturn(details);
+
+        ConcurrentModel model = new ConcurrentModel();
+        String view = assetController.details(15L, "/investments/assets?page=1", model);
+
+        assertThat(view).isEqualTo("investments/assets/details");
+        assertThat(model.getAttribute("details")).isEqualTo(details);
+        assertThat(model.getAttribute("returnTo")).isEqualTo("/investments/assets?page=1");
     }
 
     private AssetForm baseForm() {
