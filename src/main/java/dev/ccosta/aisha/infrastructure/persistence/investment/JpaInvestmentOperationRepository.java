@@ -12,16 +12,16 @@ import org.springframework.data.repository.query.Param;
 
 public interface JpaInvestmentOperationRepository extends JpaRepository<InvestmentOperation, Long> {
 
-    @EntityGraph(attributePaths = {"asset", "account"})
+    @EntityGraph(attributePaths = {"asset", "asset.account"})
     Page<InvestmentOperation> findAllByOrderByTradeDateDescIdDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"asset", "account"})
+    @EntityGraph(attributePaths = {"asset", "asset.account"})
     @Query(
         """
         select o
         from InvestmentOperation o
         where o.settlementDate between :startDate and :endDate
-          and (:accountId is null or o.account.id = :accountId)
+          and (:accountId is null or o.asset.account.id = :accountId)
           and (:operationType is null or o.operationType = :operationType)
           and (
                 :assetFilter is null
@@ -46,8 +46,6 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
         @Param("operationType") InvestmentOperationType operationType,
         Pageable pageable
     );
-
-    boolean existsByAccountId(Long accountId);
 
     boolean existsByAssetId(Long assetId);
 }

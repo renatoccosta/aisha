@@ -65,7 +65,7 @@ class InvestmentOperationControllerTest {
         assertThat(view).isEqualTo("redirect:/investments/operations?page=2&size=50");
         ArgumentCaptor<InvestmentOperation> operationCaptor = ArgumentCaptor.forClass(InvestmentOperation.class);
         ArgumentCaptor<Collection<InvestmentOperationEntryLinkRequest>> linksCaptor = ArgumentCaptor.forClass(Collection.class);
-        verify(operationService).create(operationCaptor.capture(), eq(10L), eq(20L), linksCaptor.capture());
+        verify(operationService).create(operationCaptor.capture(), eq(10L), linksCaptor.capture());
         assertThat(operationCaptor.getValue().getOperationType()).isEqualTo(InvestmentOperationType.BUY);
         assertThat(operationCaptor.getValue().getTradeDate()).isEqualTo(LocalDate.of(2026, 4, 20));
         assertThat(operationCaptor.getValue().getNetAmount()).isEqualByComparingTo("125.50");
@@ -90,6 +90,12 @@ class InvestmentOperationControllerTest {
     void shouldRefreshEntryCandidatesFromAccountAndDate() {
         InvestmentOperationForm form = baseForm();
         Entry entry = new Entry();
+        Account account = new Account();
+        setId(account, 20L);
+        dev.ccosta.aisha.domain.investment.Asset asset = new dev.ccosta.aisha.domain.investment.Asset();
+        asset.setAccount(account);
+
+        when(assetService.findById(10L)).thenReturn(asset);
 
         when(entryService.listMostRecentBySettlementDateBetweenAndFilters(
             LocalDate.of(2026, 3, 21),
@@ -180,7 +186,6 @@ class InvestmentOperationControllerTest {
     private InvestmentOperationForm baseForm() {
         InvestmentOperationForm form = new InvestmentOperationForm();
         form.setAssetId(10L);
-        form.setAccountId(20L);
         form.setOperationType(InvestmentOperationType.BUY);
         form.setTradeDate(LocalDate.of(2026, 4, 20));
         form.setSettlementDate(LocalDate.of(2026, 4, 20));
@@ -202,5 +207,15 @@ class InvestmentOperationControllerTest {
         DateFilterState state = new DateFilterState();
         state.applyCustom(LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30));
         return state;
+    }
+
+    private void setId(Account account, Long id) {
+        try {
+            var idField = Account.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(account, id);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

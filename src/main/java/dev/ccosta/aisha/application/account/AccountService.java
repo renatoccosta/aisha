@@ -5,7 +5,6 @@ import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
-import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
@@ -24,18 +23,15 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final EntryRepository entryRepository;
     private final AssetRepository assetRepository;
-    private final InvestmentOperationRepository investmentOperationRepository;
 
     public AccountService(
         AccountRepository accountRepository,
         EntryRepository entryRepository,
-        AssetRepository assetRepository,
-        InvestmentOperationRepository investmentOperationRepository
+        AssetRepository assetRepository
     ) {
         this.accountRepository = accountRepository;
         this.entryRepository = entryRepository;
         this.assetRepository = assetRepository;
-        this.investmentOperationRepository = investmentOperationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -194,9 +190,6 @@ public class AccountService {
             throw new AccountInUseException(id);
         }
         if (assetRepository.existsByAccountId(id)) {
-            throw new AccountInUseException(id);
-        }
-        if (investmentOperationRepository.existsByAccountId(id)) {
             throw new AccountInUseException(id);
         }
     }

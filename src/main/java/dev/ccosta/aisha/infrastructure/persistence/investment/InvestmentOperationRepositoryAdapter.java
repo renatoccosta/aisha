@@ -63,11 +63,6 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
     }
 
     @Override
-    public boolean existsByAccountId(Long accountId) {
-        return jpaInvestmentOperationRepository.existsByAccountId(accountId);
-    }
-
-    @Override
     public boolean existsByAssetId(Long assetId) {
         return jpaInvestmentOperationRepository.existsByAssetId(assetId);
     }

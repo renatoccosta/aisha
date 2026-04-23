@@ -5,9 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.entry.EntryService;
-import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -42,9 +40,6 @@ class InvestmentOperationServiceTest {
     private AssetRepository assetRepository;
 
     @Mock
-    private AccountService accountService;
-
-    @Mock
     private EntryService entryService;
 
     @InjectMocks
@@ -53,7 +48,6 @@ class InvestmentOperationServiceTest {
     @Test
     void shouldCreateOperationAndLinkEntries() {
         Asset asset = new Asset();
-        Account account = new Account();
         Entry entry = new Entry();
         InvestmentOperation operation = new InvestmentOperation();
         operation.setOperationType(InvestmentOperationType.BUY);
@@ -62,19 +56,16 @@ class InvestmentOperationServiceTest {
         setId(operation, 30L);
 
         when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
-        when(accountService.findById(20L)).thenReturn(account);
         when(investmentOperationRepository.save(operation)).thenReturn(operation);
         when(entryService.findById(40L)).thenReturn(entry);
 
         InvestmentOperation created = investmentOperationService.create(
             operation,
             10L,
-            20L,
             List.of(new InvestmentOperationEntryLinkRequest(40L, new BigDecimal("125.50")))
         );
 
         assertThat(created.getAsset()).isSameAs(asset);
-        assertThat(created.getAccount()).isSameAs(account);
         assertThat(created.getCurrency()).isEqualTo("USD");
         assertThat(created.getSourceType()).isEqualTo(InvestmentOperationSourceType.MANUAL);
         verify(linkRepository).deleteByOperationId(30L);
@@ -88,7 +79,6 @@ class InvestmentOperationServiceTest {
     @Test
     void shouldSkipDuplicateEntryLinks() {
         Asset asset = new Asset();
-        Account account = new Account();
         Entry entry = new Entry();
         InvestmentOperation operation = new InvestmentOperation();
         operation.setOperationType(InvestmentOperationType.DIVIDEND);
@@ -96,7 +86,6 @@ class InvestmentOperationServiceTest {
         setId(operation, 30L);
 
         when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
-        when(accountService.findById(20L)).thenReturn(account);
         when(investmentOperationRepository.save(operation)).thenReturn(operation);
         when(entryService.findById(40L)).thenReturn(entry);
         when(linkRepository.save(any(InvestmentOperationEntryLink.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -104,7 +93,6 @@ class InvestmentOperationServiceTest {
         investmentOperationService.create(
             operation,
             10L,
-            20L,
             List.of(
                 new InvestmentOperationEntryLinkRequest(40L, BigDecimal.ONE),
                 new InvestmentOperationEntryLinkRequest(40L, BigDecimal.TEN)

@@ -1,0 +1,3 @@
+ALTER TABLE investment_operations DROP CONSTRAINT fk_investment_operations_account;
+DROP INDEX idx_investment_operations_account_id;
+ALTER TABLE investment_operations DROP COLUMN account_id;

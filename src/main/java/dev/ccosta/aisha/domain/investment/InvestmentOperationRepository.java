@@ -23,8 +23,6 @@ public interface InvestmentOperationRepository {
 
     InvestmentOperation save(InvestmentOperation operation);
 
-    boolean existsByAccountId(Long accountId);
-
     boolean existsByAssetId(Long assetId);
 
     void deleteById(Long id);

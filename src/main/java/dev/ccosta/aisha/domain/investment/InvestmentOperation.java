@@ -1,6 +1,4 @@
 package dev.ccosta.aisha.domain.investment;
-
-import dev.ccosta.aisha.domain.account.Account;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -29,10 +27,6 @@ public class InvestmentOperation {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "operation_type", nullable = false, length = 30)
@@ -82,14 +76,6 @@ public class InvestmentOperation {
 
     public void setAsset(Asset asset) {
         this.asset = asset;
-    }
-
-    public Account getAccount() {
-        return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
     }
 
     public InvestmentOperationType getOperationType() {

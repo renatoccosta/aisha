@@ -1,8 +1,5 @@
 package dev.ccosta.aisha.application.investment;
-
-import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.entry.EntryService;
-import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -30,20 +27,17 @@ public class InvestmentOperationService {
     private final InvestmentOperationRepository investmentOperationRepository;
     private final InvestmentOperationEntryLinkRepository linkRepository;
     private final AssetRepository assetRepository;
-    private final AccountService accountService;
     private final EntryService entryService;
 
     public InvestmentOperationService(
         InvestmentOperationRepository investmentOperationRepository,
         InvestmentOperationEntryLinkRepository linkRepository,
         AssetRepository assetRepository,
-        AccountService accountService,
         EntryService entryService
     ) {
         this.investmentOperationRepository = investmentOperationRepository;
         this.linkRepository = linkRepository;
         this.assetRepository = assetRepository;
-        this.accountService = accountService;
         this.entryService = entryService;
     }
 
@@ -105,7 +99,6 @@ public class InvestmentOperationService {
      *
      * @param operation operation data
      * @param assetId related asset identifier
-     * @param accountId cash account affected by the operation
      * @param links optional financial entry links
      * @return persisted operation
      */
@@ -113,11 +106,9 @@ public class InvestmentOperationService {
     public InvestmentOperation create(
         InvestmentOperation operation,
         Long assetId,
-        Long accountId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
         operation.setAsset(resolveAsset(assetId));
-        operation.setAccount(resolveAccount(accountId));
         applyDefaults(operation);
         validate(operation);
         InvestmentOperation created = investmentOperationRepository.save(operation);
@@ -131,7 +122,6 @@ public class InvestmentOperationService {
      * @param id operation identifier
      * @param updatedData replacement operation data
      * @param assetId related asset identifier
-     * @param accountId cash account affected by the operation
      * @param links replacement financial entry links
      * @return updated operation
      */
@@ -140,12 +130,10 @@ public class InvestmentOperationService {
         Long id,
         InvestmentOperation updatedData,
         Long assetId,
-        Long accountId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
         InvestmentOperation existing = findById(id);
         existing.setAsset(resolveAsset(assetId));
-        existing.setAccount(resolveAccount(accountId));
         existing.setOperationType(updatedData.getOperationType());
         existing.setTradeDate(updatedData.getTradeDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
@@ -213,13 +201,6 @@ public class InvestmentOperationService {
         }
         return assetRepository.findById(assetId)
             .orElseThrow(() -> new AssetNotFoundException(assetId));
-    }
-
-    private Account resolveAccount(Long accountId) {
-        if (accountId == null) {
-            throw new IllegalArgumentException("Account must be informed");
-        }
-        return accountService.findById(accountId);
     }
 
     private void applyDefaults(InvestmentOperation operation) {
