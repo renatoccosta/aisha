@@ -1462,6 +1462,13 @@ html[data-theme="dark"] .summary-card-neutral .summary-icon {
   font-weight: 600;
 }
 
+html[data-values-hidden="true"] .dashboard-main .summary-card [data-role="value"],
+html[data-values-hidden="true"] .dashboard-main .summary-card [data-role="variation"] {
+  color: transparent;
+  text-shadow: 0 0 0.55rem var(--color-text-secondary);
+  user-select: none;
+}
+
 .variation-up {
   color: #0d6b54;
 }
