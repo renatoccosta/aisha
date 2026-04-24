@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.application.investment;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,6 +10,8 @@ import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
+import dev.ccosta.aisha.domain.investment.BrokerageNote;
+import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
@@ -38,6 +41,9 @@ class InvestmentOperationServiceTest {
 
     @Mock
     private AssetRepository assetRepository;
+
+    @Mock
+    private BrokerageNoteRepository brokerageNoteRepository;
 
     @Mock
     private EntryService entryService;
@@ -100,6 +106,41 @@ class InvestmentOperationServiceTest {
         );
 
         verify(linkRepository).save(any(InvestmentOperationEntryLink.class));
+    }
+
+    @Test
+    void shouldAssociateBrokerageNoteWhenCreatingBrokerNoteOperation() {
+        Asset asset = new Asset();
+        BrokerageNote brokerageNote = new BrokerageNote();
+        InvestmentOperation operation = new InvestmentOperation();
+        operation.setOperationType(InvestmentOperationType.BUY);
+        operation.setTradeDate(LocalDate.of(2026, 4, 20));
+        operation.setSourceType(InvestmentOperationSourceType.BROKER_NOTE);
+        setId(operation, 30L);
+
+        when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
+        when(brokerageNoteRepository.findById(50L)).thenReturn(Optional.of(brokerageNote));
+        when(investmentOperationRepository.save(operation)).thenReturn(operation);
+
+        InvestmentOperation created = investmentOperationService.create(operation, 10L, 50L, List.of());
+
+        assertThat(created.getBrokerageNote()).isSameAs(brokerageNote);
+        verify(linkRepository).deleteByOperationId(30L);
+    }
+
+    @Test
+    void shouldRejectBrokerNoteOperationWithoutBrokerageNote() {
+        Asset asset = new Asset();
+        InvestmentOperation operation = new InvestmentOperation();
+        operation.setOperationType(InvestmentOperationType.BUY);
+        operation.setTradeDate(LocalDate.of(2026, 4, 20));
+        operation.setSourceType(InvestmentOperationSourceType.BROKER_NOTE);
+
+        when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
+
+        assertThatThrownBy(() -> investmentOperationService.create(operation, 10L, List.of()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Brokerage note must be informed for broker note operations");
     }
 
     @Test

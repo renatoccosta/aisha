@@ -28,6 +28,10 @@ public class InvestmentOperation {
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brokerage_note_id")
+    private BrokerageNote brokerageNote;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "operation_type", nullable = false, length = 30)
     private InvestmentOperationType operationType;
@@ -76,6 +80,14 @@ public class InvestmentOperation {
 
     public void setAsset(Asset asset) {
         this.asset = asset;
+    }
+
+    public BrokerageNote getBrokerageNote() {
+        return brokerageNote;
+    }
+
+    public void setBrokerageNote(BrokerageNote brokerageNote) {
+        this.brokerageNote = brokerageNote;
     }
 
     public InvestmentOperationType getOperationType() {

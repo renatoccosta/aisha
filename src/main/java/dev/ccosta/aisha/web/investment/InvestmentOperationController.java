@@ -382,7 +382,7 @@ public class InvestmentOperationController {
         model.addAttribute("operationId", operationId);
         model.addAttribute("assets", assetService.listPageOrdered(0, FORM_OPTION_LIMIT).items());
         model.addAttribute("operationTypes", InvestmentOperationType.values());
-        model.addAttribute("sourceTypes", InvestmentOperationSourceType.values());
+        model.addAttribute("sourceTypes", List.of(InvestmentOperationSourceType.MANUAL));
         model.addAttribute("entryCandidates", entryCandidates);
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/investments/operations"));
     }

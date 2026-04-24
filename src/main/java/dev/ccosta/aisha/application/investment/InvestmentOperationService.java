@@ -3,6 +3,8 @@ import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
+import dev.ccosta.aisha.domain.investment.BrokerageNote;
+import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
@@ -27,17 +29,20 @@ public class InvestmentOperationService {
     private final InvestmentOperationRepository investmentOperationRepository;
     private final InvestmentOperationEntryLinkRepository linkRepository;
     private final AssetRepository assetRepository;
+    private final BrokerageNoteRepository brokerageNoteRepository;
     private final EntryService entryService;
 
     public InvestmentOperationService(
         InvestmentOperationRepository investmentOperationRepository,
         InvestmentOperationEntryLinkRepository linkRepository,
         AssetRepository assetRepository,
+        BrokerageNoteRepository brokerageNoteRepository,
         EntryService entryService
     ) {
         this.investmentOperationRepository = investmentOperationRepository;
         this.linkRepository = linkRepository;
         this.assetRepository = assetRepository;
+        this.brokerageNoteRepository = brokerageNoteRepository;
         this.entryService = entryService;
     }
 
@@ -108,7 +113,27 @@ public class InvestmentOperationService {
         Long assetId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
+        return create(operation, assetId, null, links);
+    }
+
+    /**
+     * Creates an investment operation, optionally associating it with an imported brokerage note.
+     *
+     * @param operation operation data
+     * @param assetId related asset identifier
+     * @param brokerageNoteId optional imported brokerage note identifier
+     * @param links optional financial entry links
+     * @return persisted operation
+     */
+    @Transactional
+    public InvestmentOperation create(
+        InvestmentOperation operation,
+        Long assetId,
+        Long brokerageNoteId,
+        Collection<InvestmentOperationEntryLinkRequest> links
+    ) {
         operation.setAsset(resolveAsset(assetId));
+        operation.setBrokerageNote(resolveBrokerageNote(brokerageNoteId));
         applyDefaults(operation);
         validate(operation);
         InvestmentOperation created = investmentOperationRepository.save(operation);
@@ -132,8 +157,30 @@ public class InvestmentOperationService {
         Long assetId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
+        return update(id, updatedData, assetId, null, links);
+    }
+
+    /**
+     * Updates an investment operation and its optional imported brokerage note association.
+     *
+     * @param id operation identifier
+     * @param updatedData replacement operation data
+     * @param assetId related asset identifier
+     * @param brokerageNoteId optional imported brokerage note identifier
+     * @param links replacement financial entry links
+     * @return updated operation
+     */
+    @Transactional
+    public InvestmentOperation update(
+        Long id,
+        InvestmentOperation updatedData,
+        Long assetId,
+        Long brokerageNoteId,
+        Collection<InvestmentOperationEntryLinkRequest> links
+    ) {
         InvestmentOperation existing = findById(id);
         existing.setAsset(resolveAsset(assetId));
+        existing.setBrokerageNote(resolveBrokerageNote(brokerageNoteId));
         existing.setOperationType(updatedData.getOperationType());
         existing.setTradeDate(updatedData.getTradeDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
@@ -203,6 +250,14 @@ public class InvestmentOperationService {
             .orElseThrow(() -> new AssetNotFoundException(assetId));
     }
 
+    private BrokerageNote resolveBrokerageNote(Long brokerageNoteId) {
+        if (brokerageNoteId == null) {
+            return null;
+        }
+        return brokerageNoteRepository.findById(brokerageNoteId)
+            .orElseThrow(() -> new BrokerageNoteNotFoundException(brokerageNoteId));
+    }
+
     private void applyDefaults(InvestmentOperation operation) {
         operation.setSourceType(operation.getSourceType() == null ? InvestmentOperationSourceType.MANUAL : operation.getSourceType());
         if (!StringUtils.hasText(operation.getCurrency())) {
@@ -221,6 +276,10 @@ public class InvestmentOperationService {
         }
         if (operation.getCurrency().length() != 3) {
             throw new IllegalArgumentException("Operation currency must use a 3-letter ISO code");
+        }
+        if (operation.getSourceType() == InvestmentOperationSourceType.BROKER_NOTE
+            && operation.getBrokerageNote() == null) {
+            throw new IllegalArgumentException("Brokerage note must be informed for broker note operations");
         }
     }
 
