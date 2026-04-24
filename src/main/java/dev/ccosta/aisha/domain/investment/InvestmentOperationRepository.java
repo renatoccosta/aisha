@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface InvestmentOperationRepository {
 
+    List<InvestmentOperation> findAllOrdered();
+
     PagedResult<InvestmentOperation> findPageOrdered(int page, int pageSize);
 
     PagedResult<InvestmentOperation> findPageOrdered(

@@ -47,6 +47,99 @@
         </article>
     </section>
 
+    <section class="card investments-overview-card">
+        <div class="section-heading">
+            <div>
+                <h2 class="chart-title">
+                    <i data-lucide="landmark" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.investments.heading}"></span>
+                </h2>
+                <p th:text="#{dashboard.investments.subtitle}"></p>
+            </div>
+        </div>
+        <div class="dashboard-card-grid investments-summary-grid">
+            <article class="card summary-card summary-card-balance loading" id="investment-position-cost-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="wallet" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.positionCost}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+            <article class="card summary-card summary-card-expense loading" id="investment-net-flow-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="arrow-right-left" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.netFlow}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+            <article class="card summary-card summary-card-revenue loading" id="investment-income-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.income}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+            <article class="card summary-card summary-card-neutral loading" id="investment-open-assets-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="layers-3" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.openAssets}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">0</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+        </div>
+        <p class="chart-meta loading" id="investment-excluded-meta" th:text="#{dashboard.loading}"></p>
+    </section>
+
+    <section class="dashboard-investment-flow-grid">
+        <article class="card chart-card loading" id="investment-allocation-type-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 class="chart-title">
+                        <i data-lucide="pie-chart" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.investments.allocationByType.title}"></span>
+                    </h2>
+                    <p th:text="#{dashboard.investments.allocationByType.subtitle}"></p>
+                </div>
+            </div>
+            <p class="chart-meta" id="investment-allocation-type-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap chart-wrap-donut">
+                <canvas id="investment-allocation-type-chart" th:attr="aria-label=#{dashboard.investments.allocationByType.title}"></canvas>
+            </div>
+        </article>
+
+        <article class="card chart-card loading" id="investment-flow-chart-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 class="chart-title">
+                        <i data-lucide="chart-column-big" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.investments.flowChart.title}"></span>
+                    </h2>
+                    <p th:text="#{dashboard.investments.flowChart.subtitle}"></p>
+                </div>
+            </div>
+            <p class="chart-meta" id="investment-flow-chart-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap">
+                <canvas id="investment-flow-chart" th:attr="aria-label=#{dashboard.investments.flowChart.title}"></canvas>
+            </div>
+        </article>
+    </section>
+
     <section class="dashboard-balance-grid">
         <article class="card chart-card loading" id="account-type-balances-card">
             <div class="chart-card-head">
@@ -206,21 +299,45 @@
         categoryTotalsChartEmpty: /*[[#{dashboard.categoryTotalsChart.empty}]]*/ "Sem dados no período",
         categoryTotalsChartLevelRoot: /*[[#{dashboard.categoryTotalsChart.level.root}]]*/ "Nível: categorias raiz",
         categoryTotalsChartLevelChild: /*[[#{dashboard.categoryTotalsChart.level.child}]]*/ "Nível: subcategorias de {0}",
+        investmentAllocationByTypeEmpty: /*[[#{dashboard.investments.allocationByType.empty}]]*/ "Sem posição por custo para exibir.",
+        investmentAllocationByTypeError: /*[[#{dashboard.investments.allocationByType.error}]]*/ "Não foi possível carregar a alocação por custo.",
+        investmentFlowChartError: /*[[#{dashboard.investments.flowChart.error}]]*/ "Não foi possível carregar o fluxo do período.",
+        investmentFlowSeriesInflows: /*[[#{dashboard.investments.flowChart.series.inflows}]]*/ "Entradas",
+        investmentFlowSeriesOutflows: /*[[#{dashboard.investments.flowChart.series.outflows}]]*/ "Saídas",
+        investmentFlowSeriesNet: /*[[#{dashboard.investments.flowChart.series.net}]]*/ "Fluxo líquido",
+        investmentExcludedNone: /*[[#{dashboard.investments.excluded.none}]]*/ "Todos os dados de investimentos elegíveis foram consolidados em BRL.",
+        investmentExcludedAssetsOnly: /*[[#{dashboard.investments.excluded.assetsOnly}]]*/ "{0} ativo(s) fora do padrão BRL não entraram na visão consolidada.",
+        investmentExcludedOperationsOnly: /*[[#{dashboard.investments.excluded.operationsOnly}]]*/ "{0} operação(ões) fora do padrão BRL não entraram no fluxo consolidado.",
+        investmentExcludedAssetsAndOperations: /*[[#{dashboard.investments.excluded.assetsAndOperations}]]*/ "{0} ativo(s) e {1} operação(ões) fora do padrão BRL não entraram na visão consolidada.",
         accountTypeChecking: /*[[#{account.type.checking}]]*/ "Corrente",
         accountTypeCredit: /*[[#{account.type.credit}]]*/ "Crédito",
         accountTypeInvestment: /*[[#{account.type.investment}]]*/ "Investimento",
         accountTypeFood: /*[[#{account.type.food}]]*/ "Alimentação",
-        accountTypeOther: /*[[#{account.type.other}]]*/ "Outros"
+        accountTypeOther: /*[[#{account.type.other}]]*/ "Outros",
+        assetTypeStock: /*[[#{asset.type.stock}]]*/ "Ação",
+        assetTypeEtf: /*[[#{asset.type.etf}]]*/ "ETF",
+        assetTypeFii: /*[[#{asset.type.fii}]]*/ "FII",
+        assetTypeBondGov: /*[[#{asset.type.bond_gov}]]*/ "Título público",
+        assetTypeBondBank: /*[[#{asset.type.bond_bank}]]*/ "Título bancário",
+        assetTypeMutualFund: /*[[#{asset.type.mutual_fund}]]*/ "Fundo",
+        assetTypePrivatePension: /*[[#{asset.type.private_pension}]]*/ "Previdência privada",
+        assetTypeCrypto: /*[[#{asset.type.crypto}]]*/ "Cripto",
+        assetTypeOther: /*[[#{asset.type.other}]]*/ "Outro"
     };
 
     const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
     const PERCENT_FORMATTER = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const INTEGER_FORMATTER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
     const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR");
     const MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" });
     let accountTypeBalancesChart = null;
     let accountTypeBalancesPayload = [];
     let accountBalancesPayload = [];
     let accountTypeBalancesDrillDownType = null;
+    let investmentAllocationTypeChart = null;
+    let investmentAllocationTypePayload = [];
+    let investmentFlowChart = null;
+    let investmentFlowPayload = null;
     let balanceChart = null;
     let chartPayload = null;
     let revenueExpenseChart = null;
@@ -268,6 +385,21 @@
             case "INVESTMENT": return i18n.accountTypeInvestment;
             case "FOOD": return i18n.accountTypeFood;
             default: return i18n.accountTypeOther;
+        }
+    }
+
+    function assetTypeLabel(assetType) {
+        const key = (assetType || "OTHER").toUpperCase();
+        switch (key) {
+            case "STOCK": return i18n.assetTypeStock;
+            case "ETF": return i18n.assetTypeEtf;
+            case "FII": return i18n.assetTypeFii;
+            case "BOND_GOV": return i18n.assetTypeBondGov;
+            case "BOND_BANK": return i18n.assetTypeBondBank;
+            case "MUTUAL_FUND": return i18n.assetTypeMutualFund;
+            case "PRIVATE_PENSION": return i18n.assetTypePrivatePension;
+            case "CRYPTO": return i18n.assetTypeCrypto;
+            default: return i18n.assetTypeOther;
         }
     }
 
@@ -404,11 +536,263 @@
         variationElement.classList.add("variation-stable");
     }
 
+    function renderCountCard(cardId, value, helperText) {
+        const card = document.getElementById(cardId);
+        if (!card) {
+            return;
+        }
+
+        card.classList.remove("loading");
+        const valueElement = card.querySelector('[data-role="value"]');
+        const variationElement = card.querySelector('[data-role="variation"]');
+        valueElement.textContent = INTEGER_FORMATTER.format(Number(value ?? 0));
+        valueElement.classList.remove("skeleton-line");
+        variationElement.textContent = helperText;
+        variationElement.classList.remove("skeleton-line", "variation-up", "variation-down", "variation-stable");
+        variationElement.classList.add("variation-stable");
+    }
+
+    function buildInvestmentExcludedMessage(overview) {
+        const excludedAssets = Number(overview?.excludedAssetCount ?? 0);
+        const excludedOperations = Number(overview?.excludedOperationCount ?? 0);
+        if (excludedAssets > 0 && excludedOperations > 0) {
+            return i18n.investmentExcludedAssetsAndOperations
+                .replace("{0}", INTEGER_FORMATTER.format(excludedAssets))
+                .replace("{1}", INTEGER_FORMATTER.format(excludedOperations));
+        }
+        if (excludedAssets > 0) {
+            return i18n.investmentExcludedAssetsOnly.replace("{0}", INTEGER_FORMATTER.format(excludedAssets));
+        }
+        if (excludedOperations > 0) {
+            return i18n.investmentExcludedOperationsOnly.replace("{0}", INTEGER_FORMATTER.format(excludedOperations));
+        }
+        return i18n.investmentExcludedNone;
+    }
+
+    function renderInvestmentAllocationChart(canvasId, items, emptyMessage, chartRefName, labelMapper = (item) => item.label) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            return null;
+        }
+
+        const chartTheme = getChartTheme();
+        const rows = Array.isArray(items) ? items : [];
+        const hasItems = rows.length > 0;
+        const labels = hasItems ? rows.map(labelMapper) : [emptyMessage];
+        const data = hasItems ? rows.map((item) => Number(item.amount ?? 0)) : [1];
+        const colors = hasItems
+            ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7", "#22bf96", "#cf6770"]
+            : ["#d7e0e8"];
+
+        if (chartRefName === "type" && investmentAllocationTypeChart) {
+            investmentAllocationTypeChart.destroy();
+        }
+        const chart = new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderColor: chartTheme.surface,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                if (!hasItems) {
+                                    return context.label;
+                                }
+                                const row = rows[context.dataIndex];
+                                return `${context.label}: ${formatCurrency(row?.amount)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (chartRefName === "type") {
+            investmentAllocationTypeChart = chart;
+        }
+        return chart;
+    }
+
+    function renderInvestmentOverview(overview) {
+        renderMetric("investment-position-cost-card", overview.positionCost);
+        renderMetric("investment-net-flow-card", overview.periodNetFlow);
+        renderMetric("investment-income-card", overview.periodIncome);
+        renderCountCard("investment-open-assets-card", overview.openAssetCount, /*[[#{dashboard.investments.openAssets.helper}]]*/ "Quantidade de ativos com posição aberta em custo histórico.");
+
+        const excludedMeta = document.getElementById("investment-excluded-meta");
+        if (excludedMeta) {
+            excludedMeta.classList.remove("loading");
+            excludedMeta.textContent = buildInvestmentExcludedMessage(overview);
+        }
+
+        const typeCard = document.getElementById("investment-allocation-type-card");
+        const typeMeta = document.getElementById("investment-allocation-type-meta");
+        if (typeCard && typeMeta) {
+            typeCard.classList.remove("loading");
+            investmentAllocationTypePayload = Array.isArray(overview.allocationsByAssetType) ? overview.allocationsByAssetType : [];
+            typeMeta.textContent = investmentAllocationTypePayload.length > 0
+                ? `${investmentAllocationTypePayload.length} categoria(s) com posição por custo`
+                : i18n.investmentAllocationByTypeEmpty;
+            renderInvestmentAllocationChart(
+                "investment-allocation-type-chart",
+                investmentAllocationTypePayload,
+                i18n.investmentAllocationByTypeEmpty,
+                "type",
+                (item) => assetTypeLabel(item.key)
+            );
+            if (investmentAllocationTypePayload.length > 0) {
+                typeMeta.textContent = `${investmentAllocationTypePayload.length} categoria(s) com posição por custo`;
+            }
+        }
+
+    }
+
+    function renderInvestmentFlowChart() {
+        if (!investmentFlowPayload) {
+            return;
+        }
+
+        const chartTheme = getChartTheme();
+        const labels = investmentFlowPayload.points.map((point) => (
+            investmentFlowPayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
+        ));
+        const inflows = investmentFlowPayload.points.map((point) => Number(point.inflows));
+        const outflows = investmentFlowPayload.points.map((point) => Number(point.outflows));
+        const netFlow = investmentFlowPayload.points.map((point) => Number(point.netFlow));
+        const canvas = document.getElementById("investment-flow-chart");
+        if (!canvas) {
+            return;
+        }
+
+        if (investmentFlowChart) {
+            investmentFlowChart.destroy();
+        }
+
+        investmentFlowChart = new Chart(canvas, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: i18n.investmentFlowSeriesInflows,
+                        data: inflows,
+                        backgroundColor: "rgba(34, 191, 150, 0.82)",
+                        borderColor: "#22bf96",
+                        borderWidth: 1.2,
+                        stack: "investmentFlow"
+                    },
+                    {
+                        label: i18n.investmentFlowSeriesOutflows,
+                        data: outflows.map((value) => value * -1),
+                        backgroundColor: "rgba(207, 103, 112, 0.82)",
+                        borderColor: "#cf6770",
+                        borderWidth: 1.2,
+                        stack: "investmentFlow"
+                    },
+                    {
+                        type: "line",
+                        label: i18n.investmentFlowSeriesNet,
+                        data: netFlow,
+                        borderColor: "#19647e",
+                        backgroundColor: "rgba(25, 100, 126, 0.12)",
+                        tension: 0.25,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4,
+                        yAxisID: "y"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text,
+                            callback: (value) => formatCurrency(value)
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function loadInvestmentFlowEvolution() {
+        const card = document.getElementById("investment-flow-chart-card");
+        const meta = document.getElementById("investment-flow-chart-meta");
+        if (!card || !meta) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/dashboard/investment-flow", { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("investment-flow-failed");
+            }
+            investmentFlowPayload = await response.json();
+            card.classList.remove("loading");
+            const granularityLabel = investmentFlowPayload.granularity === "MONTH"
+                ? i18n.chartGranularityMonth
+                : i18n.chartGranularityDay;
+            meta.textContent = i18n.chartMetaGranularity.replace("{0}", granularityLabel);
+            renderInvestmentFlowChart();
+        } catch (error) {
+            card.classList.remove("loading");
+            meta.textContent = i18n.investmentFlowChartError;
+        }
+    }
+
     async function loadSummary() {
         const cards = [
             document.getElementById("summary-current-balance"),
             document.getElementById("summary-total-expenses"),
-            document.getElementById("summary-total-revenues")
+            document.getElementById("summary-total-revenues"),
+            document.getElementById("investment-position-cost-card"),
+            document.getElementById("investment-net-flow-card"),
+            document.getElementById("investment-income-card"),
+            document.getElementById("investment-open-assets-card")
         ];
 
         try {
@@ -423,12 +807,26 @@
             accountBalancesPayload = Array.isArray(data.accountBalances) ? data.accountBalances : [];
             accountTypeBalancesDrillDownType = null;
             renderAccountTypeBalances(data.accountTypeBalances);
+            if (data.investmentOverview) {
+                renderInvestmentOverview(data.investmentOverview);
+            }
         } catch (error) {
             const balancesMeta = document.getElementById("account-type-balances-meta");
             const balancesCard = document.getElementById("account-type-balances-card");
+            const investmentTypeCard = document.getElementById("investment-allocation-type-card");
+            const investmentTypeMeta = document.getElementById("investment-allocation-type-meta");
+            const investmentExcludedMeta = document.getElementById("investment-excluded-meta");
             if (balancesMeta && balancesCard) {
                 balancesCard.classList.remove("loading");
                 balancesMeta.textContent = i18n.accountTypeBalancesLoadError;
+            }
+            if (investmentTypeCard && investmentTypeMeta) {
+                investmentTypeCard.classList.remove("loading");
+                investmentTypeMeta.textContent = i18n.investmentAllocationByTypeError;
+            }
+            if (investmentExcludedMeta) {
+                investmentExcludedMeta.classList.remove("loading");
+                investmentExcludedMeta.textContent = i18n.summaryLoadError;
             }
             cards.forEach((card) => {
                 if (!card) {
@@ -1025,6 +1423,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         loadSummary();
+        loadInvestmentFlowEvolution();
         loadBalanceEvolution();
         loadRevenueExpenseEvolution();
         loadExpenseCategoryBreakdown();
@@ -1065,6 +1464,14 @@
             const activeModeButton = document.querySelector(".chart-mode-selector .btn-active");
             const mode = activeModeButton?.dataset.mode ?? "accumulated";
             renderAccountTypeBalances(accountTypeBalancesPayload);
+            renderInvestmentAllocationChart(
+                "investment-allocation-type-chart",
+                investmentAllocationTypePayload,
+                i18n.investmentAllocationByTypeEmpty,
+                "type",
+                (item) => assetTypeLabel(item.key)
+            );
+            renderInvestmentFlowChart();
             renderChart(mode);
             renderRevenueExpenseChart();
             renderExpenseCategoryChart();

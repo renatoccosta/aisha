@@ -8,6 +8,10 @@ import dev.ccosta.aisha.application.dashboard.DashboardCategoryTotalsEvolution;
 import dev.ccosta.aisha.application.dashboard.DashboardCategoryTotalsSeries;
 import dev.ccosta.aisha.application.dashboard.DashboardExpenseCategoryBreakdown;
 import dev.ccosta.aisha.application.dashboard.DashboardExpenseCategoryItem;
+import dev.ccosta.aisha.application.dashboard.DashboardInvestmentAllocation;
+import dev.ccosta.aisha.application.dashboard.DashboardInvestmentFlowEvolution;
+import dev.ccosta.aisha.application.dashboard.DashboardInvestmentFlowPoint;
+import dev.ccosta.aisha.application.dashboard.DashboardInvestmentOverview;
 import dev.ccosta.aisha.application.dashboard.DashboardMetric;
 import dev.ccosta.aisha.application.dashboard.DashboardRevenueExpenseEvolution;
 import dev.ccosta.aisha.application.dashboard.DashboardRevenueExpensePoint;
@@ -43,8 +47,25 @@ public class DashboardApiController {
             toMetric(summary.currentBalance()),
             toMetric(summary.totalExpenses()),
             toMetric(summary.totalRevenues()),
+            toInvestmentOverview(summary.investmentOverview()),
             summary.accountTypeBalances().stream().map(this::toAccountTypeBalance).toList(),
             summary.accountBalances().stream().map(this::toAccountBalance).toList()
+        );
+    }
+
+    @GetMapping("/investment-flow")
+    public DashboardInvestmentFlowEvolutionResponse investmentFlow(HttpSession session) {
+        DateFilterState filter = dateFilterSessionService.getOrCreate(session);
+        DashboardInvestmentFlowEvolution evolution = dashboardService.buildInvestmentFlowEvolution(
+            filter.getStartDate(),
+            filter.getEndDate()
+        );
+
+        return new DashboardInvestmentFlowEvolutionResponse(
+            evolution.startDate(),
+            evolution.endDate(),
+            evolution.granularity(),
+            evolution.points().stream().map(this::toInvestmentFlowPoint).toList()
         );
     }
 
@@ -192,6 +213,26 @@ public class DashboardApiController {
         );
     }
 
+    private DashboardSummaryResponse.DashboardInvestmentOverviewResponse toInvestmentOverview(DashboardInvestmentOverview overview) {
+        return new DashboardSummaryResponse.DashboardInvestmentOverviewResponse(
+            toMetric(overview.positionCost()),
+            toMetric(overview.periodNetFlow()),
+            toMetric(overview.periodIncome()),
+            overview.openAssetCount(),
+            overview.excludedAssetCount(),
+            overview.excludedOperationCount(),
+            overview.allocationsByAssetType().stream().map(this::toInvestmentAllocation).toList()
+        );
+    }
+
+    private DashboardSummaryResponse.DashboardInvestmentAllocationResponse toInvestmentAllocation(DashboardInvestmentAllocation allocation) {
+        return new DashboardSummaryResponse.DashboardInvestmentAllocationResponse(
+            allocation.key(),
+            allocation.label(),
+            allocation.amount()
+        );
+    }
+
     private DashboardBalanceEvolutionResponse.DashboardBalancePointResponse toPoint(DashboardBalancePoint point) {
         return new DashboardBalanceEvolutionResponse.DashboardBalancePointResponse(
             point.date(),
@@ -207,6 +248,17 @@ public class DashboardApiController {
             point.date(),
             point.revenues(),
             point.expenses()
+        );
+    }
+
+    private DashboardInvestmentFlowEvolutionResponse.DashboardInvestmentFlowPointResponse toInvestmentFlowPoint(
+        DashboardInvestmentFlowPoint point
+    ) {
+        return new DashboardInvestmentFlowEvolutionResponse.DashboardInvestmentFlowPointResponse(
+            point.date(),
+            point.inflows(),
+            point.outflows(),
+            point.netFlow()
         );
     }
 

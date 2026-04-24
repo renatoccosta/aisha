@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface AssetRepository {
 
+    List<Asset> findAllOrdered();
+
     PagedResult<Asset> findPageOrdered(int page, int pageSize);
 
     PagedResult<Asset> findPageOrdered(Long accountId, AssetType type, String descriptionFilter, int page, int pageSize);

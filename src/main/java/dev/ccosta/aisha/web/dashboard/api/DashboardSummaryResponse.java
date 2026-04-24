@@ -8,6 +8,7 @@ public record DashboardSummaryResponse(
     DashboardMetricResponse currentBalance,
     DashboardMetricResponse totalExpenses,
     DashboardMetricResponse totalRevenues,
+    DashboardInvestmentOverviewResponse investmentOverview,
     List<DashboardAccountTypeBalanceResponse> accountTypeBalances,
     List<DashboardAccountBalanceResponse> accountBalances
 ) {
@@ -22,6 +23,24 @@ public record DashboardSummaryResponse(
         String accountTitle,
         AccountType accountType,
         BigDecimal balance
+    ) {
+    }
+
+    public record DashboardInvestmentOverviewResponse(
+        DashboardMetricResponse positionCost,
+        DashboardMetricResponse periodNetFlow,
+        DashboardMetricResponse periodIncome,
+        int openAssetCount,
+        int excludedAssetCount,
+        int excludedOperationCount,
+        List<DashboardInvestmentAllocationResponse> allocationsByAssetType
+    ) {
+    }
+
+    public record DashboardInvestmentAllocationResponse(
+        String key,
+        String label,
+        BigDecimal amount
     ) {
     }
 }

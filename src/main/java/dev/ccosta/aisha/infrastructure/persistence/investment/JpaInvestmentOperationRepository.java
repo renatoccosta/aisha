@@ -13,6 +13,9 @@ import org.springframework.data.repository.query.Param;
 public interface JpaInvestmentOperationRepository extends JpaRepository<InvestmentOperation, Long> {
 
     @EntityGraph(attributePaths = {"asset", "asset.account"})
+    java.util.List<InvestmentOperation> findAllByOrderByTradeDateAscIdAsc();
+
+    @EntityGraph(attributePaths = {"asset", "asset.account"})
     Page<InvestmentOperation> findAllByOrderByTradeDateDescIdDesc(Pageable pageable);
 
     @EntityGraph(attributePaths = {"asset", "asset.account"})

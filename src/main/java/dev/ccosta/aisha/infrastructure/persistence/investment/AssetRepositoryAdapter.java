@@ -26,6 +26,11 @@ public class AssetRepositoryAdapter implements AssetRepository {
     }
 
     @Override
+    public List<Asset> findAllOrdered() {
+        return jpaAssetRepository.findAllByOrderByAccountTitleAscNameAscTickerAscIdAsc();
+    }
+
+    @Override
     public PagedResult<Asset> findPageOrdered(int page, int pageSize) {
         Page<Asset> result = jpaAssetRepository.findAllByOrderByAccountTitleAscNameAscTickerAscIdAsc(PageRequest.of(page, pageSize));
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());

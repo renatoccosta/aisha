@@ -27,6 +27,11 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
     }
 
     @Override
+    public List<InvestmentOperation> findAllOrdered() {
+        return jpaInvestmentOperationRepository.findAllByOrderByTradeDateAscIdAsc();
+    }
+
+    @Override
     public PagedResult<InvestmentOperation> findPageOrdered(int page, int pageSize) {
         Page<InvestmentOperation> result = jpaInvestmentOperationRepository.findAllByOrderByTradeDateDescIdDesc(PageRequest.of(page, pageSize));
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
