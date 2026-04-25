@@ -37,6 +37,16 @@
                 <p th:text="#{investments.operations.subtitle}"></p>
             </div>
         </a>
+
+        <a class="card admin-nav-card" th:href="@{/investments/brokerage-note-import}">
+            <div class="admin-nav-card-icon">
+                <i data-lucide="file-up" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 th:text="#{investments.brokerageNoteImport.nav.heading}"></h3>
+                <p th:text="#{investments.brokerageNoteImport.nav.subtitle}"></p>
+            </div>
+        </a>
     </section>
 </main>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>
