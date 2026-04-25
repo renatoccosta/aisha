@@ -1,5 +1,7 @@
 package dev.ccosta.aisha.application.investment;
+import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.entry.EntryService;
+import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -30,6 +32,7 @@ public class InvestmentOperationService {
     private final InvestmentOperationEntryLinkRepository linkRepository;
     private final AssetRepository assetRepository;
     private final BrokerageNoteRepository brokerageNoteRepository;
+    private final AccountService accountService;
     private final EntryService entryService;
 
     public InvestmentOperationService(
@@ -37,12 +40,14 @@ public class InvestmentOperationService {
         InvestmentOperationEntryLinkRepository linkRepository,
         AssetRepository assetRepository,
         BrokerageNoteRepository brokerageNoteRepository,
+        AccountService accountService,
         EntryService entryService
     ) {
         this.investmentOperationRepository = investmentOperationRepository;
         this.linkRepository = linkRepository;
         this.assetRepository = assetRepository;
         this.brokerageNoteRepository = brokerageNoteRepository;
+        this.accountService = accountService;
         this.entryService = entryService;
     }
 
@@ -104,6 +109,7 @@ public class InvestmentOperationService {
      *
      * @param operation operation data
      * @param assetId related asset identifier
+     * @param accountId account where the operation was executed
      * @param links optional financial entry links
      * @return persisted operation
      */
@@ -111,9 +117,10 @@ public class InvestmentOperationService {
     public InvestmentOperation create(
         InvestmentOperation operation,
         Long assetId,
+        Long accountId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
-        return create(operation, assetId, null, links);
+        return create(operation, assetId, accountId, null, links);
     }
 
     /**
@@ -121,6 +128,7 @@ public class InvestmentOperationService {
      *
      * @param operation operation data
      * @param assetId related asset identifier
+     * @param accountId account where the operation was executed
      * @param brokerageNoteId optional imported brokerage note identifier
      * @param links optional financial entry links
      * @return persisted operation
@@ -129,10 +137,12 @@ public class InvestmentOperationService {
     public InvestmentOperation create(
         InvestmentOperation operation,
         Long assetId,
+        Long accountId,
         Long brokerageNoteId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
         operation.setAsset(resolveAsset(assetId));
+        operation.setAccount(resolveAccount(accountId));
         operation.setBrokerageNote(resolveBrokerageNote(brokerageNoteId));
         applyDefaults(operation);
         validate(operation);
@@ -147,6 +157,7 @@ public class InvestmentOperationService {
      * @param id operation identifier
      * @param updatedData replacement operation data
      * @param assetId related asset identifier
+     * @param accountId account where the operation was executed
      * @param links replacement financial entry links
      * @return updated operation
      */
@@ -155,9 +166,10 @@ public class InvestmentOperationService {
         Long id,
         InvestmentOperation updatedData,
         Long assetId,
+        Long accountId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
-        return update(id, updatedData, assetId, null, links);
+        return update(id, updatedData, assetId, accountId, null, links);
     }
 
     /**
@@ -166,6 +178,7 @@ public class InvestmentOperationService {
      * @param id operation identifier
      * @param updatedData replacement operation data
      * @param assetId related asset identifier
+     * @param accountId account where the operation was executed
      * @param brokerageNoteId optional imported brokerage note identifier
      * @param links replacement financial entry links
      * @return updated operation
@@ -175,11 +188,13 @@ public class InvestmentOperationService {
         Long id,
         InvestmentOperation updatedData,
         Long assetId,
+        Long accountId,
         Long brokerageNoteId,
         Collection<InvestmentOperationEntryLinkRequest> links
     ) {
         InvestmentOperation existing = findById(id);
         existing.setAsset(resolveAsset(assetId));
+        existing.setAccount(resolveAccount(accountId));
         existing.setBrokerageNote(resolveBrokerageNote(brokerageNoteId));
         existing.setOperationType(updatedData.getOperationType());
         existing.setTradeDate(updatedData.getTradeDate());
@@ -258,6 +273,13 @@ public class InvestmentOperationService {
             .orElseThrow(() -> new BrokerageNoteNotFoundException(brokerageNoteId));
     }
 
+    private Account resolveAccount(Long accountId) {
+        if (accountId == null) {
+            throw new IllegalArgumentException("Account must be informed");
+        }
+        return accountService.findById(accountId);
+    }
+
     private void applyDefaults(InvestmentOperation operation) {
         operation.setSourceType(operation.getSourceType() == null ? InvestmentOperationSourceType.MANUAL : operation.getSourceType());
         if (!StringUtils.hasText(operation.getCurrency())) {
@@ -270,6 +292,9 @@ public class InvestmentOperationService {
     private void validate(InvestmentOperation operation) {
         if (operation.getOperationType() == null) {
             throw new IllegalArgumentException("Operation type must be informed");
+        }
+        if (operation.getAccount() == null) {
+            throw new IllegalArgumentException("Account must be informed");
         }
         if (operation.getTradeDate() == null) {
             throw new IllegalArgumentException("Trade date must be informed");

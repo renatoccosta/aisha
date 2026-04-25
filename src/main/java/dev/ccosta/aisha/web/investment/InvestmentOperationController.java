@@ -163,7 +163,7 @@ public class InvestmentOperationController {
         }
 
         try {
-            operationService.create(toDomain(form), form.getAssetId(), toLinkRequests(form.getLinkedEntryIds()));
+            operationService.create(toDomain(form), form.getAssetId(), form.getAccountId(), toLinkRequests(form.getLinkedEntryIds()));
         } catch (AssetNotFoundException ex) {
             bindingResult.rejectValue("assetId", "investmentOperationForm.assetId.notNull");
             fillFormModel(model, form, "create", null, returnTo, entryCandidates(form));
@@ -224,7 +224,7 @@ public class InvestmentOperationController {
         }
 
         try {
-            operationService.update(id, toDomain(form), form.getAssetId(), toLinkRequests(form.getLinkedEntryIds()));
+            operationService.update(id, toDomain(form), form.getAssetId(), form.getAccountId(), toLinkRequests(form.getLinkedEntryIds()));
         } catch (AssetNotFoundException ex) {
             bindingResult.rejectValue("assetId", "investmentOperationForm.assetId.notNull");
             fillFormModel(model, form, "edit", id, returnTo, entryCandidates(form));
@@ -381,6 +381,7 @@ public class InvestmentOperationController {
         model.addAttribute("mode", mode);
         model.addAttribute("operationId", operationId);
         model.addAttribute("assets", assetService.listPageOrdered(0, FORM_OPTION_LIMIT).items());
+        model.addAttribute("accounts", accountService.listAvailableForEntryForm(form.getAccountId()));
         model.addAttribute("operationTypes", InvestmentOperationType.values());
         model.addAttribute("sourceTypes", List.of(InvestmentOperationSourceType.MANUAL));
         model.addAttribute("entryCandidates", entryCandidates);
@@ -388,7 +389,7 @@ public class InvestmentOperationController {
     }
 
     private List<Entry> entryCandidates(InvestmentOperationForm form) {
-        if (form.getAssetId() == null) {
+        if (form.getAccountId() == null) {
             return List.of();
         }
 
@@ -397,12 +398,10 @@ public class InvestmentOperationController {
             return List.of();
         }
 
-        Long accountId = assetService.findById(form.getAssetId()).getAccount().getId();
-
         return entryService.listMostRecentBySettlementDateBetweenAndFilters(
             referenceDate.minusDays(ENTRY_CANDIDATE_DAYS_BEFORE),
             referenceDate.plusDays(ENTRY_CANDIDATE_DAYS_AFTER),
-            accountId,
+            form.getAccountId(),
             null,
             null,
             false,
@@ -452,6 +451,7 @@ public class InvestmentOperationController {
     private InvestmentOperationForm fromDomain(InvestmentOperation operation) {
         InvestmentOperationForm form = new InvestmentOperationForm();
         form.setAssetId(operation.getAsset().getId());
+        form.setAccountId(operation.getAccount().getId());
         form.setOperationType(operation.getOperationType());
         form.setTradeDate(operation.getTradeDate());
         form.setSettlementDate(operation.getSettlementDate());

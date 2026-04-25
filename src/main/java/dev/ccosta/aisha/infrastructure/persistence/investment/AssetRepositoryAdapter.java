@@ -27,29 +27,23 @@ public class AssetRepositoryAdapter implements AssetRepository {
 
     @Override
     public List<Asset> findAllOrdered() {
-        return jpaAssetRepository.findAllByOrderByAccountTitleAscNameAscTickerAscIdAsc();
+        return jpaAssetRepository.findAllByOrderByNameAscTickerAscIdAsc();
     }
 
     @Override
     public PagedResult<Asset> findPageOrdered(int page, int pageSize) {
-        Page<Asset> result = jpaAssetRepository.findAllByOrderByAccountTitleAscNameAscTickerAscIdAsc(PageRequest.of(page, pageSize));
+        Page<Asset> result = jpaAssetRepository.findAllByOrderByNameAscTickerAscIdAsc(PageRequest.of(page, pageSize));
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
     @Override
-    public PagedResult<Asset> findPageOrdered(Long accountId, AssetType type, String descriptionFilter, int page, int pageSize) {
+    public PagedResult<Asset> findPageOrdered(AssetType type, String descriptionFilter, int page, int pageSize) {
         Page<Asset> result = jpaAssetRepository.searchByFilters(
-            accountId,
             type,
             normalizeTextFilter(descriptionFilter),
             PageRequest.of(page, pageSize)
         );
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
-    }
-
-    @Override
-    public List<Asset> findAllByAccountIdOrdered(Long accountId) {
-        return jpaAssetRepository.findAllByAccountIdOrderByNameAscTickerAscIdAsc(accountId);
     }
 
     @Override
@@ -60,11 +54,6 @@ public class AssetRepositoryAdapter implements AssetRepository {
     @Override
     public Asset save(Asset asset) {
         return jpaAssetRepository.save(asset);
-    }
-
-    @Override
-    public boolean existsByAccountId(Long accountId) {
-        return jpaAssetRepository.existsByAccountId(accountId);
     }
 
     @Override

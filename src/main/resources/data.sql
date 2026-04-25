@@ -589,14 +589,14 @@ INSERT INTO entry_transfers (origin_entry_id, destination_entry_id, created_at, 
     'Transferência seed: Carteira para Nubank'
 );
 
-INSERT INTO investment_assets (account_id, asset_type, name, ticker, isin, issuer, currency, maturity_date, indexer_type, indexer_spread) VALUES
-((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'STOCK', 'Petróleo Brasileiro S.A. PN', 'PETR4', 'BRPETRACNPR6', 'Petrobras', 'BRL', NULL, 'NONE', NULL),
-((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'FII', 'CSHG Logística FII', 'HGLG11', 'BRHGLGCTF004', 'CSHG', 'BRL', NULL, 'NONE', NULL),
-((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'ETF', 'iShares Ibovespa Fundo de Índice', 'BOVA11', 'BRBOVACTF003', 'BlackRock Brasil', 'BRL', NULL, 'NONE', NULL),
-((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'BOND_GOV', 'Tesouro Selic 2029', NULL, NULL, 'Tesouro Nacional', 'BRL', DATE '2029-03-01', 'SELIC', '100% SELIC'),
-((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'BOND_BANK', 'CDB Banco Inter 110% CDI', NULL, NULL, 'Banco Inter', 'BRL', DATE '2027-08-15', 'CDI', '110% CDI'),
-((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'MUTUAL_FUND', 'Fundo XPTO Multimercado', NULL, NULL, 'Gestora XPTO', 'BRL', NULL, 'NONE', NULL),
-((SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'CRYPTO', 'Bitcoin', 'BTC', NULL, 'Bitcoin Network', 'BRL', NULL, 'NONE', NULL);
+INSERT INTO investment_assets (asset_type, name, ticker, isin, issuer, currency, maturity_date, indexer_type, indexer_spread) VALUES
+('STOCK', 'Petróleo Brasileiro S.A. PN', 'PETR4', 'BRPETRACNPR6', 'Petrobras', 'BRL', NULL, 'NONE', NULL),
+('FII', 'CSHG Logística FII', 'HGLG11', 'BRHGLGCTF004', 'CSHG', 'BRL', NULL, 'NONE', NULL),
+('ETF', 'iShares Ibovespa Fundo de Índice', 'BOVA11', 'BRBOVACTF003', 'BlackRock Brasil', 'BRL', NULL, 'NONE', NULL),
+('BOND_GOV', 'Tesouro Selic 2029', NULL, NULL, 'Tesouro Nacional', 'BRL', DATE '2029-03-01', 'SELIC', '100% SELIC'),
+('BOND_BANK', 'CDB Banco Inter 110% CDI', NULL, NULL, 'Banco Inter', 'BRL', DATE '2027-08-15', 'CDI', '110% CDI'),
+('MUTUAL_FUND', 'Fundo XPTO Multimercado', NULL, NULL, 'Gestora XPTO', 'BRL', NULL, 'NONE', NULL),
+('CRYPTO', 'Bitcoin', 'BTC', NULL, 'Bitcoin Network', 'BRL', NULL, 'NONE', NULL);
 
 INSERT INTO entries (account_id, movement_date, settlement_date, description, category_id, notes, amount, entry_source, registration_date, entry_type) VALUES
 ((SELECT id FROM accounts WHERE title = 'XP Investimentos'), DATE '2026-02-13', DATE '2026-02-15', 'Compra PETR4', (SELECT id FROM categories WHERE title = 'Ações'), 'Seed investimento 001 - compra PETR4', -1578.45, 'MANUAL', DATE '2026-02-13', 'REGULAR'),
@@ -608,15 +608,15 @@ INSERT INTO entries (account_id, movement_date, settlement_date, description, ca
 ((SELECT id FROM accounts WHERE title = 'XP Investimentos'), DATE '2026-02-23', DATE '2026-02-25', 'Venda BOVA11', (SELECT id FROM categories WHERE title = 'Ações'), 'Seed investimento 007 - venda BOVA11', 1240.75, 'MANUAL', DATE '2026-02-23', 'REGULAR'),
 ((SELECT id FROM accounts WHERE title = 'XP Investimentos'), DATE '2026-02-24', DATE '2026-02-24', 'Taxa de custódia', (SELECT id FROM categories WHERE title = 'Investimentos'), 'Seed investimento 008 - taxa de custódia', -12.90, 'MANUAL', DATE '2026-02-24', 'REGULAR');
 
-INSERT INTO investment_operations (asset_id, operation_type, trade_date, settlement_date, quantity, unit_price, gross_amount, net_amount, fees, taxes, currency, notes, source_type) VALUES
-((SELECT id FROM investment_assets WHERE ticker = 'PETR4'), 'BUY', DATE '2026-02-13', DATE '2026-02-15', 50.0000000000, 31.50000000, 1575.00, 1578.45, 3.45, 0.00, 'BRL', 'Compra manual de PETR4 com corretagem e emolumentos.', 'MANUAL'),
-((SELECT id FROM investment_assets WHERE ticker = 'HGLG11'), 'BUY', DATE '2026-02-14', DATE '2026-02-18', 10.0000000000, 131.00000000, 1310.00, 1312.30, 2.30, 0.00, 'BRL', 'Compra manual de cotas de HGLG11.', 'MANUAL'),
-((SELECT id FROM investment_assets WHERE name = 'Tesouro Selic 2029'), 'BUY', DATE '2026-02-17', DATE '2026-02-17', 0.5000000000, 10000.00000000, 5000.00, 5000.00, 0.00, 0.00, 'BRL', 'Aplicação em título público pós-fixado.', 'MANUAL'),
-((SELECT id FROM investment_assets WHERE name = 'CDB Banco Inter 110% CDI'), 'BUY', DATE '2026-02-18', DATE '2026-02-18', 3000.0000000000, 1.00000000, 3000.00, 3000.00, 0.00, 0.00, 'BRL', 'Aplicação em CDB com liquidez no vencimento.', 'MANUAL'),
-((SELECT id FROM investment_assets WHERE ticker = 'PETR4'), 'DIVIDEND', DATE '2026-02-20', DATE '2026-02-20', 50.0000000000, 0.85000000, 42.50, 42.50, 0.00, 0.00, 'BRL', 'Dividendo creditado em conta de investimento.', 'MANUAL'),
-((SELECT id FROM investment_assets WHERE name = 'CDB Banco Inter 110% CDI'), 'INTEREST', DATE '2026-02-21', DATE '2026-02-21', NULL, NULL, 27.89, 27.89, 0.00, 0.00, 'BRL', 'Rendimento bruto creditado pelo CDB.', 'MANUAL'),
-((SELECT id FROM investment_assets WHERE ticker = 'BOVA11'), 'SELL', DATE '2026-02-23', DATE '2026-02-25', 8.0000000000, 155.50000000, 1244.00, 1240.75, 2.10, 1.15, 'BRL', 'Venda manual de cotas de ETF.', 'MANUAL'),
-((SELECT id FROM investment_assets WHERE ticker = 'BOVA11'), 'FEE', DATE '2026-02-24', DATE '2026-02-24', NULL, NULL, 12.90, 12.90, 12.90, 0.00, 'BRL', 'Taxa mensal de custódia da corretora.', 'MANUAL');
+INSERT INTO investment_operations (asset_id, account_id, operation_type, trade_date, settlement_date, quantity, unit_price, gross_amount, net_amount, fees, taxes, currency, notes, source_type) VALUES
+((SELECT id FROM investment_assets WHERE ticker = 'PETR4'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'BUY', DATE '2026-02-13', DATE '2026-02-15', 50.0000000000, 31.50000000, 1575.00, 1578.45, 3.45, 0.00, 'BRL', 'Compra manual de PETR4 com corretagem e emolumentos.', 'MANUAL'),
+((SELECT id FROM investment_assets WHERE ticker = 'HGLG11'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'BUY', DATE '2026-02-14', DATE '2026-02-18', 10.0000000000, 131.00000000, 1310.00, 1312.30, 2.30, 0.00, 'BRL', 'Compra manual de cotas de HGLG11.', 'MANUAL'),
+((SELECT id FROM investment_assets WHERE name = 'Tesouro Selic 2029'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'BUY', DATE '2026-02-17', DATE '2026-02-17', 0.5000000000, 10000.00000000, 5000.00, 5000.00, 0.00, 0.00, 'BRL', 'Aplicação em título público pós-fixado.', 'MANUAL'),
+((SELECT id FROM investment_assets WHERE name = 'CDB Banco Inter 110% CDI'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'BUY', DATE '2026-02-18', DATE '2026-02-18', 3000.0000000000, 1.00000000, 3000.00, 3000.00, 0.00, 0.00, 'BRL', 'Aplicação em CDB com liquidez no vencimento.', 'MANUAL'),
+((SELECT id FROM investment_assets WHERE ticker = 'PETR4'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'DIVIDEND', DATE '2026-02-20', DATE '2026-02-20', 50.0000000000, 0.85000000, 42.50, 42.50, 0.00, 0.00, 'BRL', 'Dividendo creditado em conta de investimento.', 'MANUAL'),
+((SELECT id FROM investment_assets WHERE name = 'CDB Banco Inter 110% CDI'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'INTEREST', DATE '2026-02-21', DATE '2026-02-21', NULL, NULL, 27.89, 27.89, 0.00, 0.00, 'BRL', 'Rendimento bruto creditado pelo CDB.', 'MANUAL'),
+((SELECT id FROM investment_assets WHERE ticker = 'BOVA11'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'SELL', DATE '2026-02-23', DATE '2026-02-25', 8.0000000000, 155.50000000, 1244.00, 1240.75, 2.10, 1.15, 'BRL', 'Venda manual de cotas de ETF.', 'MANUAL'),
+((SELECT id FROM investment_assets WHERE ticker = 'BOVA11'), (SELECT id FROM accounts WHERE title = 'XP Investimentos'), 'FEE', DATE '2026-02-24', DATE '2026-02-24', NULL, NULL, 12.90, 12.90, 12.90, 0.00, 'BRL', 'Taxa mensal de custódia da corretora.', 'MANUAL');
 
 INSERT INTO investment_operation_entries (operation_id, entry_id, allocated_amount) VALUES
 ((SELECT id FROM investment_operations WHERE notes = 'Compra manual de PETR4 com corretagem e emolumentos.'), (SELECT id FROM entries WHERE notes = 'Seed investimento 001 - compra PETR4'), 1578.45),

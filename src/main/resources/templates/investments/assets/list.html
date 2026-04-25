@@ -42,20 +42,8 @@
                 hx-target="#assets-listing"
                 hx-swap="outerHTML"
                 hx-push-url="true"
-                hx-trigger="input changed delay:400ms from:#filter-description, search from:#filter-description, change from:#filter-account, change from:#filter-type">
+                hx-trigger="input changed delay:400ms from:#filter-description, search from:#filter-description, change from:#filter-type">
                 <div class="grid-2">
-                    <div class="field">
-                        <label for="filter-account" th:text="#{investments.assets.list.filter.account}"></label>
-                        <select id="filter-account" name="accountId">
-                            <option value="" th:text="#{investments.assets.list.filter.allAccounts}"></option>
-                            <option
-                                th:each="account : ${accountOptions}"
-                                th:value="${account.id}"
-                                th:selected="${selectedAccountId != null and selectedAccountId == account.id}"
-                                th:text="${account.title}">
-                            </option>
-                        </select>
-                    </div>
                     <div class="field">
                         <label for="filter-type" th:text="#{investments.assets.list.filter.type}"></label>
                         <select id="filter-type" name="type">
@@ -93,7 +81,6 @@
                     hx-get="/investments/assets/fragments/table"
                     hx-target="#assets-listing"
                     hx-swap="outerHTML">
-                    <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="type" th:value="${selectedAssetType}">
                     <input type="hidden" name="description" th:value="${selectedDescription}">
                     <input type="hidden" name="page" value="0">
@@ -115,7 +102,6 @@
                     hx-get="/investments/assets/fragments/table"
                     hx-target="#assets-listing"
                     hx-swap="outerHTML">
-                    <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="type" th:value="${selectedAssetType}">
                     <input type="hidden" name="description" th:value="${selectedDescription}">
                     <input type="hidden" name="size" th:value="${pagination.pageSize}">
@@ -151,7 +137,6 @@
             hx-swap="outerHTML"
             th:attr="hx-confirm=#{investments.assets.list.confirm.bulkDelete}">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <input type="hidden" name="accountId" th:value="${selectedAccountId}">
             <input type="hidden" name="type" th:value="${selectedAssetType}">
             <input type="hidden" name="description" th:value="${selectedDescription}">
             <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
@@ -216,12 +201,6 @@
                         </th>
                         <th>
                             <span class="table-heading-label">
-                                <i data-lucide="briefcase" aria-hidden="true"></i>
-                                <span th:text="#{investments.assets.list.table.account}"></span>
-                            </span>
-                        </th>
-                        <th>
-                            <span class="table-heading-label">
                                 <i data-lucide="building-2" aria-hidden="true"></i>
                                 <span th:text="#{investments.assets.list.table.issuer}"></span>
                             </span>
@@ -254,7 +233,7 @@
                     </thead>
                     <tbody>
                     <tr th:if="${#lists.isEmpty(assets)}" class="empty-row">
-                        <td colspan="10" class="empty" th:text="#{investments.assets.list.empty}"></td>
+                        <td colspan="9" class="empty" th:text="#{investments.assets.list.empty}"></td>
                     </tr>
                     <tr th:each="asset : ${assets}">
                         <td class="cell-select" th:attr="data-label=#{investments.assets.list.table.select}">
@@ -263,7 +242,6 @@
                         <td th:attr="data-label=#{investments.assets.list.table.name}" th:text="${asset.name}"></td>
                         <td th:attr="data-label=#{investments.assets.list.table.ticker}" th:text="${asset.ticker != null && !asset.ticker.isBlank() ? asset.ticker : '-'}"></td>
                         <td th:attr="data-label=#{investments.assets.list.table.type}" th:text="#{${'asset.type.' + (asset.type != null ? asset.type.name().toLowerCase() : 'other')}}"></td>
-                        <td th:attr="data-label=#{investments.assets.list.table.account}" th:text="${asset.account.title}"></td>
                         <td th:attr="data-label=#{investments.assets.list.table.issuer}" th:text="${asset.issuer != null && !asset.issuer.isBlank() ? asset.issuer : '-'}"></td>
                         <td
                             th:attr="data-label=#{investments.assets.list.table.maturityDate}"
@@ -295,7 +273,7 @@
                                     <button
                                         class="action-menu-item action-menu-item-danger"
                                         type="button"
-                                        th:attr="hx-post=@{/investments/assets/{id}/delete(id=${asset.id},accountId=${selectedAccountId},type=${selectedAssetType},description=${selectedDescription},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{investments.assets.list.confirm.delete}"
+                                        th:attr="hx-post=@{/investments/assets/{id}/delete(id=${asset.id},type=${selectedAssetType},description=${selectedDescription},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{investments.assets.list.confirm.delete}"
                                         hx-target="#assets-listing"
                                         hx-swap="outerHTML">
                                         <i data-lucide="trash-2" aria-hidden="true"></i>

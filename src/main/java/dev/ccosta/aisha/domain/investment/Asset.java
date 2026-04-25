@@ -1,6 +1,5 @@
 package dev.ccosta.aisha.domain.investment;
 
-import dev.ccosta.aisha.domain.account.Account;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,8 +9,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -27,10 +24,6 @@ public class Asset {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "asset_type", nullable = false, length = 30)
@@ -66,14 +59,6 @@ public class Asset {
 
     public Long getId() {
         return id;
-    }
-
-    public Account getAccount() {
-        return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
     }
 
     public AssetType getType() {

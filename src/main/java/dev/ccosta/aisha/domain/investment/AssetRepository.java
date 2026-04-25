@@ -11,15 +11,11 @@ public interface AssetRepository {
 
     PagedResult<Asset> findPageOrdered(int page, int pageSize);
 
-    PagedResult<Asset> findPageOrdered(Long accountId, AssetType type, String descriptionFilter, int page, int pageSize);
-
-    List<Asset> findAllByAccountIdOrdered(Long accountId);
+    PagedResult<Asset> findPageOrdered(AssetType type, String descriptionFilter, int page, int pageSize);
 
     Optional<Asset> findById(Long id);
 
     Asset save(Asset asset);
-
-    boolean existsByAccountId(Long accountId);
 
     void deleteById(Long id);
 

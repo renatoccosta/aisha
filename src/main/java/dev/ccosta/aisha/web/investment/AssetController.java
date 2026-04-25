@@ -1,11 +1,9 @@
 package dev.ccosta.aisha.web.investment;
 
-import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.investment.AssetInUseException;
 import dev.ccosta.aisha.application.investment.AssetNotFoundException;
 import dev.ccosta.aisha.application.investment.AssetPositionService;
 import dev.ccosta.aisha.application.investment.AssetService;
-import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetType;
@@ -43,12 +41,10 @@ public class AssetController {
 
     private final AssetService assetService;
     private final AssetPositionService assetPositionService;
-    private final AccountService accountService;
 
-    public AssetController(AssetService assetService, AssetPositionService assetPositionService, AccountService accountService) {
+    public AssetController(AssetService assetService, AssetPositionService assetPositionService) {
         this.assetService = assetService;
         this.assetPositionService = assetPositionService;
-        this.accountService = accountService;
     }
 
     /**
@@ -61,14 +57,13 @@ public class AssetController {
      */
     @GetMapping
     public String list(
-        @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "type", required = false) AssetType type,
         @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, accountId, type, description, page, size);
+        fillListing(model, type, description, page, size);
         return "investments/assets/list";
     }
 
@@ -82,14 +77,13 @@ public class AssetController {
      */
     @GetMapping("/fragments/table")
     public String table(
-        @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "type", required = false) AssetType type,
         @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, accountId, type, description, page, size);
+        fillListing(model, type, description, page, size);
         return "investments/assets/list :: table";
     }
 
@@ -128,7 +122,7 @@ public class AssetController {
             return "investments/assets/form";
         }
 
-        assetService.create(toDomain(form), form.getAccountId());
+        assetService.create(toDomain(form));
         return ReturnPathSupport.resolveRedirect(returnTo, "/investments/assets");
     }
 
@@ -193,7 +187,7 @@ public class AssetController {
             return "investments/assets/form";
         }
 
-        assetService.update(id, toDomain(form), form.getAccountId());
+        assetService.update(id, toDomain(form));
         return ReturnPathSupport.resolveRedirect(returnTo, "/investments/assets");
     }
 
@@ -210,7 +204,6 @@ public class AssetController {
     @PostMapping("/{id}/delete")
     public String delete(
         @PathVariable Long id,
-        @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "type", required = false) AssetType type,
         @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "page", required = false) Integer page,
@@ -220,7 +213,7 @@ public class AssetController {
     ) {
         assetService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, accountId, type, description, page, size);
+            fillListing(model, type, description, page, size);
             return "investments/assets/list :: table";
         }
         return "redirect:/investments/assets";
@@ -239,7 +232,6 @@ public class AssetController {
     @PostMapping("/bulk-delete")
     public String bulkDelete(
         @RequestParam(name = "ids", required = false) List<Long> ids,
-        @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "type", required = false) AssetType type,
         @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "page", required = false) Integer page,
@@ -249,7 +241,7 @@ public class AssetController {
     ) {
         assetService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, accountId, type, description, page, size);
+            fillListing(model, type, description, page, size);
             return "investments/assets/list :: table";
         }
         return "redirect:/investments/assets";
@@ -268,7 +260,7 @@ public class AssetController {
             ex.getMessage(),
             ex
         );
-        fillListing(model, null, null, null, null, null);
+        fillListing(model, null, null, null, null);
         model.addAttribute("hasError", true);
         if (isHtmx(request)) {
             return "investments/assets/list :: table";
@@ -292,30 +284,27 @@ public class AssetController {
         return "errors/404";
     }
 
-    private void fillListing(Model model, Long accountId, AssetType type, String description, Integer page, Integer size) {
+    private void fillListing(Model model, AssetType type, String description, Integer page, Integer size) {
         int requestedPage = PaginationSupport.sanitizePage(page);
         int pageSize = PaginationSupport.sanitizePageSize(size);
         String selectedDescription = normalizeFilter(description);
-        PagedResult<Asset> pageResult = assetService.listPageOrdered(accountId, type, selectedDescription, requestedPage, pageSize);
+        PagedResult<Asset> pageResult = assetService.listPageOrdered(type, selectedDescription, requestedPage, pageSize);
         int effectivePage = PaginationSupport.clampPageIndex(requestedPage, pageResult.totalPages());
         if (effectivePage != requestedPage) {
-            pageResult = assetService.listPageOrdered(accountId, type, selectedDescription, effectivePage, pageSize);
+            pageResult = assetService.listPageOrdered(type, selectedDescription, effectivePage, pageSize);
         }
 
         PaginationView pagination = PaginationSupport.toView(pageResult);
         model.addAttribute("assets", pageResult.items());
         model.addAttribute("pagination", pagination);
         model.addAttribute("allowedPageSizes", PaginationSupport.ALLOWED_PAGE_SIZES);
-        model.addAttribute("accountOptions", accountService.listAvailableForEntryForm(accountId));
         model.addAttribute("assetTypes", AssetType.values());
-        model.addAttribute("selectedAccountId", accountId);
         model.addAttribute("selectedAssetType", type);
         model.addAttribute("selectedDescription", selectedDescription);
         model.addAttribute(
             "returnTo",
             ReturnPathSupport.buildReturnPath(
                 "/investments/assets",
-                "accountId", accountId,
                 "type", type,
                 "description", selectedDescription,
                 "page", pagination.page(),
@@ -330,7 +319,6 @@ public class AssetController {
         model.addAttribute("assetId", assetId);
         model.addAttribute("assetTypes", AssetType.values());
         model.addAttribute("indexerTypes", AssetIndexerType.values());
-        model.addAttribute("accounts", accountService.listAvailableForEntryForm(form.getAccountId()));
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/investments/assets"));
     }
 
@@ -358,7 +346,6 @@ public class AssetController {
 
     private AssetForm fromDomain(Asset asset) {
         AssetForm form = new AssetForm();
-        form.setAccountId(asset.getAccount().getId());
         form.setType(asset.getType());
         form.setName(asset.getName());
         form.setTicker(asset.getTicker());

@@ -6,8 +6,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import dev.ccosta.aisha.application.account.AccountService;
-import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -31,27 +29,21 @@ class AssetServiceTest {
     @Mock
     private InvestmentOperationRepository investmentOperationRepository;
 
-    @Mock
-    private AccountService accountService;
-
     @InjectMocks
     private AssetService assetService;
 
     @Test
     void shouldCreateAssetWithDefaults() {
-        Account account = new Account();
         Asset asset = new Asset();
         asset.setName("PETR4");
         asset.setTicker("PETR4");
         asset.setType(AssetType.STOCK);
         asset.setCurrency("brl");
 
-        when(accountService.findById(10L)).thenReturn(account);
         when(assetRepository.save(asset)).thenReturn(asset);
 
-        Asset created = assetService.create(asset, 10L);
+        Asset created = assetService.create(asset);
 
-        assertThat(created.getAccount()).isSameAs(account);
         assertThat(created.getCurrency()).isEqualTo("BRL");
         assertThat(created.getIndexerType()).isEqualTo(AssetIndexerType.NONE);
         verify(assetRepository).save(asset);
@@ -59,7 +51,6 @@ class AssetServiceTest {
 
     @Test
     void shouldCreateAssetWithOpeningPositionDefaults() {
-        Account account = new Account();
         Asset asset = new Asset();
         asset.setName("Tesouro Selic");
         asset.setCurrency("brl");
@@ -67,10 +58,9 @@ class AssetServiceTest {
         asset.setOpeningPositionQuantity(new BigDecimal("15.5000000000"));
         asset.setOpeningPositionTotalCost(new BigDecimal("1500.25"));
 
-        when(accountService.findById(10L)).thenReturn(account);
         when(assetRepository.save(asset)).thenReturn(asset);
 
-        Asset created = assetService.create(asset, 10L);
+        Asset created = assetService.create(asset);
 
         assertThat(created.getOpeningPositionDate()).isEqualTo(LocalDate.of(2026, 1, 31));
         assertThat(created.getOpeningPositionQuantity()).isEqualByComparingTo("15.5000000000");
@@ -80,13 +70,10 @@ class AssetServiceTest {
 
     @Test
     void shouldRejectBlankAssetName() {
-        Account account = new Account();
         Asset asset = new Asset();
         asset.setName(" ");
 
-        when(accountService.findById(10L)).thenReturn(account);
-
-        assertThatThrownBy(() -> assetService.create(asset, 10L))
+        assertThatThrownBy(() -> assetService.create(asset))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("name");
 
@@ -95,14 +82,11 @@ class AssetServiceTest {
 
     @Test
     void shouldRejectPartialOpeningPosition() {
-        Account account = new Account();
         Asset asset = new Asset();
         asset.setName("Tesouro Selic");
         asset.setOpeningPositionDate(LocalDate.of(2026, 1, 31));
 
-        when(accountService.findById(10L)).thenReturn(account);
-
-        assertThatThrownBy(() -> assetService.create(asset, 10L))
+        assertThatThrownBy(() -> assetService.create(asset))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Opening position");
 

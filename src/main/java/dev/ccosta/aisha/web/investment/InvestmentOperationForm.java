@@ -21,6 +21,9 @@ public class InvestmentOperationForm {
     @NotNull(message = "{investmentOperationForm.assetId.notNull}")
     private Long assetId;
 
+    @NotNull(message = "{investmentOperationForm.accountId.notNull}")
+    private Long accountId;
+
     @NotNull(message = "{investmentOperationForm.operationType.notNull}")
     private InvestmentOperationType operationType = InvestmentOperationType.BUY;
 
@@ -67,6 +70,14 @@ public class InvestmentOperationForm {
 
     public void setAssetId(Long assetId) {
         this.assetId = assetId;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
     public InvestmentOperationType getOperationType() {

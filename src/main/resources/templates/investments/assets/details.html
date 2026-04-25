@@ -40,10 +40,6 @@
         </div>
         <dl class="import-summary-grid">
             <div>
-                <dt th:text="#{investments.assets.details.field.account}"></dt>
-                <dd th:text="${asset.account.title}"></dd>
-            </div>
-            <div>
                 <dt th:text="#{investments.assets.details.field.type}"></dt>
                 <dd th:text="#{${'asset.type.' + asset.type.name().toLowerCase()}}"></dd>
             </div>

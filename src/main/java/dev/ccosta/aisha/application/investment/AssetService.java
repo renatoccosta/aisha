@@ -1,7 +1,5 @@
 package dev.ccosta.aisha.application.investment;
 
-import dev.ccosta.aisha.application.account.AccountService;
-import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -17,23 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Coordinates asset lifecycle operations and validates account ownership for investment instruments.
+ * Coordinates asset lifecycle operations for investment instruments.
  */
 @Service
 public class AssetService {
 
     private final AssetRepository assetRepository;
     private final InvestmentOperationRepository investmentOperationRepository;
-    private final AccountService accountService;
 
     public AssetService(
         AssetRepository assetRepository,
-        InvestmentOperationRepository investmentOperationRepository,
-        AccountService accountService
+        InvestmentOperationRepository investmentOperationRepository
     ) {
         this.assetRepository = assetRepository;
         this.investmentOperationRepository = investmentOperationRepository;
-        this.accountService = accountService;
     }
 
     /**
@@ -49,9 +44,8 @@ public class AssetService {
     }
 
     /**
-     * Lists assets filtered by account, type, and descriptive text using database pagination.
+     * Lists assets filtered by type and descriptive text using database pagination.
      *
-     * @param accountId optional account identifier
      * @param type optional asset type
      * @param descriptionFilter optional text matched against name, ticker, or issuer
      * @param page zero-based page number
@@ -59,22 +53,8 @@ public class AssetService {
      * @return a filtered page of assets
      */
     @Transactional(readOnly = true)
-    public PagedResult<Asset> listPageOrdered(Long accountId, AssetType type, String descriptionFilter, int page, int pageSize) {
-        return assetRepository.findPageOrdered(accountId, type, descriptionFilter, page, pageSize);
-    }
-
-    /**
-     * Lists all assets attached to one account.
-     *
-     * @param accountId account identifier
-     * @return assets ordered by name, ticker, and id
-     */
-    @Transactional(readOnly = true)
-    public List<Asset> listAllByAccountIdOrdered(Long accountId) {
-        if (accountId == null) {
-            throw new IllegalArgumentException("Account must be informed");
-        }
-        return assetRepository.findAllByAccountIdOrdered(accountId);
+    public PagedResult<Asset> listPageOrdered(AssetType type, String descriptionFilter, int page, int pageSize) {
+        return assetRepository.findPageOrdered(type, descriptionFilter, page, pageSize);
     }
 
     /**
@@ -90,32 +70,28 @@ public class AssetService {
     }
 
     /**
-     * Creates an asset associated with an existing account.
+     * Creates an asset.
      *
      * @param asset asset data to persist
-     * @param accountId owner investment account identifier
      * @return persisted asset
      */
     @Transactional
-    public Asset create(Asset asset, Long accountId) {
-        asset.setAccount(resolveAccount(accountId));
+    public Asset create(Asset asset) {
         applyDefaults(asset);
         validate(asset);
         return assetRepository.save(asset);
     }
 
     /**
-     * Updates asset descriptive data and account association.
+     * Updates asset descriptive data.
      *
      * @param id asset identifier
      * @param updatedData replacement asset data
-     * @param accountId owner investment account identifier
      * @return updated asset
      */
     @Transactional
-    public Asset update(Long id, Asset updatedData, Long accountId) {
+    public Asset update(Long id, Asset updatedData) {
         Asset existing = findById(id);
-        existing.setAccount(resolveAccount(accountId));
         existing.setType(updatedData.getType());
         existing.setName(updatedData.getName());
         existing.setTicker(updatedData.getTicker());
@@ -159,13 +135,6 @@ public class AssetService {
             ensureAssetIsNotInUse(id);
         }
         assetRepository.deleteByIds(uniqueIds);
-    }
-
-    private Account resolveAccount(Long accountId) {
-        if (accountId == null) {
-            throw new IllegalArgumentException("Account must be informed");
-        }
-        return accountService.findById(accountId);
     }
 
     private void applyDefaults(Asset asset) {

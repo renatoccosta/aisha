@@ -16,9 +16,6 @@ import org.springframework.format.annotation.DateTimeFormat;
  */
 public class AssetForm {
 
-    @NotNull(message = "{assetForm.accountId.notNull}")
-    private Long accountId;
-
     @NotNull(message = "{assetForm.type.notNull}")
     private AssetType type = AssetType.OTHER;
 
@@ -59,14 +56,6 @@ public class AssetForm {
 
     @Pattern(regexp = "|[A-Za-z]{3}", message = "{assetForm.openingPositionCurrency.pattern}")
     private String openingPositionCurrency;
-
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
-    }
 
     public AssetType getType() {
         return type;

@@ -264,7 +264,7 @@
                             <strong th:text="${operation.asset.name}"></strong>
                             <span th:if="${operation.asset.ticker != null && !operation.asset.ticker.isBlank()}" th:text="${' (' + operation.asset.ticker + ')'}"></span>
                         </td>
-                        <td th:attr="data-label=#{investments.operations.list.table.account}" th:text="${operation.asset.account.title}"></td>
+                        <td th:attr="data-label=#{investments.operations.list.table.account}" th:text="${operation.account.title}"></td>
                         <td th:attr="data-label=#{investments.operations.list.table.type}" th:text="#{${'investment.operationType.' + operation.operationType.name().toLowerCase()}}"></td>
                         <td
                             class="amount-cell"

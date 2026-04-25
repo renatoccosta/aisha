@@ -12,22 +12,22 @@ import org.springframework.data.repository.query.Param;
 
 public interface JpaInvestmentOperationRepository extends JpaRepository<InvestmentOperation, Long> {
 
-    @EntityGraph(attributePaths = {"asset", "asset.account"})
+    @EntityGraph(attributePaths = {"asset", "account"})
     java.util.List<InvestmentOperation> findAllByOrderByTradeDateAscIdAsc();
 
-    @EntityGraph(attributePaths = {"asset", "asset.account"})
+    @EntityGraph(attributePaths = {"asset", "account"})
     Page<InvestmentOperation> findAllByOrderByTradeDateDescIdDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"asset", "asset.account"})
+    @EntityGraph(attributePaths = {"asset", "account"})
     java.util.List<InvestmentOperation> findAllByAssetIdOrderByTradeDateAscIdAsc(Long assetId);
 
-    @EntityGraph(attributePaths = {"asset", "asset.account"})
+    @EntityGraph(attributePaths = {"asset", "account"})
     @Query(
         """
         select o
         from InvestmentOperation o
         where o.settlementDate between :startDate and :endDate
-          and (:accountId is null or o.asset.account.id = :accountId)
+          and (:accountId is null or o.account.id = :accountId)
           and (:operationType is null or o.operationType = :operationType)
           and (
                 :assetFilter is null
@@ -54,4 +54,6 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
     );
 
     boolean existsByAssetId(Long assetId);
+
+    boolean existsByAccountId(Long accountId);
 }

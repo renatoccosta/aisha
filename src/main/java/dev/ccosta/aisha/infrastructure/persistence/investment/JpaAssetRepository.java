@@ -12,19 +12,18 @@ import org.springframework.data.repository.query.Param;
 
 public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
 
-    @EntityGraph(attributePaths = {"account", "openingPosition"})
-    List<Asset> findAllByOrderByAccountTitleAscNameAscTickerAscIdAsc();
+    @EntityGraph(attributePaths = {"openingPosition"})
+    List<Asset> findAllByOrderByNameAscTickerAscIdAsc();
 
-    @EntityGraph(attributePaths = {"account", "openingPosition"})
-    Page<Asset> findAllByOrderByAccountTitleAscNameAscTickerAscIdAsc(Pageable pageable);
+    @EntityGraph(attributePaths = {"openingPosition"})
+    Page<Asset> findAllByOrderByNameAscTickerAscIdAsc(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"account", "openingPosition"})
+    @EntityGraph(attributePaths = {"openingPosition"})
     @Query(
         """
         select a
         from Asset a
-        where (:accountId is null or a.account.id = :accountId)
-          and (:type is null or a.type = :type)
+        where (:type is null or a.type = :type)
           and (
                 :descriptionFilter is null
                 or upper(
@@ -37,22 +36,16 @@ public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
                 )
                     like concat('%', :descriptionFilter, '%') escape '\\'
           )
-        order by a.account.title asc, a.name asc, a.ticker asc, a.id asc
+        order by a.name asc, a.ticker asc, a.id asc
         """
     )
     Page<Asset> searchByFilters(
-        @Param("accountId") Long accountId,
         @Param("type") AssetType type,
         @Param("descriptionFilter") String descriptionFilter,
         Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"account", "openingPosition"})
-    List<Asset> findAllByAccountIdOrderByNameAscTickerAscIdAsc(Long accountId);
-
     @Override
-    @EntityGraph(attributePaths = {"account", "openingPosition"})
+    @EntityGraph(attributePaths = {"openingPosition"})
     java.util.Optional<Asset> findById(Long id);
-
-    boolean existsByAccountId(Long accountId);
 }

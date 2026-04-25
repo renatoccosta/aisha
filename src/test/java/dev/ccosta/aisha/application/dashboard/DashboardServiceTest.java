@@ -663,7 +663,6 @@ class DashboardServiceTest {
 
     private Asset newAsset(Long id, Account account, String name, AssetType assetType, String currency) {
         Asset asset = new Asset();
-        asset.setAccount(account);
         asset.setName(name);
         asset.setType(assetType);
         asset.setCurrency(currency);
@@ -680,6 +679,7 @@ class DashboardServiceTest {
     ) {
         InvestmentOperation operation = new InvestmentOperation();
         operation.setAsset(asset);
+        operation.setAccount(newAccount());
         operation.setOperationType(type);
         operation.setTradeDate(tradeDate);
         operation.setSettlementDate(tradeDate);

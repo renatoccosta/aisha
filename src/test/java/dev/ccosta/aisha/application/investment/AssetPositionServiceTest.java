@@ -3,7 +3,6 @@ package dev.ccosta.aisha.application.investment;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
@@ -32,7 +31,6 @@ class AssetPositionServiceTest {
     @Test
     void shouldCalculateCurrentPositionAndSeparateCalculationMemory() {
         Asset asset = new Asset();
-        asset.setAccount(new Account());
         asset.setName("PETR4");
         asset.setCurrency("BRL");
         asset.setOpeningPositionDate(LocalDate.of(2026, 1, 31));

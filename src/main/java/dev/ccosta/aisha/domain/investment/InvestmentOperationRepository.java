@@ -30,6 +30,8 @@ public interface InvestmentOperationRepository {
 
     boolean existsByAssetId(Long assetId);
 
+    boolean existsByAccountId(Long accountId);
+
     void deleteById(Long id);
 
     void deleteByIds(Collection<Long> ids);
