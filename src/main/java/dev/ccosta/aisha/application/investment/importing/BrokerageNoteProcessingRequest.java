@@ -1,7 +1,7 @@
 package dev.ccosta.aisha.application.investment.importing;
 
 /**
- * Input for a brokerage note PDF processor.
+ * Input for a brokerage note processor.
  *
  * @param accountId selected account used by the import routine
  * @param originalFileName uploaded file name

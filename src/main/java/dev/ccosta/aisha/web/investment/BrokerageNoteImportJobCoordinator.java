@@ -4,12 +4,12 @@ import dev.ccosta.aisha.application.account.AccountNotFoundException;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.investment.importing.BrokerageNoteImportService;
 import dev.ccosta.aisha.application.investment.importing.BrokerageNoteImportSummary;
+import dev.ccosta.aisha.application.investment.importing.UnsupportedBrokerageNoteFormatException;
 import dev.ccosta.aisha.domain.account.Account;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,15 +43,15 @@ public class BrokerageNoteImportJobCoordinator {
     }
 
     /**
-     * Starts a brokerage note import job after validating the selected account and PDF file.
+     * Starts a brokerage note import job after validating the selected account and uploaded file.
      *
-     * @param file uploaded brokerage note PDF
+     * @param file uploaded brokerage note file
      * @param accountId account used by the import routine
      * @return created job identifier
      */
     public String startJob(MultipartFile file, Long accountId) {
         validateAccount(accountId);
-        validatePdfFile(file);
+        validateImportFile(file);
         byte[] fileContent = readFileContent(file);
         String originalFilename = file.getOriginalFilename();
         String fileHash = sha256(fileContent);
@@ -89,13 +89,9 @@ public class BrokerageNoteImportJobCoordinator {
         }
     }
 
-    private void validatePdfFile(MultipartFile file) {
+    private void validateImportFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File must not be empty");
-        }
-        String filename = file.getOriginalFilename();
-        if (filename == null || !filename.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            throw new IllegalArgumentException("Only PDF files are accepted");
         }
     }
 
@@ -124,9 +120,12 @@ public class BrokerageNoteImportJobCoordinator {
         try {
             state.setTotalSteps(1);
             log.info("Brokerage note import started. jobId={}, filename={}, bytes={}", jobId, originalFilename, fileContent.length);
-            BrokerageNoteImportSummary summary = importService.importPdf(accountId, originalFilename, fileHash, fileContent);
+            BrokerageNoteImportSummary summary = importService.importFile(accountId, originalFilename, fileHash, fileContent);
             state.setProcessedSteps(1);
             state.markSuccess(summary);
+        } catch (UnsupportedBrokerageNoteFormatException ex) {
+            log.warn("Unsupported brokerage note format. jobId={}, filename={}", jobId, originalFilename);
+            state.markFailure(ex.getMessage());
         } catch (Exception ex) {
             log.error("Unknown error while importing brokerage notes. jobId={}", jobId, ex);
             state.markFailure("Unknown brokerage note import error");

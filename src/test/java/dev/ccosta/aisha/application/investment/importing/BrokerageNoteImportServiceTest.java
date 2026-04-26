@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.application.investment.importing;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -26,7 +27,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,7 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BrokerageNoteImportServiceTest {
 
     @Mock
-    private BrokerageNotePdfProcessor pdfProcessor;
+    private BrokerageNoteProcessor processor;
 
     @Mock
     private BrokerageNoteRepository brokerageNoteRepository;
@@ -51,19 +51,31 @@ class BrokerageNoteImportServiceTest {
     @Mock
     private AccountService accountService;
 
-    @InjectMocks
     private BrokerageNoteImportService importService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        importService = new BrokerageNoteImportService(
+            List.of(processor),
+            brokerageNoteRepository,
+            assetRepository,
+            investmentOperationRepository,
+            entryRepository,
+            accountService
+        );
+    }
 
     @Test
     void shouldIgnoreAlreadyImportedNote() {
         Account account = account();
         BrokerageNote note = brokerageNote();
         when(accountService.findById(10L)).thenReturn(account);
-        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(asset("PETR4"))))));
+        when(processor.supports(any(BrokerageNoteProcessingRequest.class))).thenReturn(true);
+        when(processor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(asset("PETR4"))))));
         when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
             .thenReturn(true);
 
-        BrokerageNoteImportSummary summary = importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+        BrokerageNoteImportSummary summary = importService.importFile(10L, "nota.pdf", "hash", new byte[] {1});
 
         assertThat(summary.importedNotes()).isZero();
         assertThat(summary.importedOperations()).isZero();
@@ -80,14 +92,15 @@ class BrokerageNoteImportServiceTest {
         Asset existingByIsin = asset("PETR4");
         existingByIsin.setIsin("BRPETRACNPR6");
         when(accountService.findById(10L)).thenReturn(account);
-        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(asset("PETR4"))))));
+        when(processor.supports(any(BrokerageNoteProcessingRequest.class))).thenReturn(true);
+        when(processor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(asset("PETR4"))))));
         when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
             .thenReturn(false);
         when(entryRepository.save(entry)).thenReturn(entry);
         when(brokerageNoteRepository.save(note)).thenReturn(note);
         when(assetRepository.findByIsinIgnoreCase("BRPETRACNPR6")).thenReturn(Optional.of(existingByIsin));
 
-        BrokerageNoteImportSummary summary = importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+        BrokerageNoteImportSummary summary = importService.importFile(10L, "nota.pdf", "hash", new byte[] {1});
 
         assertThat(summary.importedNotes()).isEqualTo(1);
         assertThat(summary.importedOperations()).isEqualTo(1);
@@ -108,7 +121,8 @@ class BrokerageNoteImportServiceTest {
         candidate.setType(AssetType.FII);
         candidate.setIsin(null);
         when(accountService.findById(10L)).thenReturn(account);
-        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(candidate)))));
+        when(processor.supports(any(BrokerageNoteProcessingRequest.class))).thenReturn(true);
+        when(processor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(candidate)))));
         when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
             .thenReturn(false);
         when(entryRepository.save(entry)).thenReturn(entry);
@@ -117,7 +131,7 @@ class BrokerageNoteImportServiceTest {
         when(assetRepository.findByNameIgnoreCase("XPML11")).thenReturn(Optional.empty());
         when(assetRepository.save(candidate)).thenReturn(candidate);
 
-        importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+        importService.importFile(10L, "nota.pdf", "hash", new byte[] {1});
 
         ArgumentCaptor<Asset> assetCaptor = ArgumentCaptor.forClass(Asset.class);
         verify(assetRepository).save(assetCaptor.capture());
@@ -137,19 +151,32 @@ class BrokerageNoteImportServiceTest {
         InvestmentOperation second = operation(asset("PETR4"));
         second.setGrossAmount(new BigDecimal("200.00"));
         when(accountService.findById(10L)).thenReturn(account);
-        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(first, second))));
+        when(processor.supports(any(BrokerageNoteProcessingRequest.class))).thenReturn(true);
+        when(processor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(first, second))));
         when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
             .thenReturn(false);
         when(entryRepository.save(entry)).thenReturn(entry);
         when(brokerageNoteRepository.save(note)).thenReturn(note);
         when(assetRepository.findByIsinIgnoreCase("BRPETRACNPR6")).thenReturn(Optional.of(existingAsset));
 
-        importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+        importService.importFile(10L, "nota.pdf", "hash", new byte[] {1});
 
         assertThat(first.getFees()).isEqualByComparingTo("10.00");
         assertThat(first.getTaxes()).isEqualByComparingTo("0.00");
         assertThat(second.getFees()).isEqualByComparingTo("20.00");
         assertThat(second.getTaxes()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    void shouldRejectFileWhenNoProcessorSupportsIt() {
+        when(accountService.findById(10L)).thenReturn(account());
+        when(processor.supports(any(BrokerageNoteProcessingRequest.class))).thenReturn(false);
+
+        assertThatThrownBy(() -> importService.importFile(10L, "nota.ofx", "hash", new byte[] {1}))
+            .isInstanceOf(UnsupportedBrokerageNoteFormatException.class)
+            .hasMessage("Unsupported brokerage note file format: nota.ofx");
+        verify(entryRepository, never()).save(any(Entry.class));
+        verify(investmentOperationRepository, never()).save(any(InvestmentOperation.class));
     }
 
     private Account account() {

@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,7 @@ public class BrokerageNoteImportService {
     private static final int MONEY_SCALE = 2;
     private static final BigDecimal ZERO_MONEY = BigDecimal.ZERO.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
 
-    private final BrokerageNotePdfProcessor pdfProcessor;
+    private final List<BrokerageNoteProcessor> processors;
     private final BrokerageNoteRepository brokerageNoteRepository;
     private final AssetRepository assetRepository;
     private final InvestmentOperationRepository investmentOperationRepository;
@@ -45,14 +46,16 @@ public class BrokerageNoteImportService {
     private final AccountService accountService;
 
     public BrokerageNoteImportService(
-        BrokerageNotePdfProcessor pdfProcessor,
+        List<BrokerageNoteProcessor> processors,
         BrokerageNoteRepository brokerageNoteRepository,
         AssetRepository assetRepository,
         InvestmentOperationRepository investmentOperationRepository,
         EntryRepository entryRepository,
         AccountService accountService
     ) {
-        this.pdfProcessor = pdfProcessor;
+        this.processors = processors.stream()
+            .sorted(Comparator.comparing(processor -> processor.getClass().getName()))
+            .toList();
         this.brokerageNoteRepository = brokerageNoteRepository;
         this.assetRepository = assetRepository;
         this.investmentOperationRepository = investmentOperationRepository;
@@ -61,7 +64,7 @@ public class BrokerageNoteImportService {
     }
 
     /**
-     * Imports brokerage notes parsed from a PDF file.
+     * Imports brokerage notes parsed from an uploaded file.
      *
      * @param accountId selected account used by the import routine
      * @param originalFileName uploaded file name
@@ -70,11 +73,12 @@ public class BrokerageNoteImportService {
      * @return import summary
      */
     @Transactional
-    public BrokerageNoteImportSummary importPdf(Long accountId, String originalFileName, String fileHash, byte[] fileContent) {
+    public BrokerageNoteImportSummary importFile(Long accountId, String originalFileName, String fileHash, byte[] fileContent) {
         Instant startedAt = Instant.now();
         Account account = accountService.findById(accountId);
         BrokerageNoteProcessingRequest request = new BrokerageNoteProcessingRequest(accountId, originalFileName, fileHash, fileContent);
-        List<ParsedBrokerageNote> parsedNotes = pdfProcessor.process(request);
+        BrokerageNoteProcessor processor = selectProcessor(request);
+        List<ParsedBrokerageNote> parsedNotes = processor.process(request);
 
         int importedNotes = 0;
         int importedOperations = 0;
@@ -107,6 +111,13 @@ public class BrokerageNoteImportService {
 
         long durationMillis = Duration.between(startedAt, Instant.now()).toMillis();
         return new BrokerageNoteImportSummary(importedNotes, importedOperations, skippedDuplicateNotes, durationMillis);
+    }
+
+    private BrokerageNoteProcessor selectProcessor(BrokerageNoteProcessingRequest request) {
+        return processors.stream()
+            .filter(processor -> processor.supports(request))
+            .findFirst()
+            .orElseThrow(() -> new UnsupportedBrokerageNoteFormatException(request.originalFileName()));
     }
 
     private void applyBrokerageNoteDefaults(BrokerageNote brokerageNote, String originalFileName, String fileHash) {

@@ -45,7 +45,7 @@ public class BrokerageNoteImportController {
     /**
      * Starts a brokerage note import job and returns the result fragment.
      *
-     * @param file uploaded brokerage note PDF
+     * @param file uploaded brokerage note file
      * @param accountId account used by the import routine
      * @param globalDateFilter current global date filter
      * @param model view model
@@ -146,8 +146,8 @@ public class BrokerageNoteImportController {
             if (normalizedMessage.contains("must not be empty")) {
                 return "investments.brokerageNoteImport.result.failure.emptyFile";
             }
-            if (normalizedMessage.contains("only pdf files are accepted")) {
-                return "investments.brokerageNoteImport.result.failure.invalidFileType";
+            if (normalizedMessage.contains("unsupported brokerage note file format")) {
+                return "investments.brokerageNoteImport.result.failure.unsupportedFormat";
             }
             if (normalizedMessage.contains("account must be informed")) {
                 return "investments.brokerageNoteImport.result.failure.missingAccount";
