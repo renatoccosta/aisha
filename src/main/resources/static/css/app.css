@@ -505,6 +505,12 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+@media (min-width: 900px) {
+  .admin-grid:has(> :nth-child(3)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .admin-nav-card {
   color: inherit;
   text-decoration: none;
