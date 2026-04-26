@@ -2,10 +2,13 @@ package dev.ccosta.aisha.web.investment;
 
 import dev.ccosta.aisha.application.account.AccountNotFoundException;
 import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.application.investment.importing.BrokerageNoteImportService;
+import dev.ccosta.aisha.application.investment.importing.BrokerageNoteImportSummary;
 import dev.ccosta.aisha.domain.account.Account;
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -26,10 +29,16 @@ public class BrokerageNoteImportJobCoordinator {
 
     private final Map<String, BrokerageNoteImportJobState> jobsById = new ConcurrentHashMap<>();
     private final AccountService accountService;
+    private final BrokerageNoteImportService importService;
     private final TaskExecutor taskExecutor;
 
-    public BrokerageNoteImportJobCoordinator(AccountService accountService, TaskExecutor taskExecutor) {
+    public BrokerageNoteImportJobCoordinator(
+        AccountService accountService,
+        BrokerageNoteImportService importService,
+        TaskExecutor taskExecutor
+    ) {
         this.accountService = accountService;
+        this.importService = importService;
         this.taskExecutor = taskExecutor;
     }
 
@@ -45,11 +54,12 @@ public class BrokerageNoteImportJobCoordinator {
         validatePdfFile(file);
         byte[] fileContent = readFileContent(file);
         String originalFilename = file.getOriginalFilename();
+        String fileHash = sha256(fileContent);
 
         String jobId = UUID.randomUUID().toString();
         BrokerageNoteImportJobState state = new BrokerageNoteImportJobState(jobId);
         jobsById.put(jobId, state);
-        taskExecutor.execute(() -> runPlaceholderImport(jobId, originalFilename, fileContent));
+        taskExecutor.execute(() -> runImport(jobId, accountId, originalFilename, fileHash, fileContent));
         return jobId;
     }
 
@@ -97,18 +107,26 @@ public class BrokerageNoteImportJobCoordinator {
         }
     }
 
-    private void runPlaceholderImport(String jobId, String originalFilename, byte[] fileContent) {
+    private String sha256(byte[] fileContent) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(fileContent));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 digest is not available", ex);
+        }
+    }
+
+    private void runImport(String jobId, Long accountId, String originalFilename, String fileHash, byte[] fileContent) {
         BrokerageNoteImportJobState state = jobsById.get(jobId);
         if (state == null) {
             return;
         }
 
-        Instant startedAt = Instant.now();
         try {
             state.setTotalSteps(1);
-            log.info("Brokerage note import placeholder started. jobId={}, filename={}, bytes={}", jobId, originalFilename, fileContent.length);
+            log.info("Brokerage note import started. jobId={}, filename={}, bytes={}", jobId, originalFilename, fileContent.length);
+            BrokerageNoteImportSummary summary = importService.importPdf(accountId, originalFilename, fileHash, fileContent);
             state.setProcessedSteps(1);
-            state.markSuccess(new BrokerageNoteImportSummary(0, 0, 0, Duration.between(startedAt, Instant.now()).toMillis()));
+            state.markSuccess(summary);
         } catch (Exception ex) {
             log.error("Unknown error while importing brokerage notes. jobId={}", jobId, ex);
             state.markFailure("Unknown brokerage note import error");

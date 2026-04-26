@@ -1,5 +1,7 @@
 package dev.ccosta.aisha.web.investment;
 
+import dev.ccosta.aisha.application.investment.importing.BrokerageNoteImportSummary;
+
 /**
  * Immutable view of a brokerage note import job state used by polling fragments.
  *

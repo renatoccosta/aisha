@@ -15,6 +15,12 @@ public interface AssetRepository {
 
     Optional<Asset> findById(Long id);
 
+    Optional<Asset> findByIsinIgnoreCase(String isin);
+
+    Optional<Asset> findByTickerIgnoreCase(String ticker);
+
+    Optional<Asset> findByNameIgnoreCase(String name);
+
     Asset save(Asset asset);
 
     void deleteById(Long id);

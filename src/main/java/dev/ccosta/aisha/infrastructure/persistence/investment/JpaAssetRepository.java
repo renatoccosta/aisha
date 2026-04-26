@@ -3,6 +3,7 @@ package dev.ccosta.aisha.infrastructure.persistence.investment;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetType;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -47,5 +48,14 @@ public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
 
     @Override
     @EntityGraph(attributePaths = {"openingPosition"})
-    java.util.Optional<Asset> findById(Long id);
+    Optional<Asset> findById(Long id);
+
+    @EntityGraph(attributePaths = {"openingPosition"})
+    Optional<Asset> findByIsinIgnoreCase(String isin);
+
+    @EntityGraph(attributePaths = {"openingPosition"})
+    Optional<Asset> findByTickerIgnoreCase(String ticker);
+
+    @EntityGraph(attributePaths = {"openingPosition"})
+    Optional<Asset> findByNameIgnoreCase(String name);
 }

@@ -1,0 +1,204 @@
+package dev.ccosta.aisha.application.investment.importing;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.investment.Asset;
+import dev.ccosta.aisha.domain.investment.AssetRepository;
+import dev.ccosta.aisha.domain.investment.AssetType;
+import dev.ccosta.aisha.domain.investment.BrokerageNote;
+import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperation;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class BrokerageNoteImportServiceTest {
+
+    @Mock
+    private BrokerageNotePdfProcessor pdfProcessor;
+
+    @Mock
+    private BrokerageNoteRepository brokerageNoteRepository;
+
+    @Mock
+    private AssetRepository assetRepository;
+
+    @Mock
+    private InvestmentOperationRepository investmentOperationRepository;
+
+    @Mock
+    private EntryRepository entryRepository;
+
+    @Mock
+    private AccountService accountService;
+
+    @InjectMocks
+    private BrokerageNoteImportService importService;
+
+    @Test
+    void shouldIgnoreAlreadyImportedNote() {
+        Account account = account();
+        BrokerageNote note = brokerageNote();
+        when(accountService.findById(10L)).thenReturn(account);
+        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(asset("PETR4"))))));
+        when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
+            .thenReturn(true);
+
+        BrokerageNoteImportSummary summary = importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+
+        assertThat(summary.importedNotes()).isZero();
+        assertThat(summary.importedOperations()).isZero();
+        assertThat(summary.skippedDuplicateNotes()).isEqualTo(1);
+        verify(entryRepository, never()).save(any(Entry.class));
+        verify(investmentOperationRepository, never()).save(any(InvestmentOperation.class));
+    }
+
+    @Test
+    void shouldResolveAssetByIsinTickerThenNameAndPersistBrokerNoteOperations() {
+        Account account = account();
+        BrokerageNote note = brokerageNote();
+        Entry entry = note.getNetEntry();
+        Asset existingByIsin = asset("PETR4");
+        existingByIsin.setIsin("BRPETRACNPR6");
+        when(accountService.findById(10L)).thenReturn(account);
+        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(asset("PETR4"))))));
+        when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
+            .thenReturn(false);
+        when(entryRepository.save(entry)).thenReturn(entry);
+        when(brokerageNoteRepository.save(note)).thenReturn(note);
+        when(assetRepository.findByIsinIgnoreCase("BRPETRACNPR6")).thenReturn(Optional.of(existingByIsin));
+
+        BrokerageNoteImportSummary summary = importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+
+        assertThat(summary.importedNotes()).isEqualTo(1);
+        assertThat(summary.importedOperations()).isEqualTo(1);
+        ArgumentCaptor<InvestmentOperation> operationCaptor = ArgumentCaptor.forClass(InvestmentOperation.class);
+        verify(investmentOperationRepository).save(operationCaptor.capture());
+        assertThat(operationCaptor.getValue().getAsset()).isSameAs(existingByIsin);
+        assertThat(operationCaptor.getValue().getAccount()).isSameAs(account);
+        assertThat(operationCaptor.getValue().getBrokerageNote()).isSameAs(note);
+        assertThat(operationCaptor.getValue().getSourceType()).isEqualTo(InvestmentOperationSourceType.BROKER_NOTE);
+    }
+
+    @Test
+    void shouldCreateAssetWhenNoMatchingAssetExists() {
+        Account account = account();
+        BrokerageNote note = brokerageNote();
+        Entry entry = note.getNetEntry();
+        Asset candidate = asset("XPML11");
+        candidate.setType(AssetType.FII);
+        candidate.setIsin(null);
+        when(accountService.findById(10L)).thenReturn(account);
+        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation(candidate)))));
+        when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
+            .thenReturn(false);
+        when(entryRepository.save(entry)).thenReturn(entry);
+        when(brokerageNoteRepository.save(note)).thenReturn(note);
+        when(assetRepository.findByTickerIgnoreCase("XPML11")).thenReturn(Optional.empty());
+        when(assetRepository.findByNameIgnoreCase("XPML11")).thenReturn(Optional.empty());
+        when(assetRepository.save(candidate)).thenReturn(candidate);
+
+        importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+
+        ArgumentCaptor<Asset> assetCaptor = ArgumentCaptor.forClass(Asset.class);
+        verify(assetRepository).save(assetCaptor.capture());
+        assertThat(assetCaptor.getValue().getType()).isEqualTo(AssetType.FII);
+        assertThat(assetCaptor.getValue().getCurrency()).isEqualTo("BRL");
+    }
+
+    @Test
+    void shouldAllocateMissingCostsProportionally() {
+        Account account = account();
+        BrokerageNote note = brokerageNote();
+        note.setTotalCosts(new BigDecimal("30.00"));
+        Entry entry = note.getNetEntry();
+        Asset existingAsset = asset("PETR4");
+        InvestmentOperation first = operation(asset("PETR4"));
+        first.setGrossAmount(new BigDecimal("100.00"));
+        InvestmentOperation second = operation(asset("PETR4"));
+        second.setGrossAmount(new BigDecimal("200.00"));
+        when(accountService.findById(10L)).thenReturn(account);
+        when(pdfProcessor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(first, second))));
+        when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
+            .thenReturn(false);
+        when(entryRepository.save(entry)).thenReturn(entry);
+        when(brokerageNoteRepository.save(note)).thenReturn(note);
+        when(assetRepository.findByIsinIgnoreCase("BRPETRACNPR6")).thenReturn(Optional.of(existingAsset));
+
+        importService.importPdf(10L, "nota.pdf", "hash", new byte[] {1});
+
+        assertThat(first.getFees()).isEqualByComparingTo("10.00");
+        assertThat(first.getTaxes()).isEqualByComparingTo("0.00");
+        assertThat(second.getFees()).isEqualByComparingTo("20.00");
+        assertThat(second.getTaxes()).isEqualByComparingTo("0.00");
+    }
+
+    private Account account() {
+        Account account = new Account();
+        setId(account, 10L);
+        account.setTitle("Investimentos");
+        return account;
+    }
+
+    private BrokerageNote brokerageNote() {
+        BrokerageNote note = new BrokerageNote();
+        note.setBrokerName("RICO");
+        note.setBrokerCnpj("13.434.335/0001-60");
+        note.setNoteNumber("123");
+        note.setTradeDate(LocalDate.of(2026, 1, 5));
+        note.setSettlementDate(LocalDate.of(2026, 1, 7));
+        note.setTotalCosts(BigDecimal.ZERO);
+        note.setNetAmount(new BigDecimal("100.00"));
+        note.setNetEntry(new Entry());
+        return note;
+    }
+
+    private InvestmentOperation operation(Asset asset) {
+        InvestmentOperation operation = new InvestmentOperation();
+        operation.setAsset(asset);
+        operation.setOperationType(InvestmentOperationType.BUY);
+        operation.setQuantity(BigDecimal.ONE);
+        operation.setUnitPrice(new BigDecimal("100.00"));
+        operation.setGrossAmount(new BigDecimal("100.00"));
+        operation.setCurrency("BRL");
+        return operation;
+    }
+
+    private Asset asset(String ticker) {
+        Asset asset = new Asset();
+        asset.setName(ticker);
+        asset.setTicker(ticker);
+        asset.setIsin("BRPETRACNPR6");
+        asset.setCurrency("BRL");
+        return asset;
+    }
+
+    private void setId(Account account, Long id) {
+        try {
+            var idField = Account.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(account, id);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+}

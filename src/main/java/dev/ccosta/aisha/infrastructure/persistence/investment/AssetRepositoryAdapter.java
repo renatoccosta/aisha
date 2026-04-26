@@ -52,6 +52,21 @@ public class AssetRepositoryAdapter implements AssetRepository {
     }
 
     @Override
+    public Optional<Asset> findByIsinIgnoreCase(String isin) {
+        return jpaAssetRepository.findByIsinIgnoreCase(isin);
+    }
+
+    @Override
+    public Optional<Asset> findByTickerIgnoreCase(String ticker) {
+        return jpaAssetRepository.findByTickerIgnoreCase(ticker);
+    }
+
+    @Override
+    public Optional<Asset> findByNameIgnoreCase(String name) {
+        return jpaAssetRepository.findByNameIgnoreCase(name);
+    }
+
+    @Override
     public Asset save(Asset asset) {
         return jpaAssetRepository.save(asset);
     }
