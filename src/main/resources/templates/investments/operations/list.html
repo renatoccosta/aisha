@@ -80,6 +80,7 @@
                         </select>
                     </div>
                 </div>
+                <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
                 <input type="hidden" name="page" value="0">
                 <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
             </form>
@@ -98,6 +99,7 @@
                     <input type="hidden" name="asset" th:value="${selectedAsset}">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="operationType" th:value="${selectedOperationType}">
+                    <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
                     <input type="hidden" name="page" value="0">
                     <label for="operations-page-size" th:text="#{pagination.size.label}"></label>
                     <select id="operations-page-size" name="size" onchange="this.form.requestSubmit()">
@@ -120,6 +122,7 @@
                     <input type="hidden" name="asset" th:value="${selectedAsset}">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="operationType" th:value="${selectedOperationType}">
+                    <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
                     <input type="hidden" name="size" th:value="${pagination.pageSize}">
                     <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.firstPage()}" th:disabled="${!pagination.hasPrevious()}">
                         <i data-lucide="chevrons-left" aria-hidden="true"></i>
@@ -156,6 +159,7 @@
             <input type="hidden" name="asset" th:value="${selectedAsset}">
             <input type="hidden" name="accountId" th:value="${selectedAccountId}">
             <input type="hidden" name="operationType" th:value="${selectedOperationType}">
+            <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
             <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
             <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
 
@@ -278,21 +282,41 @@
                         </td>
                         <td th:attr="data-label=#{investments.operations.list.table.currency}" th:text="${operation.currency}"></td>
                         <td class="cell-actions" th:attr="data-label=#{investments.operations.list.table.actions}">
-                            <div class="actions-inline">
-                                <a class="btn btn-secondary" th:href="@{/investments/operations/{id}/edit(id=${operation.id},returnTo=${returnTo})}">
-                                    <i data-lucide="edit-3" aria-hidden="true"></i>
-                                    <span th:text="#{investments.operations.list.action.edit}"></span>
-                                </a>
-                                <button
-                                    class="btn btn-danger"
-                                    type="button"
-                                    th:attr="hx-post=@{/investments/operations/{id}/delete(id=${operation.id},asset=${selectedAsset},accountId=${selectedAccountId},operationType=${selectedOperationType},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{investments.operations.list.confirm.delete}"
-                                    hx-target="#operations-listing"
-                                    hx-swap="outerHTML">
-                                    <i data-lucide="trash-2" aria-hidden="true"></i>
-                                    <span th:text="#{investments.operations.list.action.delete}"></span>
-                                </button>
-                            </div>
+                            <details class="action-menu action-menu-row">
+                                <summary class="btn btn-secondary">
+                                    <span class="action-menu-trigger">
+                                        <i data-lucide="settings-2" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.table.actions}"></span>
+                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                                    </span>
+                                </summary>
+                                <div class="action-menu-panel">
+                                    <a class="action-menu-item" th:href="@{/investments/operations/{id}(id=${operation.id},returnTo=${returnTo})}">
+                                        <i data-lucide="eye" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.details}"></span>
+                                    </a>
+                                    <a
+                                        class="action-menu-item"
+                                        th:if="${operation.brokerageNote != null}"
+                                        th:href="@{/investments/brokerage-notes/{id}(id=${operation.brokerageNote.id},returnTo=${returnTo})}">
+                                        <i data-lucide="file-text" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.brokerageNote}"></span>
+                                    </a>
+                                    <a class="action-menu-item" th:href="@{/investments/operations/{id}/edit(id=${operation.id},returnTo=${returnTo})}">
+                                        <i data-lucide="edit-3" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.edit}"></span>
+                                    </a>
+                                    <button
+                                        class="action-menu-item action-menu-item-danger"
+                                        type="button"
+                                        th:attr="hx-post=@{/investments/operations/{id}/delete(id=${operation.id},asset=${selectedAsset},accountId=${selectedAccountId},operationType=${selectedOperationType},brokerageNoteId=${selectedBrokerageNoteId},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{investments.operations.list.confirm.delete}"
+                                        hx-target="#operations-listing"
+                                        hx-swap="outerHTML">
+                                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.delete}"></span>
+                                    </button>
+                                </div>
+                            </details>
                         </td>
                     </tr>
                     </tbody>

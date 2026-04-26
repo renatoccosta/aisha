@@ -112,12 +112,13 @@ class InvestmentOperationControllerTest {
     @Test
     void shouldBulkDeleteAndRefreshListingForHtmx() {
         DateFilterState globalDateFilter = baseDateFilter();
-        when(operationService.listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25))
+        when(operationService.listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, null, 0, 25))
             .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
 
         String view = operationController.bulkDelete(
             globalDateFilter,
             List.of(1L, 2L),
+            null,
             null,
             null,
             null,
@@ -129,7 +130,7 @@ class InvestmentOperationControllerTest {
 
         assertThat(view).isEqualTo("investments/operations/list :: table");
         verify(operationService).bulkDelete(List.of(1L, 2L));
-        verify(operationService).listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25);
+        verify(operationService).listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, null, 0, 25);
     }
 
     @Test
@@ -141,13 +142,14 @@ class InvestmentOperationControllerTest {
             "Petróleo",
             20L,
             InvestmentOperationType.BUY,
+            null,
             0,
             25
         ))
             .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
 
         ConcurrentModel model = new ConcurrentModel();
-        String view = operationController.table(globalDateFilter, " Petróleo ", 20L, InvestmentOperationType.BUY, null, null, model);
+        String view = operationController.table(globalDateFilter, " Petróleo ", 20L, InvestmentOperationType.BUY, null, null, null, model);
 
         assertThat(view).isEqualTo("investments/operations/list :: table");
         assertThat(model.getAttribute("selectedAsset")).isEqualTo("Petróleo");
@@ -159,6 +161,7 @@ class InvestmentOperationControllerTest {
             "Petróleo",
             20L,
             InvestmentOperationType.BUY,
+            null,
             0,
             25
         );
@@ -167,13 +170,13 @@ class InvestmentOperationControllerTest {
     @Test
     void shouldApplyGlobalDateFilterToOperationListing() {
         DateFilterState globalDateFilter = baseDateFilter();
-        when(operationService.listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25))
+        when(operationService.listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, null, 0, 25))
             .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
 
-        String view = operationController.list(globalDateFilter, null, null, null, null, null, new ConcurrentModel());
+        String view = operationController.list(globalDateFilter, null, null, null, null, null, null, new ConcurrentModel());
 
         assertThat(view).isEqualTo("investments/operations/list");
-        verify(operationService).listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, 0, 25);
+        verify(operationService).listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, null, 0, 25);
     }
 
     private InvestmentOperationForm baseForm() {

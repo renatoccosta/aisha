@@ -18,6 +18,7 @@ public interface InvestmentOperationRepository {
         String assetFilter,
         Long accountId,
         InvestmentOperationType operationType,
+        Long brokerageNoteId,
         int page,
         int pageSize
     );

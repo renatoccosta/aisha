@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{investments.brokerageNotes.list.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{investments.brokerageNotes.list.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card header-actions">
+        <div>
+            <h2 th:text="#{investments.brokerageNotes.list.heading}"></h2>
+            <p th:text="#{investments.brokerageNotes.list.subtitle}"></p>
+        </div>
+        <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="@{/investments/brokerage-note-import}">
+                <i data-lucide="file-up" aria-hidden="true"></i>
+                <span th:text="#{investments.brokerageNotes.list.action.import}"></span>
+            </a>
+        </div>
+    </section>
+
+    <div id="brokerage-notes-listing" th:fragment="table" class="listing-stack">
+        <section class="card filter-panel">
+            <div class="filter-panel-header">
+                <h3 th:text="#{investments.brokerageNotes.list.filters.heading}"></h3>
+                <p th:text="#{investments.brokerageNotes.list.filters.subtitle}"></p>
+            </div>
+
+            <form
+                class="list-filters"
+                method="get"
+                th:action="@{/investments/brokerage-notes}"
+                hx-get="/investments/brokerage-notes/fragments/table"
+                hx-target="#brokerage-notes-listing"
+                hx-swap="outerHTML"
+                hx-push-url="true"
+                hx-trigger="change from:#filter-account, change from:#filter-trade-start, change from:#filter-trade-end, input changed delay:400ms from:#filter-note-number, search from:#filter-note-number">
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="filter-account" th:text="#{investments.brokerageNotes.list.filter.account}"></label>
+                        <select id="filter-account" name="accountId">
+                            <option value="" th:text="#{investments.brokerageNotes.list.filter.allAccounts}"></option>
+                            <option
+                                th:each="account : ${accountOptions}"
+                                th:value="${account.id}"
+                                th:selected="${selectedAccountId != null and selectedAccountId == account.id}"
+                                th:text="${account.title}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="filter-note-number" th:text="#{investments.brokerageNotes.list.filter.noteNumber}"></label>
+                        <input
+                            id="filter-note-number"
+                            name="noteNumber"
+                            type="search"
+                            th:value="${selectedNoteNumber}"
+                            th:placeholder="#{investments.brokerageNotes.list.filter.noteNumber.placeholder}">
+                    </div>
+                    <div class="field">
+                        <label for="filter-trade-start" th:text="#{investments.brokerageNotes.list.filter.tradeStartDate}"></label>
+                        <input id="filter-trade-start" name="tradeStartDate" type="date" th:value="${selectedTradeStartDate}">
+                    </div>
+                    <div class="field">
+                        <label for="filter-trade-end" th:text="#{investments.brokerageNotes.list.filter.tradeEndDate}"></label>
+                        <input id="filter-trade-end" name="tradeEndDate" type="date" th:value="${selectedTradeEndDate}">
+                    </div>
+                </div>
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
+            </form>
+        </section>
+
+        <section id="table-container" class="card">
+            <div class="pagination-bar" th:if="${pagination != null}">
+                <div class="pagination-controls">
+                    <form
+                        class="pagination-size-form"
+                        method="get"
+                        th:action="@{/investments/brokerage-notes}"
+                        hx-get="/investments/brokerage-notes/fragments/table"
+                        hx-target="#brokerage-notes-listing"
+                        hx-swap="outerHTML">
+                        <input type="hidden" name="accountId" th:value="${selectedAccountId}">
+                        <input type="hidden" name="tradeStartDate" th:value="${selectedTradeStartDate}">
+                        <input type="hidden" name="tradeEndDate" th:value="${selectedTradeEndDate}">
+                        <input type="hidden" name="noteNumber" th:value="${selectedNoteNumber}">
+                        <input type="hidden" name="page" value="0">
+                        <label for="brokerage-notes-page-size" th:text="#{pagination.size.label}"></label>
+                        <select id="brokerage-notes-page-size" name="size" onchange="this.form.requestSubmit()">
+                            <option
+                                th:each="allowedSize : ${allowedPageSizes}"
+                                th:value="${allowedSize}"
+                                th:selected="${allowedSize == pagination.pageSize}"
+                                th:text="${allowedSize}">
+                            </option>
+                        </select>
+                    </form>
+
+                    <form
+                        class="pagination-nav-form"
+                        method="get"
+                        th:action="@{/investments/brokerage-notes}"
+                        hx-get="/investments/brokerage-notes/fragments/table"
+                        hx-target="#brokerage-notes-listing"
+                        hx-swap="outerHTML">
+                        <input type="hidden" name="accountId" th:value="${selectedAccountId}">
+                        <input type="hidden" name="tradeStartDate" th:value="${selectedTradeStartDate}">
+                        <input type="hidden" name="tradeEndDate" th:value="${selectedTradeEndDate}">
+                        <input type="hidden" name="noteNumber" th:value="${selectedNoteNumber}">
+                        <input type="hidden" name="size" th:value="${pagination.pageSize}">
+                        <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.firstPage()}" th:disabled="${!pagination.hasPrevious()}">
+                            <i data-lucide="chevrons-left" aria-hidden="true"></i>
+                            <span th:text="#{pagination.nav.first}"></span>
+                        </button>
+                        <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.previousPage()}" th:disabled="${!pagination.hasPrevious()}">
+                            <i data-lucide="chevron-left" aria-hidden="true"></i>
+                            <span th:text="#{pagination.nav.previous}"></span>
+                        </button>
+                        <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.nextPage()}" th:disabled="${!pagination.hasNext()}">
+                            <i data-lucide="chevron-right" aria-hidden="true"></i>
+                            <span th:text="#{pagination.nav.next}"></span>
+                        </button>
+                        <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.lastPage()}" th:disabled="${!pagination.hasNext()}">
+                            <i data-lucide="chevrons-right" aria-hidden="true"></i>
+                            <span th:text="#{pagination.nav.last}"></span>
+                        </button>
+                    </form>
+                </div>
+                <div class="pagination-summary">
+                    <span th:text="#{pagination.summary.page(${pagination.currentPageDisplay()}, ${pagination.totalPages})}"></span>
+                    <span th:text="#{pagination.summary.range(${pagination.rangeStart}, ${pagination.rangeEnd}, ${pagination.totalItems})}"></span>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="responsive-list">
+                    <thead>
+                    <tr>
+                        <th><span class="table-heading-label"><i data-lucide="briefcase" aria-hidden="true"></i><span th:text="#{investments.brokerageNotes.list.table.account}"></span></span></th>
+                        <th><span class="table-heading-label"><i data-lucide="file-text" aria-hidden="true"></i><span th:text="#{investments.brokerageNotes.list.table.noteNumber}"></span></span></th>
+                        <th><span class="table-heading-label"><i data-lucide="calendar-days" aria-hidden="true"></i><span th:text="#{investments.brokerageNotes.list.table.tradeDate}"></span></span></th>
+                        <th class="amount-cell"><span class="table-heading-label"><i data-lucide="badge-dollar-sign" aria-hidden="true"></i><span th:text="#{investments.brokerageNotes.list.table.netAmount}"></span></span></th>
+                        <th class="amount-cell"><span class="table-heading-label"><i data-lucide="receipt" aria-hidden="true"></i><span th:text="#{investments.brokerageNotes.list.table.totalCosts}"></span></span></th>
+                        <th><span class="table-heading-label"><i data-lucide="calendar-check" aria-hidden="true"></i><span th:text="#{investments.brokerageNotes.list.table.settlementDate}"></span></span></th>
+                        <th><span class="table-heading-label"><i data-lucide="settings" aria-hidden="true"></i><span th:text="#{investments.brokerageNotes.list.table.actions}"></span></span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(brokerageNotes)}" class="empty-row">
+                        <td colspan="7" class="empty" th:text="#{investments.brokerageNotes.list.empty}"></td>
+                    </tr>
+                    <tr th:each="brokerageNote : ${brokerageNotes}">
+                        <td th:attr="data-label=#{investments.brokerageNotes.list.table.account}" th:text="${brokerageNote.netEntry.account.title}"></td>
+                        <td th:attr="data-label=#{investments.brokerageNotes.list.table.noteNumber}" th:text="${brokerageNote.noteNumber}"></td>
+                        <td th:attr="data-label=#{investments.brokerageNotes.list.table.tradeDate}" th:text="${#temporals.format(brokerageNote.tradeDate, 'dd/MM/yyyy')}"></td>
+                        <td class="amount-cell" th:attr="data-label=#{investments.brokerageNotes.list.table.netAmount}" th:text="${#numbers.formatDecimal(brokerageNote.netAmount, 1, 'POINT', 2, 'COMMA')}"></td>
+                        <td class="amount-cell" th:attr="data-label=#{investments.brokerageNotes.list.table.totalCosts}" th:text="${#numbers.formatDecimal(brokerageNote.totalCosts, 1, 'POINT', 2, 'COMMA')}"></td>
+                        <td th:attr="data-label=#{investments.brokerageNotes.list.table.settlementDate}" th:text="${#temporals.format(brokerageNote.settlementDate, 'dd/MM/yyyy')}"></td>
+                        <td class="cell-actions" th:attr="data-label=#{investments.brokerageNotes.list.table.actions}">
+                            <details class="action-menu action-menu-row">
+                                <summary class="btn btn-secondary">
+                                    <span class="action-menu-trigger">
+                                        <i data-lucide="settings-2" aria-hidden="true"></i>
+                                        <span th:text="#{investments.brokerageNotes.list.table.actions}"></span>
+                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                                    </span>
+                                </summary>
+                                <div class="action-menu-panel">
+                                    <a class="action-menu-item" th:href="@{/investments/brokerage-notes/{id}(id=${brokerageNote.id},returnTo=${returnTo})}">
+                                        <i data-lucide="eye" aria-hidden="true"></i>
+                                        <span th:text="#{investments.brokerageNotes.list.action.details}"></span>
+                                    </a>
+                                    <a class="action-menu-item" th:href="@{/investments/operations(brokerageNoteId=${brokerageNote.id})}">
+                                        <i data-lucide="repeat-2" aria-hidden="true"></i>
+                                        <span th:text="#{investments.brokerageNotes.list.action.operations}"></span>
+                                    </a>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

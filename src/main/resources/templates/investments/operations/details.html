@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{investments.operations.details.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{investments.operations.details.header.subtitle})}"></header>
+
+<main class="wrap asset-details-main">
+    <section class="card header-actions">
+        <div>
+            <h2 th:text="#{investments.operations.details.heading}"></h2>
+            <p>
+                <span th:text="#{${'investment.operationType.' + operation.operationType.name().toLowerCase()}}"></span>
+                <span th:text="${' - ' + operation.asset.name}"></span>
+            </p>
+        </div>
+        <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="${returnTo}">
+                <i data-lucide="arrow-left" aria-hidden="true"></i>
+                <span th:text="#{investments.operations.details.action.back}"></span>
+            </a>
+            <a
+                class="btn btn-secondary"
+                th:if="${operation.brokerageNote != null}"
+                th:href="@{/investments/brokerage-notes/{id}(id=${operation.brokerageNote.id},returnTo=${returnTo})}">
+                <i data-lucide="file-text" aria-hidden="true"></i>
+                <span th:text="#{investments.operations.details.action.brokerageNote}"></span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/investments/operations/{id}/edit(id=${operation.id},returnTo=${returnTo})}">
+                <i data-lucide="edit-3" aria-hidden="true"></i>
+                <span th:text="#{investments.operations.details.action.edit}"></span>
+            </a>
+        </div>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{investments.operations.details.section.basicData}"></h3>
+                <p th:text="#{investments.operations.details.section.basicData.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid">
+            <div>
+                <dt th:text="#{investments.operations.details.field.id}"></dt>
+                <dd th:text="${operation.id}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.asset}"></dt>
+                <dd>
+                    <span th:text="${operation.asset.name}"></span>
+                    <span th:if="${operation.asset.ticker != null && !operation.asset.ticker.isBlank()}" th:text="${' (' + operation.asset.ticker + ')'}"></span>
+                </dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.account}"></dt>
+                <dd th:text="${operation.account.title}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.operationType}"></dt>
+                <dd th:text="#{${'investment.operationType.' + operation.operationType.name().toLowerCase()}}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.sourceType}"></dt>
+                <dd th:text="#{${'investment.sourceType.' + operation.sourceType.name().toLowerCase()}}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.tradeDate}"></dt>
+                <dd th:text="${#temporals.format(operation.tradeDate, 'dd/MM/yyyy')}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.settlementDate}"></dt>
+                <dd th:text="${operation.settlementDate != null ? #temporals.format(operation.settlementDate, 'dd/MM/yyyy') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.quantity}"></dt>
+                <dd th:text="${operation.quantity != null ? #numbers.formatDecimal(operation.quantity, 1, 'POINT', 10, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.unitPrice}"></dt>
+                <dd th:text="${operation.unitPrice != null ? #numbers.formatDecimal(operation.unitPrice, 1, 'POINT', 8, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.grossAmount}"></dt>
+                <dd th:text="${operation.grossAmount != null ? #numbers.formatDecimal(operation.grossAmount, 1, 'POINT', 2, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.netAmount}"></dt>
+                <dd th:text="${operation.netAmount != null ? #numbers.formatDecimal(operation.netAmount, 1, 'POINT', 2, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.fees}"></dt>
+                <dd th:text="${operation.fees != null ? #numbers.formatDecimal(operation.fees, 1, 'POINT', 2, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.taxes}"></dt>
+                <dd th:text="${operation.taxes != null ? #numbers.formatDecimal(operation.taxes, 1, 'POINT', 2, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.currency}"></dt>
+                <dd th:text="${operation.currency}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.brokerageNote}"></dt>
+                <dd th:text="${operation.brokerageNote != null ? operation.brokerageNote.noteNumber : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.operations.details.field.notes}"></dt>
+                <dd th:text="${operation.notes != null && !operation.notes.isBlank() ? operation.notes : '-'}"></dd>
+            </div>
+        </dl>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

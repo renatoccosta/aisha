@@ -5,10 +5,12 @@ import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.application.investment.AssetNotFoundException;
 import dev.ccosta.aisha.application.investment.AssetService;
+import dev.ccosta.aisha.application.investment.BrokerageNoteNotFoundException;
 import dev.ccosta.aisha.application.investment.InvestmentOperationEntryLinkRequest;
 import dev.ccosta.aisha.application.investment.InvestmentOperationNotFoundException;
 import dev.ccosta.aisha.application.investment.InvestmentOperationService;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.investment.BrokerageNote;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
@@ -84,11 +86,12 @@ public class InvestmentOperationController {
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "operationType", required = false) InvestmentOperationType operationType,
+        @RequestParam(name = "brokerageNoteId", required = false) Long brokerageNoteId,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
+        fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
         return "investments/operations/list";
     }
 
@@ -106,12 +109,33 @@ public class InvestmentOperationController {
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "operationType", required = false) InvestmentOperationType operationType,
+        @RequestParam(name = "brokerageNoteId", required = false) Long brokerageNoteId,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         Model model
     ) {
-        fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
+        fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
         return "investments/operations/list :: table";
+    }
+
+    /**
+     * Displays all fields for one investment operation.
+     *
+     * @param id operation identifier
+     * @param returnTo optional safe return path
+     * @param model view model
+     * @return operation details template
+     */
+    @GetMapping("/{id}")
+    public String details(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        InvestmentOperation operation = operationService.findById(id);
+        model.addAttribute("operation", operation);
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/investments/operations"));
+        return "investments/operations/details";
     }
 
     /**
@@ -224,7 +248,14 @@ public class InvestmentOperationController {
         }
 
         try {
-            operationService.update(id, toDomain(form), form.getAssetId(), form.getAccountId(), toLinkRequests(form.getLinkedEntryIds()));
+            operationService.update(
+                id,
+                toDomain(form),
+                form.getAssetId(),
+                form.getAccountId(),
+                form.getBrokerageNoteId(),
+                toLinkRequests(form.getLinkedEntryIds())
+            );
         } catch (AssetNotFoundException ex) {
             bindingResult.rejectValue("assetId", "investmentOperationForm.assetId.notNull");
             fillFormModel(model, form, "edit", id, returnTo, entryCandidates(form));
@@ -254,6 +285,7 @@ public class InvestmentOperationController {
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "operationType", required = false) InvestmentOperationType operationType,
+        @RequestParam(name = "brokerageNoteId", required = false) Long brokerageNoteId,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         HttpServletRequest request,
@@ -261,7 +293,7 @@ public class InvestmentOperationController {
     ) {
         operationService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
+            fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
             return "investments/operations/list :: table";
         }
         return "redirect:/investments/operations";
@@ -284,6 +316,7 @@ public class InvestmentOperationController {
         @RequestParam(name = "asset", required = false) String asset,
         @RequestParam(name = "accountId", required = false) Long accountId,
         @RequestParam(name = "operationType", required = false) InvestmentOperationType operationType,
+        @RequestParam(name = "brokerageNoteId", required = false) Long brokerageNoteId,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
         HttpServletRequest request,
@@ -291,14 +324,14 @@ public class InvestmentOperationController {
     ) {
         operationService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, asset, accountId, operationType, page, size);
+            fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
             return "investments/operations/list :: table";
         }
         return "redirect:/investments/operations";
     }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler({InvestmentOperationNotFoundException.class, AssetNotFoundException.class})
+    @ExceptionHandler({InvestmentOperationNotFoundException.class, AssetNotFoundException.class, BrokerageNoteNotFoundException.class})
     public String handleNotFound(RuntimeException ex, HttpServletRequest request) {
         String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
         log.warn(
@@ -319,6 +352,7 @@ public class InvestmentOperationController {
         String asset,
         Long accountId,
         InvestmentOperationType operationType,
+        Long brokerageNoteId,
         Integer page,
         Integer size
     ) {
@@ -331,6 +365,7 @@ public class InvestmentOperationController {
             selectedAsset,
             accountId,
             operationType,
+            brokerageNoteId,
             requestedPage,
             pageSize
         );
@@ -342,6 +377,7 @@ public class InvestmentOperationController {
                 selectedAsset,
                 accountId,
                 operationType,
+                brokerageNoteId,
                 effectivePage,
                 pageSize
             );
@@ -356,6 +392,7 @@ public class InvestmentOperationController {
         model.addAttribute("selectedAsset", selectedAsset);
         model.addAttribute("selectedAccountId", accountId);
         model.addAttribute("selectedOperationType", operationType);
+        model.addAttribute("selectedBrokerageNoteId", brokerageNoteId);
         model.addAttribute(
             "returnTo",
             ReturnPathSupport.buildReturnPath(
@@ -363,6 +400,7 @@ public class InvestmentOperationController {
                 "asset", selectedAsset,
                 "accountId", accountId,
                 "operationType", operationType,
+                "brokerageNoteId", brokerageNoteId,
                 "page", pagination.page(),
                 "size", pagination.pageSize()
             )
@@ -383,7 +421,8 @@ public class InvestmentOperationController {
         model.addAttribute("assets", assetService.listPageOrdered(0, FORM_OPTION_LIMIT).items());
         model.addAttribute("accounts", accountService.listAvailableForEntryForm(form.getAccountId()));
         model.addAttribute("operationTypes", InvestmentOperationType.values());
-        model.addAttribute("sourceTypes", List.of(InvestmentOperationSourceType.MANUAL));
+        model.addAttribute("sourceTypes", sourceTypesFor(form));
+        model.addAttribute("brokerageNote", findBrokerageNoteForForm(form));
         model.addAttribute("entryCandidates", entryCandidates);
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/investments/operations"));
     }
@@ -464,11 +503,29 @@ public class InvestmentOperationController {
         form.setCurrency(operation.getCurrency());
         form.setNotes(operation.getNotes());
         form.setSourceType(operation.getSourceType());
+        if (operation.getBrokerageNote() != null) {
+            form.setBrokerageNoteId(operation.getBrokerageNote().getId());
+        }
         form.setLinkedEntryIds(operationService.listLinksByOperationId(operation.getId()).stream()
             .map(InvestmentOperationEntryLink::getEntry)
             .map(Entry::getId)
             .toList());
         return form;
+    }
+
+    private List<InvestmentOperationSourceType> sourceTypesFor(InvestmentOperationForm form) {
+        if (form.getSourceType() == InvestmentOperationSourceType.BROKER_NOTE) {
+            return List.of(InvestmentOperationSourceType.BROKER_NOTE);
+        }
+        return List.of(InvestmentOperationSourceType.MANUAL);
+    }
+
+    private BrokerageNote findBrokerageNoteForForm(InvestmentOperationForm form) {
+        Long brokerageNoteId = form.getBrokerageNoteId();
+        if (brokerageNoteId == null) {
+            return null;
+        }
+        return operationService.findBrokerageNoteById(brokerageNoteId);
     }
 
     private Collection<InvestmentOperationEntryLinkRequest> toLinkRequests(Collection<Long> entryIds) {

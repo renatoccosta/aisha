@@ -38,6 +38,16 @@
             </div>
         </a>
 
+        <a class="card admin-nav-card" th:href="@{/investments/brokerage-notes}">
+            <div class="admin-nav-card-icon">
+                <i data-lucide="file-text" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 th:text="#{investments.brokerageNotes.heading}"></h3>
+                <p th:text="#{investments.brokerageNotes.subtitle}"></p>
+            </div>
+        </a>
+
         <a class="card admin-nav-card" th:href="@{/investments/brokerage-note-import}">
             <div class="admin-nav-card-icon">
                 <i data-lucide="file-up" aria-hidden="true"></i>

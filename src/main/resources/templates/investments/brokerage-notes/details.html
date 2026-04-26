@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{investments.brokerageNotes.details.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{investments.brokerageNotes.details.header.subtitle})}"></header>
+
+<main class="wrap asset-details-main">
+    <section class="card header-actions">
+        <div>
+            <h2 th:text="#{investments.brokerageNotes.details.heading(${brokerageNote.noteNumber})}"></h2>
+            <p th:text="${brokerageNote.brokerName}"></p>
+        </div>
+        <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="${returnTo}">
+                <i data-lucide="arrow-left" aria-hidden="true"></i>
+                <span th:text="#{investments.brokerageNotes.details.action.back}"></span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/investments/operations(brokerageNoteId=${brokerageNote.id})}">
+                <i data-lucide="repeat-2" aria-hidden="true"></i>
+                <span th:text="#{investments.brokerageNotes.details.action.operations}"></span>
+            </a>
+        </div>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{investments.brokerageNotes.details.section.brokerData}"></h3>
+                <p th:text="#{investments.brokerageNotes.details.section.brokerData.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid">
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="briefcase" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.account}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${brokerageNote.netEntry.account.title}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="building-2" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.brokerName}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${brokerageNote.brokerName}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="badge" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.brokerCnpj}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${brokerageNote.brokerCnpj}"></dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{investments.brokerageNotes.details.section.noteData}"></h3>
+                <p th:text="#{investments.brokerageNotes.details.section.noteData.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid">
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="file-text" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.noteNumber}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${brokerageNote.noteNumber}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="calendar-days" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.tradeDate}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#temporals.format(brokerageNote.tradeDate, 'dd/MM/yyyy')}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="calendar-check" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.settlementDate}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#temporals.format(brokerageNote.settlementDate, 'dd/MM/yyyy')}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.netAmount}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#numbers.formatDecimal(brokerageNote.netAmount, 1, 'POINT', 2, 'COMMA')}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="receipt" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.totalCosts}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#numbers.formatDecimal(brokerageNote.totalCosts, 1, 'POINT', 2, 'COMMA')}"></dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{investments.brokerageNotes.details.section.importData}"></h3>
+                <p th:text="#{investments.brokerageNotes.details.section.importData.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid">
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="clock" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.importedAt}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#temporals.format(brokerageNote.importedAt, 'dd/MM/yyyy HH:mm')}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="file" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.originalFileName}"></span>
+                    </span>
+                </dt>
+                <dd class="breakable-value" th:text="${brokerageNote.originalFileName}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="wallet-cards" aria-hidden="true"></i>
+                        <span th:text="#{investments.brokerageNotes.details.field.netEntry}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${brokerageNote.netEntry.description}"></dd>
+            </div>
+        </dl>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

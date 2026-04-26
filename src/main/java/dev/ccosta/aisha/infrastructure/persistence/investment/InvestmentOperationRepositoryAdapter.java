@@ -44,6 +44,7 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
         String assetFilter,
         Long accountId,
         InvestmentOperationType operationType,
+        Long brokerageNoteId,
         int page,
         int pageSize
     ) {
@@ -53,6 +54,7 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
             normalizeTextFilter(assetFilter),
             accountId,
             operationType,
+            brokerageNoteId,
             PageRequest.of(page, pageSize)
         );
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());

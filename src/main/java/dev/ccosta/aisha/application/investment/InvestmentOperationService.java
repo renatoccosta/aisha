@@ -80,6 +80,7 @@ public class InvestmentOperationService {
         String assetFilter,
         Long accountId,
         InvestmentOperationType operationType,
+        Long brokerageNoteId,
         int page,
         int pageSize
     ) {
@@ -89,7 +90,16 @@ public class InvestmentOperationService {
         if (endDate.isBefore(startDate)) {
             throw new IllegalArgumentException("End date must be greater than or equal to start date");
         }
-        return investmentOperationRepository.findPageOrdered(startDate, endDate, assetFilter, accountId, operationType, page, pageSize);
+        return investmentOperationRepository.findPageOrdered(
+            startDate,
+            endDate,
+            assetFilter,
+            accountId,
+            operationType,
+            brokerageNoteId,
+            page,
+            pageSize
+        );
     }
 
     /**
@@ -102,6 +112,18 @@ public class InvestmentOperationService {
     public InvestmentOperation findById(Long id) {
         return investmentOperationRepository.findById(id)
             .orElseThrow(() -> new InvestmentOperationNotFoundException(id));
+    }
+
+    /**
+     * Finds a brokerage note linked to operation workflows.
+     *
+     * @param id brokerage note identifier
+     * @return the matching brokerage note
+     */
+    @Transactional(readOnly = true)
+    public BrokerageNote findBrokerageNoteById(Long id) {
+        return brokerageNoteRepository.findById(id)
+            .orElseThrow(() -> new BrokerageNoteNotFoundException(id));
     }
 
     /**

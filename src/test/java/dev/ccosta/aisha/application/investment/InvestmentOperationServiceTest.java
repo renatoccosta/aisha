@@ -172,6 +172,7 @@ class InvestmentOperationServiceTest {
             "PETR4",
             20L,
             InvestmentOperationType.BUY,
+            50L,
             0,
             25
         )).thenReturn(page);
@@ -182,6 +183,7 @@ class InvestmentOperationServiceTest {
             "PETR4",
             20L,
             InvestmentOperationType.BUY,
+            50L,
             0,
             25
         );
@@ -193,6 +195,7 @@ class InvestmentOperationServiceTest {
             "PETR4",
             20L,
             InvestmentOperationType.BUY,
+            50L,
             0,
             25
         );

@@ -62,6 +62,8 @@ public class InvestmentOperationForm {
     @NotNull(message = "{investmentOperationForm.sourceType.notNull}")
     private InvestmentOperationSourceType sourceType = InvestmentOperationSourceType.MANUAL;
 
+    private Long brokerageNoteId;
+
     private List<Long> linkedEntryIds = new ArrayList<>();
 
     public Long getAssetId() {
@@ -174,6 +176,14 @@ public class InvestmentOperationForm {
 
     public void setSourceType(InvestmentOperationSourceType sourceType) {
         this.sourceType = sourceType;
+    }
+
+    public Long getBrokerageNoteId() {
+        return brokerageNoteId;
+    }
+
+    public void setBrokerageNoteId(Long brokerageNoteId) {
+        this.brokerageNoteId = brokerageNoteId;
     }
 
     public List<Long> getLinkedEntryIds() {

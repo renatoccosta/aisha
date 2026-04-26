@@ -1282,6 +1282,10 @@ body.import-drag-active .import-drop-overlay {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.import-summary-grid > div {
+  min-width: 0;
+}
+
 .import-summary-grid dt {
   color: var(--muted);
   font-size: 0.88rem;
@@ -1290,6 +1294,11 @@ body.import-drag-active .import-drop-overlay {
 .import-summary-grid dd {
   margin: 0.2rem 0 0;
   font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.breakable-value {
+  word-break: break-word;
 }
 
 .dashboard-main {
