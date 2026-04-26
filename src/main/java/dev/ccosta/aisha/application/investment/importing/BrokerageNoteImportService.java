@@ -15,6 +15,7 @@ import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -205,6 +206,7 @@ public class BrokerageNoteImportService {
         } else {
             operation.setCurrency(operation.getCurrency().trim().toUpperCase(Locale.ROOT));
         }
+        normalizeImportedOperationAmounts(operation);
         investmentOperationRepository.save(operation);
     }
 
@@ -298,6 +300,33 @@ public class BrokerageNoteImportService {
             }
             operation.setFees(cost);
             operation.setTaxes(ZERO_MONEY);
+        }
+    }
+
+    private void normalizeImportedOperationAmounts(InvestmentOperation operation) {
+        if (operation.getFees() != null) {
+            operation.setFees(money(operation.getFees()));
+        }
+        if (operation.getTaxes() != null) {
+            operation.setTaxes(money(operation.getTaxes()));
+        }
+        if (operation.getGrossAmount() == null) {
+            return;
+        }
+
+        BigDecimal grossAmount = money(operation.getGrossAmount());
+        operation.setGrossAmount(grossAmount);
+        BigDecimal costs = operationCosts(operation);
+        if (operation.getOperationType() == InvestmentOperationType.BUY
+            || operation.getOperationType() == InvestmentOperationType.SUBSCRIPTION
+            || operation.getOperationType() == InvestmentOperationType.TRANSFER_IN) {
+            operation.setNetAmount(grossAmount.add(costs).setScale(MONEY_SCALE, RoundingMode.HALF_UP));
+            return;
+        }
+        if (operation.getOperationType() == InvestmentOperationType.SELL
+            || operation.getOperationType() == InvestmentOperationType.REDEMPTION
+            || operation.getOperationType() == InvestmentOperationType.TRANSFER_OUT) {
+            operation.setNetAmount(grossAmount.subtract(costs).setScale(MONEY_SCALE, RoundingMode.HALF_UP));
         }
     }
 

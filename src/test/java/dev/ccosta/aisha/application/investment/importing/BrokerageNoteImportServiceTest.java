@@ -163,8 +163,36 @@ class BrokerageNoteImportServiceTest {
 
         assertThat(first.getFees()).isEqualByComparingTo("10.00");
         assertThat(first.getTaxes()).isEqualByComparingTo("0.00");
+        assertThat(first.getNetAmount()).isEqualByComparingTo("110.00");
         assertThat(second.getFees()).isEqualByComparingTo("20.00");
         assertThat(second.getTaxes()).isEqualByComparingTo("0.00");
+        assertThat(second.getNetAmount()).isEqualByComparingTo("220.00");
+    }
+
+    @Test
+    void shouldSubtractAllocatedCostsFromSellOperationNetAmount() {
+        Account account = account();
+        BrokerageNote note = brokerageNote();
+        note.setTotalCosts(new BigDecimal("3.00"));
+        Entry entry = note.getNetEntry();
+        Asset existingAsset = asset("PETR4");
+        InvestmentOperation operation = operation(asset("PETR4"));
+        operation.setOperationType(InvestmentOperationType.SELL);
+        operation.setGrossAmount(new BigDecimal("100.00"));
+        when(accountService.findById(10L)).thenReturn(account);
+        when(processor.supports(any(BrokerageNoteProcessingRequest.class))).thenReturn(true);
+        when(processor.process(any(BrokerageNoteProcessingRequest.class))).thenReturn(List.of(new ParsedBrokerageNote(note, List.of(operation))));
+        when(brokerageNoteRepository.existsByBrokerCnpjAndNoteNumberAndTradeDate("13.434.335/0001-60", "123", LocalDate.of(2026, 1, 5)))
+            .thenReturn(false);
+        when(entryRepository.save(entry)).thenReturn(entry);
+        when(brokerageNoteRepository.save(note)).thenReturn(note);
+        when(assetRepository.findByIsinIgnoreCase("BRPETRACNPR6")).thenReturn(Optional.of(existingAsset));
+
+        importService.importFile(10L, "nota.pdf", "hash", new byte[] {1});
+
+        assertThat(operation.getFees()).isEqualByComparingTo("3.00");
+        assertThat(operation.getTaxes()).isEqualByComparingTo("0.00");
+        assertThat(operation.getNetAmount()).isEqualByComparingTo("97.00");
     }
 
     @Test

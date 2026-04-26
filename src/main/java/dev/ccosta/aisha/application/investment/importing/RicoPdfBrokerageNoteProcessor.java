@@ -44,6 +44,8 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
     private static final Pattern NET_SETTLEMENT_PATTERN = Pattern.compile("Líquido para\\s+(\\d{2}/\\d{2}/\\d{4})\\s+([\\d.]+,\\d{2})\\s+([CD])");
     private static final Pattern TICKER_PATTERN = Pattern.compile("^[A-Z]{4}\\d{1,2}[A-Z]?$");
     private static final Pattern TRAILING_MARKER_PATTERN = Pattern.compile("^(?:@.*|#.*|EDJ|EJ|EDR|ED|EB|ER|NM|N1|N2)$");
+    private static final Pattern OBSERVATION_REFERENCE_PATTERN = Pattern.compile("^(?:[@#0-9]+)$");
+    private static final Pattern OBSERVATION_LEGEND_PATTERN = Pattern.compile("(?<![A-Za-z0-9])([A-Z0-9#@])\\s+-\\s+");
 
     /**
      * Checks whether the uploaded file is a Rico PDF brokerage note.
@@ -143,6 +145,7 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         String brokerCnpj = extractBrokerCnpj(firstPage.text());
         Settlement settlement = extractSettlement(lastPage.text());
         BigDecimal totalCosts = extractTotalCosts(lastPage.text());
+        Map<String, String> observationLegend = extractObservationLegend(pages);
         BrokerageNote note = new BrokerageNote();
         note.setBrokerName(BROKER_NAME);
         note.setBrokerCnpj(brokerCnpj);
@@ -158,7 +161,7 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
 
         List<InvestmentOperation> operations = pages.stream()
             .flatMap(page -> page.lines().stream())
-            .map(line -> parseOperation(line, note))
+            .map(line -> parseOperation(line, note, observationLegend))
             .flatMap(Optional::stream)
             .toList();
         return new ParsedBrokerageNote(note, operations);
@@ -206,13 +209,48 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         return entry;
     }
 
-    private Optional<InvestmentOperation> parseOperation(String line, BrokerageNote note) {
+    private Map<String, String> extractObservationLegend(List<RicoPage> pages) {
+        Map<String, String> legend = new LinkedHashMap<>();
+        for (RicoPage page : pages) {
+            boolean insideObservationLegend = false;
+            for (String line : page.lines()) {
+                if (line.contains("Observações")) {
+                    insideObservationLegend = true;
+                }
+                if (line.startsWith("Capitais e regiões metropolitanas:")) {
+                    insideObservationLegend = false;
+                }
+                if (insideObservationLegend && line.contains(" - ")) {
+                    extractObservationLegendEntries(line, legend);
+                }
+            }
+        }
+        return legend;
+    }
+
+    private void extractObservationLegendEntries(String line, Map<String, String> legend) {
+        Matcher matcher = OBSERVATION_LEGEND_PATTERN.matcher(line);
+        List<LegendMatch> matches = new ArrayList<>();
+        while (matcher.find()) {
+            matches.add(new LegendMatch(matcher.group(1), matcher.end(), matcher.start()));
+        }
+        for (int index = 0; index < matches.size(); index++) {
+            LegendMatch current = matches.get(index);
+            int end = index + 1 < matches.size() ? matches.get(index + 1).start() : line.length();
+            String description = line.substring(current.descriptionStart(), end).trim();
+            if (StringUtils.hasText(description)) {
+                legend.putIfAbsent(current.code(), description);
+            }
+        }
+    }
+
+    private Optional<InvestmentOperation> parseOperation(String line, BrokerageNote note, Map<String, String> observationLegend) {
         Matcher matcher = OPERATION_PATTERN.matcher(line);
         if (!matcher.matches()) {
             return Optional.empty();
         }
 
-        AssetDescriptor assetDescriptor = describeAsset(matcher.group(3));
+        AssetDescriptor assetDescriptor = describeAsset(matcher.group(3), observationLegend);
         InvestmentOperation operation = new InvestmentOperation();
         operation.setAsset(assetDescriptor.toAsset());
         operation.setOperationType(toOperationType(matcher.group(1)));
@@ -226,18 +264,28 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         operation.setTaxes(BigDecimal.ZERO);
         operation.setCurrency("BRL");
         operation.setSourceType(InvestmentOperationSourceType.BROKER_NOTE);
-        operation.setNotes("Rico " + matcher.group(2) + " - " + assetDescriptor.originalSpecification());
+        operation.setNotes(operationNotes(matcher.group(2), assetDescriptor));
         return Optional.of(operation);
+    }
+
+    private String operationNotes(String marketType, AssetDescriptor assetDescriptor) {
+        String notes = "Rico " + marketType + " - " + assetDescriptor.cleanedSpecification();
+        if (!assetDescriptor.observations().isEmpty()) {
+            notes += ". Observações: " + String.join("; ", assetDescriptor.observations());
+        }
+        return notes;
     }
 
     private InvestmentOperationType toOperationType(String side) {
         return "C".equals(side) ? InvestmentOperationType.BUY : InvestmentOperationType.SELL;
     }
 
-    private AssetDescriptor describeAsset(String rawSpecification) {
+    private AssetDescriptor describeAsset(String rawSpecification, Map<String, String> observationLegend) {
         List<String> tokens = new ArrayList<>(List.of(rawSpecification.trim().replaceAll("\\s+", " ").split(" ")));
+        List<String> observations = new ArrayList<>();
         while (!tokens.isEmpty() && TRAILING_MARKER_PATTERN.matcher(tokens.getLast()).matches()) {
-            tokens.removeLast();
+            String marker = tokens.removeLast();
+            observations.addAll(0, expandObservationMarker(marker, observationLegend));
         }
         String ticker = tokens.stream()
             .filter(token -> TICKER_PATTERN.matcher(token).matches())
@@ -251,7 +299,23 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         if (!StringUtils.hasText(name)) {
             name = ticker;
         }
-        return new AssetDescriptor(rawSpecification.trim().replaceAll("\\s+", " "), name, ticker, type);
+        return new AssetDescriptor(String.join(" ", tokens), name, ticker, type, List.copyOf(observations));
+    }
+
+    private List<String> expandObservationMarker(String marker, Map<String, String> observationLegend) {
+        if (!OBSERVATION_REFERENCE_PATTERN.matcher(marker).matches()) {
+            return List.of();
+        }
+
+        List<String> observations = new ArrayList<>();
+        for (int index = 0; index < marker.length(); index++) {
+            String code = String.valueOf(marker.charAt(index));
+            String observation = observationLegend.getOrDefault(code, code);
+            if (!observations.contains(observation)) {
+                observations.add(observation);
+            }
+        }
+        return observations;
     }
 
     private AssetType assetType(List<String> tokens) {
@@ -289,10 +353,13 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
     private record RicoPage(int pageIndex, String noteNumber, int notePageNumber, LocalDate tradeDate, String text, List<String> lines) {
     }
 
+    private record LegendMatch(String code, int descriptionStart, int start) {
+    }
+
     private record Settlement(LocalDate date, BigDecimal amount, String side) {
     }
 
-    private record AssetDescriptor(String originalSpecification, String name, String ticker, AssetType type) {
+    private record AssetDescriptor(String cleanedSpecification, String name, String ticker, AssetType type, List<String> observations) {
 
         private Asset toAsset() {
             Asset asset = new Asset();

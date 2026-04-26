@@ -30,12 +30,16 @@ class RicoPdfBrokerageNoteProcessorTest {
             "Negócios realizados",
             "Q Negociação C/V Tipo mercado Prazo Especificação do título Obs. (*) Quantidade Preço / Ajuste Valor Operação / Ajuste D/C",
             "1-BOVESPA V FRACIONARIO CIELO          ON NM 70 3,75 262,50 C",
-            "1-BOVESPA C VISTA FII XP MALLS          XPML11          CI 200 111,80 22.360,00 D",
+            "1-BOVESPA C VISTA FII XP MALLS          XPML11          CI #2 200 111,80 22.360,00 D",
             "Resumo dos Negócios Resumo Financeiro",
             "Taxa de liquidação 18,80 D",
             "Total Bovespa / Soma 2,21 D",
             "Total Custos / Despesas 0,00 D",
-            "Líquido para 20/11/2020 67.643,76 D"
+            "Líquido para 20/11/2020 67.643,76 D",
+            "(*) Observações A - Posição futuro T - Liquidação pelo Bruto",
+            "2 - Corretora ou pessoa vinculada atuou na contra parte. C - Clubes e fundos de Ações I - POP",
+            "# - Negócio direto P - Carteira Própria",
+            "Capitais e regiões metropolitanas: 3003-5465"
         )));
         BrokerageNoteProcessingRequest request = request("rico-2020.pdf", pdf);
 
@@ -59,6 +63,9 @@ class RicoPdfBrokerageNoteProcessorTest {
         assertThat(parsedNote.operations().get(1).getOperationType()).isEqualTo(InvestmentOperationType.BUY);
         assertThat(parsedNote.operations().get(1).getAsset().getType()).isEqualTo(AssetType.FII);
         assertThat(parsedNote.operations().get(1).getAsset().getTicker()).isEqualTo("XPML11");
+        assertThat(parsedNote.operations().get(1).getNotes())
+            .contains("Observações: Negócio direto; Corretora ou pessoa vinculada atuou na contra parte.")
+            .doesNotContain("#2");
     }
 
     @Test
