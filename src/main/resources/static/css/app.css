@@ -1292,6 +1292,10 @@ body.import-drag-active .import-drop-overlay {
   min-width: 0;
 }
 
+.import-summary-grid-wide {
+  grid-column: 1 / -1;
+}
+
 .import-summary-grid dt {
   color: var(--muted);
   font-size: 0.88rem;
