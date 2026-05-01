@@ -62,17 +62,20 @@ public class InvestmentOperationController {
     private final AssetService assetService;
     private final AccountService accountService;
     private final EntryService entryService;
+    private final EntryLinkedOperationPrefillBuilder entryLinkedOperationPrefillBuilder;
 
     public InvestmentOperationController(
         InvestmentOperationService operationService,
         AssetService assetService,
         AccountService accountService,
-        EntryService entryService
+        EntryService entryService,
+        EntryLinkedOperationPrefillBuilder entryLinkedOperationPrefillBuilder
     ) {
         this.operationService = operationService;
         this.assetService = assetService;
         this.accountService = accountService;
         this.entryService = entryService;
+        this.entryLinkedOperationPrefillBuilder = entryLinkedOperationPrefillBuilder;
     }
 
     /**
@@ -152,6 +155,31 @@ public class InvestmentOperationController {
     public String createForm(@RequestParam(name = "returnTo", required = false) String returnTo, Model model) {
         InvestmentOperationForm form = new InvestmentOperationForm();
         fillFormModel(model, form, "create", null, returnTo, List.of());
+        return "investments/operations/form";
+    }
+
+    /**
+     * Opens the creation form prefilled from a regular financial entry.
+     *
+     * @param entryId source financial entry identifier
+     * @param returnTo optional safe return path
+     * @param model view model
+     * @return operation form template
+     */
+    @GetMapping("/new/from-entry/{entryId}")
+    public String createFormFromEntry(
+        @PathVariable Long entryId,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        Entry entry = entryService.findById(entryId);
+        if (entry.isTransfer()) {
+            return ReturnPathSupport.resolveRedirect(returnTo, "/entries");
+        }
+
+        List<Asset> assets = assetService.listPageOrdered(0, FORM_OPTION_LIMIT).items();
+        InvestmentOperationForm form = entryLinkedOperationPrefillBuilder.build(entry, assets, NEW_ASSET_OPTION_ID);
+        fillFormModel(model, form, "create", null, returnTo, mergeEntryCandidates(form, List.of(entry)));
         return "investments/operations/form";
     }
 

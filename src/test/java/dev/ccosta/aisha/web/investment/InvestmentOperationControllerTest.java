@@ -51,6 +51,9 @@ class InvestmentOperationControllerTest {
     @Mock
     private EntryService entryService;
 
+    @Mock
+    private EntryLinkedOperationPrefillBuilder entryLinkedOperationPrefillBuilder;
+
     @InjectMocks
     private InvestmentOperationController operationController;
 
@@ -165,6 +168,49 @@ class InvestmentOperationControllerTest {
     }
 
     @Test
+    void shouldOpenCreateFormPrefilledFromEntry() {
+        Entry entry = entryWithId(30L, accountWithId(20L));
+        InvestmentOperationForm form = baseForm();
+        form.setLinkedEntryIds(List.of(30L));
+        Asset asset = assetWithId(10L);
+        when(entryService.findById(30L)).thenReturn(entry);
+        when(assetService.listPageOrdered(0, 100))
+            .thenReturn(new PagedResult<>(List.of(asset), 0, 100, 1, 1));
+        when(entryLinkedOperationPrefillBuilder.build(entry, List.of(asset), -1L)).thenReturn(form);
+        when(entryService.listMostRecentBySettlementDateBetweenAndFilters(
+            LocalDate.of(2026, 3, 21),
+            LocalDate.of(2026, 5, 20),
+            20L,
+            null,
+            null,
+            false,
+            false,
+            0,
+            100
+        )).thenReturn(new PagedResult<>(List.of(), 0, 100, 0, 0));
+
+        ConcurrentModel model = new ConcurrentModel();
+        String view = operationController.createFormFromEntry(30L, "/entries?page=1", model);
+
+        assertThat(view).isEqualTo("investments/operations/form");
+        assertThat(model.getAttribute("form")).isSameAs(form);
+        assertThat(model.getAttribute("returnTo")).isEqualTo("/entries?page=1");
+        assertThat(model.getAttribute("entryCandidates")).isEqualTo(List.of(entry));
+    }
+
+    @Test
+    void shouldRedirectWhenTryingToPrefillOperationFromTransferEntry() {
+        Entry entry = entryWithId(30L, accountWithId(20L));
+        entry.setEntryType(dev.ccosta.aisha.domain.entry.EntryType.TRANSFER);
+        when(entryService.findById(30L)).thenReturn(entry);
+
+        String view = operationController.createFormFromEntry(30L, "/entries?page=1", new ConcurrentModel());
+
+        assertThat(view).isEqualTo("redirect:/entries?page=1");
+        verify(entryLinkedOperationPrefillBuilder, never()).build(any(), any(), any());
+    }
+
+    @Test
     void shouldBulkDeleteAndRefreshListingForHtmx() {
         DateFilterState globalDateFilter = baseDateFilter();
         when(operationService.listPageOrdered(globalDateFilter.getStartDate(), globalDateFilter.getEndDate(), null, null, null, null, 0, 25))
@@ -265,6 +311,24 @@ class InvestmentOperationControllerTest {
         Asset asset = new Asset();
         ReflectionTestUtils.setField(asset, "id", id);
         return asset;
+    }
+
+    private Entry entryWithId(Long id, Account account) {
+        Entry entry = new Entry();
+        ReflectionTestUtils.setField(entry, "id", id);
+        entry.setAccount(account);
+        entry.setDescription("Compra PETR4 qtd 10");
+        entry.setMovementDate(LocalDate.of(2026, 4, 20));
+        entry.setSettlementDate(LocalDate.of(2026, 4, 20));
+        entry.setAmount(new BigDecimal("-125.50"));
+        return entry;
+    }
+
+    private Account accountWithId(Long id) {
+        Account account = new Account();
+        ReflectionTestUtils.setField(account, "id", id);
+        account.setTitle("Investimentos");
+        return account;
     }
 
 }

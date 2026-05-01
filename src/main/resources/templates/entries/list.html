@@ -355,6 +355,13 @@
                                     </a>
                                     <a
                                         class="action-menu-item"
+                                        th:if="${entry.entryType.name() != 'TRANSFER'}"
+                                        th:href="@{/investments/operations/new/from-entry/{entryId}(entryId=${entry.id},returnTo=${returnTo})}">
+                                        <i data-lucide="workflow" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.createLinkedOperation}"></span>
+                                    </a>
+                                    <a
+                                        class="action-menu-item"
                                         th:if="${transferViewsByEntryId[entry.id] == null}"
                                         th:href="@{/entries/{id}/transfer-counterpart(id=${entry.id},returnTo=${returnTo})}">
                                         <i data-lucide="repeat" aria-hidden="true"></i>
