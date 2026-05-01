@@ -7,13 +7,16 @@
     <script defer th:src="@{/js/selectable-table-rows.js}"></script>
     <script th:inline="javascript">
         (function () {
-            const key = "aisha-theme";
-            const savedTheme = localStorage.getItem(key);
+            const themeKey = "aisha-theme";
+            const valuesVisibilityKey = "aisha-dashboard-values-hidden";
+            const savedTheme = localStorage.getItem(themeKey);
+            const savedValuesVisibility = localStorage.getItem(valuesVisibilityKey);
             const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
             const theme = savedTheme === "dark" || savedTheme === "light"
                 ? savedTheme
                 : (prefersDark ? "dark" : "light");
             document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("data-values-hidden", String(savedValuesVisibility === "true"));
         }());
     </script>
     <div class="wrap brand">
@@ -27,17 +30,13 @@
                         <i data-lucide="home" aria-hidden="true"></i>
                         <span th:text="#{nav.dashboard}"></span>
                     </a>
-                    <a th:href="@{/entries}">
-                        <i data-lucide="file-text" aria-hidden="true"></i>
-                        <span th:text="#{nav.entries}"></span>
+                    <a th:href="@{/finances}">
+                        <i data-lucide="wallet-cards" aria-hidden="true"></i>
+                        <span th:text="#{nav.finances}"></span>
                     </a>
-                    <a th:href="@{/categories}">
-                        <i data-lucide="tag" aria-hidden="true"></i>
-                        <span th:text="#{nav.categories}"></span>
-                    </a>
-                    <a th:href="@{/accounts}">
-                        <i data-lucide="briefcase" aria-hidden="true"></i>
-                        <span th:text="#{nav.accounts}"></span>
+                    <a th:href="@{/investments}">
+                        <i data-lucide="trending-up" aria-hidden="true"></i>
+                        <span th:text="#{nav.investments}"></span>
                     </a>
                     <a th:href="@{/admin}">
                         <i data-lucide="shield-check" aria-hidden="true"></i>
@@ -52,17 +51,23 @@
                 <strong th:text="${currentUsername}"></strong>
             </p>
             <div class="actions-inline topbar-controls">
-                <form method="post" th:action="@{/logout}" th:if="${currentUsername != null}">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                    <button type="submit" class="btn btn-secondary">
-                        <i data-lucide="log-out" aria-hidden="true"></i>
-                        <span th:text="#{auth.header.logout}"></span>
-                    </button>
-                </form>
+                <button
+                    type="button"
+                    id="values-visibility-toggle"
+                    class="btn btn-secondary btn-icon"
+                    th:attr="aria-label=#{dashboard.values.toggle.hide},data-label-show=#{dashboard.values.toggle.show},data-label-hide=#{dashboard.values.toggle.hide}">
+                    <span data-role="icon-visible">
+                        <i data-lucide="eye" aria-hidden="true"></i>
+                    </span>
+                    <span data-role="icon-hidden" hidden>
+                        <i data-lucide="eye-off" aria-hidden="true"></i>
+                    </span>
+                    <span class="sr-only" data-role="label" th:text="#{dashboard.values.toggle.hide}"></span>
+                </button>
                 <button
                     type="button"
                     id="theme-toggle"
-                    class="btn btn-secondary"
+                    class="btn btn-secondary btn-icon"
                     th:attr="aria-label=#{theme.toggle.aria},data-label-light=#{theme.toggle.light},data-label-dark=#{theme.toggle.dark}">
                     <span data-role="icon-dark">
                         <i data-lucide="moon" aria-hidden="true"></i>
@@ -70,8 +75,15 @@
                     <span data-role="icon-light" hidden>
                         <i data-lucide="sun" aria-hidden="true"></i>
                     </span>
-                    <span data-role="label"></span>
+                    <span class="sr-only" data-role="label"></span>
                 </button>
+                <form method="post" th:action="@{/logout}" th:if="${currentUsername != null}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="submit" class="btn btn-secondary">
+                        <i data-lucide="log-out" aria-hidden="true"></i>
+                        <span th:text="#{auth.header.logout}"></span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -144,10 +156,48 @@
     </div>
     <script>
         (function () {
-            const key = "aisha-theme";
+            const themeKey = "aisha-theme";
+            const valuesVisibilityKey = "aisha-dashboard-values-hidden";
+            const valuesVisibilityToggle = document.getElementById("values-visibility-toggle");
             const themeToggle = document.getElementById("theme-toggle");
             const periodFilterForm = document.getElementById("period-filter-form");
             const periodFilterRedirectInput = document.getElementById("period-filter-redirect-to");
+
+            if (valuesVisibilityToggle) {
+                const valuesToggleLabel = valuesVisibilityToggle.querySelector('[data-role="label"]');
+                const valuesIconVisible = valuesVisibilityToggle.querySelector('[data-role="icon-visible"]');
+                const valuesIconHidden = valuesVisibilityToggle.querySelector('[data-role="icon-hidden"]');
+
+                function valuesAreHidden() {
+                    return document.documentElement.getAttribute("data-values-hidden") === "true";
+                }
+
+                function updateValuesVisibilityToggle() {
+                    const hidden = valuesAreHidden();
+                    const label = hidden
+                        ? valuesVisibilityToggle.dataset.labelShow
+                        : valuesVisibilityToggle.dataset.labelHide;
+
+                    if (valuesToggleLabel) {
+                        valuesToggleLabel.textContent = label;
+                    }
+                    if (valuesIconVisible && valuesIconHidden) {
+                        valuesIconVisible.hidden = hidden;
+                        valuesIconHidden.hidden = !hidden;
+                    }
+                    valuesVisibilityToggle.setAttribute("aria-label", label);
+                    valuesVisibilityToggle.setAttribute("aria-pressed", String(hidden));
+                }
+
+                valuesVisibilityToggle.addEventListener("click", () => {
+                    const nextHidden = !valuesAreHidden();
+                    document.documentElement.setAttribute("data-values-hidden", String(nextHidden));
+                    localStorage.setItem(valuesVisibilityKey, String(nextHidden));
+                    updateValuesVisibilityToggle();
+                });
+
+                updateValuesVisibilityToggle();
+            }
 
             if (themeToggle) {
                 const themeToggleLabel = themeToggle.querySelector('[data-role="label"]');
@@ -179,7 +229,7 @@
                     const currentTheme = readCurrentTheme();
                     const nextTheme = currentTheme === "dark" ? "light" : "dark";
                     document.documentElement.setAttribute("data-theme", nextTheme);
-                    localStorage.setItem(key, nextTheme);
+                    localStorage.setItem(themeKey, nextTheme);
                     window.dispatchEvent(new CustomEvent("aisha-theme-changed", { detail: { theme: nextTheme } }));
                     updateToggleLabel();
                 });

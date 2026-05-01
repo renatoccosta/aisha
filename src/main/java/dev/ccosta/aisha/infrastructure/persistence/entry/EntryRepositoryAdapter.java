@@ -1,8 +1,8 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
-import dev.ccosta.aisha.domain.entry.EntryCategoryTrainingExample;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategoryTrainingExample;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;

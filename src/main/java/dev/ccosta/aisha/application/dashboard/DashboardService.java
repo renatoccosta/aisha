@@ -7,6 +7,12 @@ import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.investment.Asset;
+import dev.ccosta.aisha.domain.investment.AssetRepository;
+import dev.ccosta.aisha.domain.investment.AssetType;
+import dev.ccosta.aisha.domain.investment.InvestmentOperation;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -25,15 +31,21 @@ public class DashboardService {
     private final EntryRepository entryRepository;
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
+    private final AssetRepository assetRepository;
+    private final InvestmentOperationRepository investmentOperationRepository;
 
     public DashboardService(
         EntryRepository entryRepository,
         AccountRepository accountRepository,
-        CategoryRepository categoryRepository
+        CategoryRepository categoryRepository,
+        AssetRepository assetRepository,
+        InvestmentOperationRepository investmentOperationRepository
     ) {
         this.entryRepository = entryRepository;
         this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
+        this.assetRepository = assetRepository;
+        this.investmentOperationRepository = investmentOperationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -44,6 +56,7 @@ public class DashboardService {
         LocalDate previousEndDate = startDate.minusDays(1);
         List<Entry> entries = entryRepository.listAllBySettlementDateLessThanEqual(endDate);
         List<Account> accounts = accountRepository.findAllOrdered();
+        DashboardInvestmentOverview investmentOverview = buildInvestmentOverview(startDate, endDate);
 
         BigDecimal currentBalance = sumInitialBalancesUntil(accounts, endDate);
         BigDecimal previousBalance = sumInitialBalancesUntil(accounts, previousEndDate);
@@ -92,8 +105,111 @@ public class DashboardService {
             metric(currentBalance, previousBalance),
             metric(currentExpenses, previousExpenses),
             metric(currentRevenues, previousRevenues),
-            buildAccountTypeBalances(accounts, entries, endDate)
+            investmentOverview,
+            buildAccountTypeBalances(accounts, entries, endDate),
+            buildAccountBalances(accounts, entries, endDate)
         );
+    }
+
+    /**
+     * Builds the investment overview section using historical cost and BRL-only safe aggregation.
+     *
+     * @param startDate filter start date
+     * @param endDate filter end date
+     * @return investment overview data
+     */
+    @Transactional(readOnly = true)
+    public DashboardInvestmentOverview buildInvestmentOverview(LocalDate startDate, LocalDate endDate) {
+        validateRange(startDate, endDate);
+
+        LocalDate previousStartDate = resolvePreviousStart(startDate, endDate);
+        LocalDate previousEndDate = startDate.minusDays(1);
+        List<Asset> assets = assetRepository.findAllOrdered();
+        List<InvestmentOperation> operations = investmentOperationRepository.findAllOrdered();
+
+        InvestmentOverviewSnapshot currentSnapshot = buildInvestmentOverviewSnapshot(
+            assets,
+            operations,
+            startDate,
+            endDate,
+            endDate
+        );
+        InvestmentOverviewSnapshot previousSnapshot = buildInvestmentOverviewSnapshot(
+            assets,
+            operations,
+            previousStartDate,
+            previousEndDate,
+            previousEndDate
+        );
+
+        return new DashboardInvestmentOverview(
+            metric(currentSnapshot.positionCost(), previousSnapshot.positionCost()),
+            metric(currentSnapshot.periodNetFlow(), previousSnapshot.periodNetFlow()),
+            metric(currentSnapshot.periodIncome(), previousSnapshot.periodIncome()),
+            currentSnapshot.openAssetCount(),
+            currentSnapshot.excludedAssetCount(),
+            currentSnapshot.excludedOperationCount(),
+            currentSnapshot.allocationsByAssetType()
+        );
+    }
+
+    /**
+     * Builds the evolution series for the investment period flow chart.
+     *
+     * @param startDate filter start date
+     * @param endDate filter end date
+     * @return investment cash flow evolution
+     */
+    @Transactional(readOnly = true)
+    public DashboardInvestmentFlowEvolution buildInvestmentFlowEvolution(LocalDate startDate, LocalDate endDate) {
+        validateRange(startDate, endDate);
+
+        DashboardSeriesGranularity granularity = resolveGranularity(startDate, endDate);
+        List<Asset> assets = assetRepository.findAllOrdered();
+        List<InvestmentOperation> operations = investmentOperationRepository.findAllOrdered();
+        Map<Long, List<InvestmentOperation>> operationsByAssetId = groupOperationsByAssetId(operations);
+        Map<LocalDate, BigDecimal> inflowsByBucket = new HashMap<>();
+        Map<LocalDate, BigDecimal> outflowsByBucket = new HashMap<>();
+        LocalDate lastBucketWithRecords = null;
+
+        for (Asset asset : assets) {
+            List<InvestmentOperation> assetOperations = operationsByAssetId.getOrDefault(asset.getId(), List.of());
+            if (!isBrlEligibleAsset(asset, assetOperations)) {
+                continue;
+            }
+
+            for (InvestmentOperation operation : assetOperations) {
+                LocalDate flowDate = resolveInvestmentFlowDate(operation);
+                if (flowDate == null || !isInsideRange(flowDate, startDate, endDate)) {
+                    continue;
+                }
+
+                BigDecimal signedAmount = signedCashAmount(operation);
+                LocalDate bucketDate = normalizeBucketStart(flowDate, granularity);
+                if (signedAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    inflowsByBucket.merge(bucketDate, signedAmount, BigDecimal::add);
+                    lastBucketWithRecords = maxDate(lastBucketWithRecords, bucketDate);
+                } else if (signedAmount.compareTo(BigDecimal.ZERO) < 0) {
+                    outflowsByBucket.merge(bucketDate, signedAmount.abs(), BigDecimal::add);
+                    lastBucketWithRecords = maxDate(lastBucketWithRecords, bucketDate);
+                }
+            }
+        }
+
+        LocalDate effectiveEndDate = resolveEffectiveEndDate(endDate, lastBucketWithRecords, granularity);
+        List<DashboardInvestmentFlowPoint> points = new ArrayList<>();
+        for (LocalDate bucketStart : buildBucketStarts(startDate, effectiveEndDate, granularity)) {
+            BigDecimal inflows = inflowsByBucket.getOrDefault(bucketStart, BigDecimal.ZERO);
+            BigDecimal outflows = outflowsByBucket.getOrDefault(bucketStart, BigDecimal.ZERO);
+            points.add(new DashboardInvestmentFlowPoint(
+                bucketStart,
+                inflows,
+                outflows,
+                inflows.subtract(outflows)
+            ));
+        }
+
+        return new DashboardInvestmentFlowEvolution(startDate, endDate, granularity, points);
     }
 
     @Transactional(readOnly = true)
@@ -418,6 +534,115 @@ public class DashboardService {
             .toList();
     }
 
+    private List<DashboardAccountBalance> buildAccountBalances(List<Account> accounts, List<Entry> entries, LocalDate endDate) {
+        Map<Long, BigDecimal> balanceByAccountId = new HashMap<>();
+
+        for (Account account : accounts) {
+            if (account.getId() == null) {
+                continue;
+            }
+
+            if (account.getInitialBalance() == null || account.getInitialBalanceDate() == null || account.getInitialBalanceDate().isAfter(endDate)) {
+                balanceByAccountId.put(account.getId(), BigDecimal.ZERO);
+            } else {
+                balanceByAccountId.put(account.getId(), account.getInitialBalance());
+            }
+        }
+
+        for (Entry entry : entries) {
+            if (entry.getAccount() == null || entry.getAccount().getId() == null) {
+                continue;
+            }
+            Long accountId = entry.getAccount().getId();
+            if (!balanceByAccountId.containsKey(accountId)) {
+                continue;
+            }
+            if (entry.getSettlementDate().isAfter(endDate) || mustIgnoreEntryByAccountStartingPoint(entry)) {
+                continue;
+            }
+            balanceByAccountId.merge(accountId, entry.getAmount(), BigDecimal::add);
+        }
+
+        return accounts.stream()
+            .filter(account -> account.getId() != null)
+            .map(account -> new DashboardAccountBalance(
+                account.getId(),
+                account.getTitle(),
+                account.getAccountType() == null ? AccountType.OTHER : account.getAccountType(),
+                balanceByAccountId.getOrDefault(account.getId(), BigDecimal.ZERO)
+            ))
+            .toList();
+    }
+
+    private InvestmentOverviewSnapshot buildInvestmentOverviewSnapshot(
+        List<Asset> assets,
+        List<InvestmentOperation> operations,
+        LocalDate periodStartDate,
+        LocalDate periodEndDate,
+        LocalDate positionDate
+    ) {
+        Map<Long, List<InvestmentOperation>> operationsByAssetId = groupOperationsByAssetId(operations);
+        EnumMap<AssetType, BigDecimal> positionCostByAssetType = new EnumMap<>(AssetType.class);
+        BigDecimal positionCost = BigDecimal.ZERO;
+        BigDecimal periodNetFlow = BigDecimal.ZERO;
+        BigDecimal periodIncome = BigDecimal.ZERO;
+        int openAssetCount = 0;
+        int excludedAssetCount = 0;
+        int excludedOperationCount = 0;
+
+        for (AssetType type : AssetType.values()) {
+            positionCostByAssetType.put(type, BigDecimal.ZERO);
+        }
+
+        for (Asset asset : assets) {
+            if (asset.getId() == null) {
+                continue;
+            }
+
+            List<InvestmentOperation> assetOperations = operationsByAssetId.getOrDefault(asset.getId(), List.of());
+            if (!isBrlEligibleAsset(asset, assetOperations)) {
+                excludedAssetCount++;
+                excludedOperationCount += countOperationsInsideRange(assetOperations, periodStartDate, periodEndDate);
+                continue;
+            }
+
+            InvestmentPositionSnapshot position = calculatePositionAt(asset, assetOperations, positionDate);
+            if (position.quantity().compareTo(BigDecimal.ZERO) > 0 && position.totalCost().compareTo(BigDecimal.ZERO) > 0) {
+                openAssetCount++;
+                positionCost = positionCost.add(position.totalCost());
+                positionCostByAssetType.merge(asset.getType(), position.totalCost(), BigDecimal::add);
+            }
+
+            for (InvestmentOperation operation : assetOperations) {
+                LocalDate flowDate = resolveInvestmentFlowDate(operation);
+                if (flowDate == null || !isInsideRange(flowDate, periodStartDate, periodEndDate)) {
+                    continue;
+                }
+                BigDecimal signedAmount = signedCashAmount(operation);
+                periodNetFlow = periodNetFlow.add(signedAmount);
+                if (isIncomeOperation(operation.getOperationType()) && signedAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    periodIncome = periodIncome.add(signedAmount);
+                }
+            }
+        }
+
+        List<DashboardInvestmentAllocation> allocationsByAssetType = java.util.Arrays.stream(AssetType.values())
+            .map(type -> new DashboardInvestmentAllocation(type.name(), type.name(), positionCostByAssetType.getOrDefault(type, BigDecimal.ZERO)))
+            .filter(item -> item.amount().compareTo(BigDecimal.ZERO) > 0)
+            .sorted(Comparator.comparing(DashboardInvestmentAllocation::amount).reversed())
+            .toList();
+
+        return new InvestmentOverviewSnapshot(
+            positionCost,
+            periodNetFlow,
+            periodIncome,
+            openAssetCount,
+            excludedAssetCount,
+            excludedOperationCount,
+            allocationsByAssetType
+        );
+    }
+
     private DashboardMetric metric(BigDecimal currentValue, BigDecimal previousValue) {
         return new DashboardMetric(currentValue, previousValue, resolveVariationPercent(currentValue, previousValue));
     }
@@ -517,6 +742,217 @@ public class DashboardService {
             return false;
         }
         return entry.getSettlementDate().isBefore(entry.getAccount().getInitialBalanceDate());
+    }
+
+    private Map<Long, List<InvestmentOperation>> groupOperationsByAssetId(List<InvestmentOperation> operations) {
+        Map<Long, List<InvestmentOperation>> operationsByAssetId = new HashMap<>();
+        for (InvestmentOperation operation : operations) {
+            if (operation.getAsset() == null || operation.getAsset().getId() == null) {
+                continue;
+            }
+            operationsByAssetId.computeIfAbsent(operation.getAsset().getId(), ignored -> new ArrayList<>()).add(operation);
+        }
+        return operationsByAssetId;
+    }
+
+    private InvestmentPositionSnapshot calculatePositionAt(Asset asset, List<InvestmentOperation> operations, LocalDate positionDate) {
+        BigDecimal runningQuantity = defaultQuantity(asset.getOpeningPositionQuantity());
+        BigDecimal runningTotalCost = defaultMoney(asset.getOpeningPositionTotalCost());
+
+        if (asset.getOpeningPositionDate() != null && positionDate != null && asset.getOpeningPositionDate().isAfter(positionDate)) {
+            runningQuantity = BigDecimal.ZERO;
+            runningTotalCost = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        for (InvestmentOperation operation : operations) {
+            if (positionDate != null && operation.getTradeDate() != null && operation.getTradeDate().isAfter(positionDate)) {
+                break;
+            }
+            PositionImpact impact = calculatePositionImpact(operation, runningQuantity, runningTotalCost);
+            runningQuantity = impact.resultingQuantity();
+            runningTotalCost = impact.resultingTotalCost();
+        }
+
+        return new InvestmentPositionSnapshot(runningQuantity, runningTotalCost);
+    }
+
+    private PositionImpact calculatePositionImpact(
+        InvestmentOperation operation,
+        BigDecimal runningQuantity,
+        BigDecimal runningTotalCost
+    ) {
+        InvestmentOperationType type = operation.getOperationType();
+        BigDecimal quantity = defaultQuantity(operation.getQuantity());
+        BigDecimal resultingQuantity = runningQuantity;
+        BigDecimal resultingTotalCost = runningTotalCost;
+
+        if (isQuantityIncrease(type)) {
+            BigDecimal costDelta = switch (type) {
+                case BUY, SUBSCRIPTION, TRANSFER_IN -> acquisitionCost(operation);
+                case BONUS, SPLIT -> BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+                default -> BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+            };
+            resultingQuantity = runningQuantity.add(quantity);
+            resultingTotalCost = sanitizeMoney(runningTotalCost.add(costDelta));
+        } else if (isQuantityDecrease(type)) {
+            BigDecimal quantityToRemove = quantity.max(BigDecimal.ZERO);
+            BigDecimal removableQuantity = quantityToRemove.min(runningQuantity.max(BigDecimal.ZERO));
+            BigDecimal allocatedCost = allocatedCost(removableQuantity, runningQuantity, runningTotalCost);
+            resultingQuantity = sanitizeQuantity(runningQuantity.subtract(removableQuantity));
+            resultingTotalCost = sanitizeMoney(runningTotalCost.subtract(allocatedCost));
+            if (resultingQuantity.compareTo(BigDecimal.ZERO) == 0) {
+                resultingTotalCost = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+            }
+        } else if (type == InvestmentOperationType.AMORTIZATION) {
+            resultingTotalCost = sanitizeMoney(runningTotalCost.subtract(unsignedMoneyAmount(operation)));
+        }
+
+        return new PositionImpact(resultingQuantity, resultingTotalCost);
+    }
+
+    private boolean isBrlEligibleAsset(Asset asset, List<InvestmentOperation> operations) {
+        if (!isBrlCurrency(asset.getCurrency())) {
+            return false;
+        }
+        if (asset.getOpeningPositionCurrency() != null && !asset.getOpeningPositionCurrency().isBlank()
+            && !isBrlCurrency(asset.getOpeningPositionCurrency())) {
+            return false;
+        }
+        for (InvestmentOperation operation : operations) {
+            if (!isBrlCurrency(operation.getCurrency())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isBrlCurrency(String currency) {
+        return currency != null && "BRL".equalsIgnoreCase(currency.trim());
+    }
+
+    private int countOperationsInsideRange(List<InvestmentOperation> operations, LocalDate startDate, LocalDate endDate) {
+        int count = 0;
+        for (InvestmentOperation operation : operations) {
+            LocalDate flowDate = resolveInvestmentFlowDate(operation);
+            if (flowDate != null && isInsideRange(flowDate, startDate, endDate)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private LocalDate resolveInvestmentFlowDate(InvestmentOperation operation) {
+        if (operation.getSettlementDate() != null) {
+            return operation.getSettlementDate();
+        }
+        return operation.getTradeDate();
+    }
+
+    private boolean isIncomeOperation(InvestmentOperationType operationType) {
+        return switch (operationType) {
+            case DIVIDEND, INTEREST, COUPON, AMORTIZATION, REDEMPTION -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isQuantityIncrease(InvestmentOperationType type) {
+        return switch (type) {
+            case BUY, BONUS, SPLIT, SUBSCRIPTION, TRANSFER_IN -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isQuantityDecrease(InvestmentOperationType type) {
+        return switch (type) {
+            case SELL, REDEMPTION, REVERSE_SPLIT, TRANSFER_OUT -> true;
+            default -> false;
+        };
+    }
+
+    private BigDecimal acquisitionCost(InvestmentOperation operation) {
+        if (operation.getNetAmount() != null) {
+            return operation.getNetAmount().setScale(2, RoundingMode.HALF_UP);
+        }
+        if (operation.getGrossAmount() != null) {
+            return operation.getGrossAmount()
+                .setScale(2, RoundingMode.HALF_UP)
+                .add(defaultMoney(operation.getFees()))
+                .add(defaultMoney(operation.getTaxes()));
+        }
+        if (operation.getQuantity() != null && operation.getUnitPrice() != null) {
+            return operation.getQuantity()
+                .multiply(operation.getUnitPrice())
+                .setScale(2, RoundingMode.HALF_UP)
+                .add(defaultMoney(operation.getFees()))
+                .add(defaultMoney(operation.getTaxes()));
+        }
+        return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal allocatedCost(BigDecimal quantity, BigDecimal runningQuantity, BigDecimal runningTotalCost) {
+        if (quantity.compareTo(BigDecimal.ZERO) <= 0
+            || runningQuantity.compareTo(BigDecimal.ZERO) <= 0
+            || runningTotalCost.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        if (quantity.compareTo(runningQuantity) >= 0) {
+            return sanitizeMoney(runningTotalCost);
+        }
+        BigDecimal averageCost = runningTotalCost.divide(runningQuantity, 8, RoundingMode.HALF_UP);
+        return sanitizeMoney(averageCost.multiply(quantity));
+    }
+
+    private BigDecimal signedCashAmount(InvestmentOperation operation) {
+        BigDecimal rawAmount = unsignedMoneyAmount(operation);
+        if (rawAmount.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+
+        return switch (operation.getOperationType()) {
+            case BUY, SUBSCRIPTION, TAX, FEE -> rawAmount.negate();
+            case SELL, DIVIDEND, INTEREST, AMORTIZATION, COUPON, REDEMPTION -> rawAmount;
+            default -> operation.getNetAmount() != null
+                ? operation.getNetAmount().setScale(2, RoundingMode.HALF_UP)
+                : rawAmount;
+        };
+    }
+
+    private BigDecimal unsignedMoneyAmount(InvestmentOperation operation) {
+        if (operation.getNetAmount() != null) {
+            return operation.getNetAmount().abs().setScale(2, RoundingMode.HALF_UP);
+        }
+        if (operation.getGrossAmount() != null) {
+            return operation.getGrossAmount().abs().setScale(2, RoundingMode.HALF_UP);
+        }
+        if (operation.getQuantity() != null && operation.getUnitPrice() != null) {
+            return operation.getQuantity()
+                .multiply(operation.getUnitPrice())
+                .abs()
+                .setScale(2, RoundingMode.HALF_UP);
+        }
+        return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal defaultQuantity(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private BigDecimal defaultMoney(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP) : value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal sanitizeMoney(BigDecimal value) {
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal sanitizeQuantity(BigDecimal value) {
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
+        return value;
     }
 
     private DashboardCategoryTotalsSeries toCategoryTotalsSeries(CategorySeriesData data, List<LocalDate> buckets) {
@@ -638,6 +1074,23 @@ public class DashboardService {
         boolean hasChildren,
         Map<LocalDate, BigDecimal> valuesByBucket,
         BigDecimal total
+    ) {
+    }
+
+    private record PositionImpact(BigDecimal resultingQuantity, BigDecimal resultingTotalCost) {
+    }
+
+    private record InvestmentPositionSnapshot(BigDecimal quantity, BigDecimal totalCost) {
+    }
+
+    private record InvestmentOverviewSnapshot(
+        BigDecimal positionCost,
+        BigDecimal periodNetFlow,
+        BigDecimal periodIncome,
+        int openAssetCount,
+        int excludedAssetCount,
+        int excludedOperationCount,
+        List<DashboardInvestmentAllocation> allocationsByAssetType
     ) {
     }
 

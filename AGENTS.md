@@ -81,6 +81,7 @@ AI$HA is a personal finance manager with AI features. Prioritize correctness, au
   - Default page size: 25; allowed sizes: 50 and 100.
   - Required controls: first page, previous, next, and last.
   - Required indicators: current page, total pages, current page record range, and total records.
+- In listing screens that include filters, filters and result listings must be visually separated into distinct sections/cards, following the entries listing pattern.
 - Use a modern visual style:
   - consistent spacing scale
   - clear typography hierarchy (h1/h2/body)

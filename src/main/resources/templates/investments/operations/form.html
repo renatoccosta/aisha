@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${mode == 'create'} ? #{investments.operations.form.title.create} : #{investments.operations.form.title.edit}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{investments.operations.form.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="${mode == 'create'} ? #{investments.operations.form.title.create} : #{investments.operations.form.title.edit}"></h2>
+
+        <form class="stack-form" th:object="${form}" th:action="${mode == 'create'} ? @{/investments/operations} : @{/investments/operations/{id}(id=${operationId})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="returnTo" th:value="${returnTo}">
+            <input type="hidden" th:field="*{brokerageNoteId}">
+
+            <div class="actions-inline" th:if="${brokerageNote != null}">
+                <a class="btn btn-secondary" th:href="@{/investments/brokerage-notes/{id}(id=${brokerageNote.id},returnTo=${returnTo})}">
+                    <i data-lucide="file-text" aria-hidden="true"></i>
+                    <span th:text="#{investments.operations.form.action.brokerageNote}"></span>
+                </a>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="assetId" th:text="#{investments.operations.form.field.asset.required}"></label>
+                    <select
+                        id="assetId"
+                        th:field="*{assetId}"
+                        required
+                        hx-get="/investments/operations/fragments/entry-candidates"
+                        hx-include="closest form"
+                        hx-target="#entry-link-selection"
+                        hx-swap="outerHTML">
+                        <option value="" th:text="#{investments.operations.form.option.selectAsset}"></option>
+                        <option th:value="${newAssetOptionId}" th:text="#{investments.operations.form.option.newAsset}"></option>
+                        <option th:each="asset : ${assets}" th:value="${asset.id}" th:text="${asset.ticker != null && !asset.ticker.isBlank() ? asset.name + ' (' + asset.ticker + ')' : asset.name}"></option>
+                    </select>
+                    <p class="error" th:if="${#fields.hasErrors('assetId')}" th:errors="*{assetId}"></p>
+                </div>
+
+                <div id="new-asset-name-field" class="field" th:hidden="${form.assetId != newAssetOptionId}">
+                    <label for="newAssetName" th:text="#{investments.operations.form.field.newAssetName.required}"></label>
+                    <input id="newAssetName" type="text" th:field="*{newAssetName}" maxlength="200" th:required="${form.assetId == newAssetOptionId}">
+                    <p class="error" th:if="${#fields.hasErrors('newAssetName')}" th:errors="*{newAssetName}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="accountId" th:text="#{investments.operations.form.field.account.required}"></label>
+                    <select
+                        id="accountId"
+                        th:field="*{accountId}"
+                        required
+                        hx-get="/investments/operations/fragments/entry-candidates"
+                        hx-include="closest form"
+                        hx-target="#entry-link-selection"
+                        hx-swap="outerHTML">
+                        <option value="" th:text="#{investments.operations.form.option.selectAccount}"></option>
+                        <option th:each="account : ${accounts}" th:value="${account.id}" th:text="${account.title}"></option>
+                    </select>
+                    <p class="error" th:if="${#fields.hasErrors('accountId')}" th:errors="*{accountId}"></p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="operationType" th:text="#{investments.operations.form.field.operationType.required}"></label>
+                    <select id="operationType" th:field="*{operationType}" required>
+                        <option th:each="operationType : ${operationTypes}" th:value="${operationType}" th:text="#{${'investment.operationType.' + operationType.name().toLowerCase()}}"></option>
+                    </select>
+                    <p class="error" th:if="${#fields.hasErrors('operationType')}" th:errors="*{operationType}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="sourceType" th:text="#{investments.operations.form.field.sourceType.required}"></label>
+                    <select id="sourceType" th:field="*{sourceType}" required>
+                        <option th:each="sourceType : ${sourceTypes}" th:value="${sourceType}" th:text="#{${'investment.sourceType.' + sourceType.name().toLowerCase()}}"></option>
+                    </select>
+                    <p class="error" th:if="${#fields.hasErrors('sourceType')}" th:errors="*{sourceType}"></p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="tradeDate" th:text="#{investments.operations.form.field.tradeDate.required}"></label>
+                    <input
+                        id="tradeDate"
+                        type="date"
+                        th:field="*{tradeDate}"
+                        required
+                        hx-get="/investments/operations/fragments/entry-candidates"
+                        hx-include="closest form"
+                        hx-target="#entry-link-selection"
+                        hx-swap="outerHTML">
+                    <p class="error" th:if="${#fields.hasErrors('tradeDate')}" th:errors="*{tradeDate}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="settlementDate" th:text="#{investments.operations.form.field.settlementDate}"></label>
+                    <input
+                        id="settlementDate"
+                        type="date"
+                        th:field="*{settlementDate}"
+                        hx-get="/investments/operations/fragments/entry-candidates"
+                        hx-include="closest form"
+                        hx-target="#entry-link-selection"
+                        hx-swap="outerHTML">
+                    <p class="error" th:if="${#fields.hasErrors('settlementDate')}" th:errors="*{settlementDate}"></p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="quantity" th:text="#{investments.operations.form.field.quantity}"></label>
+                    <input id="quantity" type="number" th:field="*{quantity}" step="0.0000000001">
+                    <p class="error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="unitPrice" th:text="#{investments.operations.form.field.unitPrice}"></label>
+                    <input id="unitPrice" type="number" th:field="*{unitPrice}" step="0.00000001">
+                    <p class="error" th:if="${#fields.hasErrors('unitPrice')}" th:errors="*{unitPrice}"></p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="grossAmount" th:text="#{investments.operations.form.field.grossAmount}"></label>
+                    <input id="grossAmount" type="number" th:field="*{grossAmount}" step="0.01">
+                    <p class="error" th:if="${#fields.hasErrors('grossAmount')}" th:errors="*{grossAmount}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="netAmount" th:text="#{investments.operations.form.field.netAmount}"></label>
+                    <input id="netAmount" type="number" th:field="*{netAmount}" step="0.01">
+                    <p class="error" th:if="${#fields.hasErrors('netAmount')}" th:errors="*{netAmount}"></p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="fees" th:text="#{investments.operations.form.field.fees}"></label>
+                    <input id="fees" type="number" th:field="*{fees}" step="0.01">
+                    <p class="error" th:if="${#fields.hasErrors('fees')}" th:errors="*{fees}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="taxes" th:text="#{investments.operations.form.field.taxes}"></label>
+                    <input id="taxes" type="number" th:field="*{taxes}" step="0.01">
+                    <p class="error" th:if="${#fields.hasErrors('taxes')}" th:errors="*{taxes}"></p>
+                </div>
+            </div>
+
+            <div class="field field-half">
+                <label for="currency" th:text="#{investments.operations.form.field.currency.required}"></label>
+                <input id="currency" type="text" th:field="*{currency}" maxlength="3" required>
+                <p class="error" th:if="${#fields.hasErrors('currency')}" th:errors="*{currency}"></p>
+            </div>
+
+            <div id="entry-link-selection" th:fragment="entryLinkSelection" th:object="${form}" class="field">
+                <label for="linkedEntryIds" th:text="#{investments.operations.form.field.linkedEntryIds}"></label>
+                <select id="linkedEntryIds" th:field="*{linkedEntryIds}">
+                    <option value="" th:text="#{common.select.none}"></option>
+                    <option
+                        th:each="entry : ${entryCandidates}"
+                        th:value="${entry.id}"
+                        th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy') + ' - ' + entry.description + ' - ' + #numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}">
+                    </option>
+                </select>
+                <p class="helper" th:text="#{investments.operations.form.help.linkedEntryIds}"></p>
+                <p class="error" th:if="${#fields.hasErrors('linkedEntryIds')}" th:errors="*{linkedEntryIds}"></p>
+            </div>
+
+            <div class="field">
+                <label for="notes" th:text="#{investments.operations.form.field.notes}"></label>
+                <textarea id="notes" th:field="*{notes}" rows="4" maxlength="1000"></textarea>
+                <p class="error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+            </div>
+
+            <div class="actions-inline">
+                <button class="btn btn-primary" type="submit">
+                    <i data-lucide="save" aria-hidden="true"></i>
+                    <span th:text="${mode == 'create'} ? #{investments.operations.form.action.save} : #{investments.operations.form.action.update}"></span>
+                </button>
+                <a class="btn btn-secondary" th:href="${returnTo}">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <span th:text="#{investments.operations.form.action.cancel}"></span>
+                </a>
+            </div>
+        </form>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+<script th:inline="javascript">
+    (() => {
+        const newAssetOptionId = String(/*[[${newAssetOptionId}]]*/ '-1');
+        const assetSelect = document.getElementById('assetId');
+        const newAssetField = document.getElementById('new-asset-name-field');
+        const newAssetInput = document.getElementById('newAssetName');
+
+        if (!assetSelect || !newAssetField || !newAssetInput) {
+            return;
+        }
+
+        const toggleNewAssetField = () => {
+            const isNewAssetSelected = assetSelect.value === newAssetOptionId;
+            newAssetField.hidden = !isNewAssetSelected;
+            newAssetInput.required = isNewAssetSelected;
+        };
+
+        assetSelect.addEventListener('change', toggleNewAssetField);
+        toggleNewAssetField();
+    })();
+</script>
+</body>
+</html>

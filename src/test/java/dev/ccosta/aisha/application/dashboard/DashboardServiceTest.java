@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.application.dashboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.domain.account.Account;
@@ -10,9 +11,16 @@ import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.category.CategoryRepository;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.investment.Asset;
+import dev.ccosta.aisha.domain.investment.AssetRepository;
+import dev.ccosta.aisha.domain.investment.AssetType;
+import dev.ccosta.aisha.domain.investment.InvestmentOperation;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,8 +39,20 @@ class DashboardServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
+    @Mock
+    private AssetRepository assetRepository;
+
+    @Mock
+    private InvestmentOperationRepository investmentOperationRepository;
+
     @InjectMocks
     private DashboardService dashboardService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(assetRepository.findAllOrdered()).thenReturn(List.of());
+        lenient().when(investmentOperationRepository.findAllOrdered()).thenReturn(List.of());
+    }
 
     @Test
     void shouldBuildSummaryWithPreviousEquivalentPeriod() {
@@ -103,6 +123,75 @@ class DashboardServiceTest {
         assertThat(summary.accountTypeBalances().get(0).balance()).isEqualByComparingTo("125.00");
         assertThat(summary.accountTypeBalances().get(1).balance()).isEqualByComparingTo("-60.00");
         assertThat(summary.accountTypeBalances().get(4).balance()).isEqualByComparingTo("0.00");
+        assertThat(summary.accountBalances()).extracting(item -> item.accountTitle())
+            .containsExactly("Conta Corrente", "Cartão");
+        assertThat(summary.accountBalances().get(0).balance()).isEqualByComparingTo("125.00");
+        assertThat(summary.accountBalances().get(1).balance()).isEqualByComparingTo("-60.00");
+    }
+
+    @Test
+    void shouldBuildInvestmentOverviewUsingHistoricalCost() {
+        Account investmentAccount = newAccount("Carteira XP", "0.00", LocalDate.of(2026, 1, 1));
+        investmentAccount.setAccountType(AccountType.INVESTMENT);
+        setId(investmentAccount, 90L, Account.class);
+
+        Asset asset = newAsset(10L, investmentAccount, "PETR4", AssetType.STOCK, "BRL");
+        asset.setOpeningPositionDate(LocalDate.of(2026, 1, 31));
+        asset.setOpeningPositionQuantity(new BigDecimal("10.0000000000"));
+        asset.setOpeningPositionTotalCost(new BigDecimal("100.00"));
+        asset.setOpeningPositionCurrency("BRL");
+
+        when(accountRepository.findAllOrdered()).thenReturn(List.of());
+        when(entryRepository.listAllBySettlementDateLessThanEqual(LocalDate.of(2026, 3, 31))).thenReturn(List.of());
+        when(assetRepository.findAllOrdered()).thenReturn(List.of(asset));
+        when(investmentOperationRepository.findAllOrdered()).thenReturn(List.of(
+            newOperation(asset, InvestmentOperationType.BUY, LocalDate.of(2026, 3, 5), "5.0000000000", "50.00"),
+            newOperation(asset, InvestmentOperationType.DIVIDEND, LocalDate.of(2026, 3, 10), null, "10.00"),
+            newOperation(asset, InvestmentOperationType.SELL, LocalDate.of(2026, 3, 15), "3.0000000000", "30.00")
+        ));
+
+        DashboardSummary summary = dashboardService.buildSummary(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31));
+
+        assertThat(summary.investmentOverview().positionCost().currentValue()).isEqualByComparingTo("120.00");
+        assertThat(summary.investmentOverview().positionCost().previousValue()).isEqualByComparingTo("100.00");
+        assertThat(summary.investmentOverview().periodNetFlow().currentValue()).isEqualByComparingTo("-10.00");
+        assertThat(summary.investmentOverview().periodIncome().currentValue()).isEqualByComparingTo("10.00");
+        assertThat(summary.investmentOverview().openAssetCount()).isEqualTo(1);
+        assertThat(summary.investmentOverview().excludedAssetCount()).isEqualTo(0);
+        assertThat(summary.investmentOverview().allocationsByAssetType()).extracting(DashboardInvestmentAllocation::key)
+            .containsExactly("STOCK");
+        assertThat(summary.investmentOverview().allocationsByAssetType().getFirst().amount()).isEqualByComparingTo("120.00");
+    }
+
+    @Test
+    void shouldBuildInvestmentFlowEvolutionByMonth() {
+        Account investmentAccount = newAccount("Carteira XP", "0.00", LocalDate.of(2026, 1, 1));
+        investmentAccount.setAccountType(AccountType.INVESTMENT);
+        setId(investmentAccount, 91L, Account.class);
+
+        Asset asset = newAsset(11L, investmentAccount, "Tesouro Selic", AssetType.BOND_GOV, "BRL");
+        when(assetRepository.findAllOrdered()).thenReturn(List.of(asset));
+        when(investmentOperationRepository.findAllOrdered()).thenReturn(List.of(
+            newOperation(asset, InvestmentOperationType.BUY, LocalDate.of(2026, 1, 10), "1.0000000000", "100.00"),
+            newOperation(asset, InvestmentOperationType.DIVIDEND, LocalDate.of(2026, 3, 5), null, "12.00"),
+            newOperation(asset, InvestmentOperationType.FEE, LocalDate.of(2026, 3, 8), null, "2.00")
+        ));
+
+        DashboardInvestmentFlowEvolution evolution = dashboardService.buildInvestmentFlowEvolution(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 3, 31)
+        );
+
+        assertThat(evolution.granularity()).isEqualTo(DashboardSeriesGranularity.MONTH);
+        assertThat(evolution.points()).hasSize(3);
+        assertThat(evolution.points().get(0).date()).isEqualTo(LocalDate.of(2026, 1, 1));
+        assertThat(evolution.points().get(0).inflows()).isEqualByComparingTo("0.00");
+        assertThat(evolution.points().get(0).outflows()).isEqualByComparingTo("100.00");
+        assertThat(evolution.points().get(0).netFlow()).isEqualByComparingTo("-100.00");
+        assertThat(evolution.points().get(2).date()).isEqualTo(LocalDate.of(2026, 3, 1));
+        assertThat(evolution.points().get(2).inflows()).isEqualByComparingTo("12.00");
+        assertThat(evolution.points().get(2).outflows()).isEqualByComparingTo("2.00");
+        assertThat(evolution.points().get(2).netFlow()).isEqualByComparingTo("10.00");
     }
 
     @Test
@@ -570,6 +659,38 @@ class DashboardServiceTest {
         category.setParent(parent);
         setId(category, id, Category.class);
         return category;
+    }
+
+    private Asset newAsset(Long id, Account account, String name, AssetType assetType, String currency) {
+        Asset asset = new Asset();
+        asset.setName(name);
+        asset.setType(assetType);
+        asset.setCurrency(currency);
+        setId(asset, id, Asset.class);
+        return asset;
+    }
+
+    private InvestmentOperation newOperation(
+        Asset asset,
+        InvestmentOperationType type,
+        LocalDate tradeDate,
+        String quantity,
+        String netAmount
+    ) {
+        InvestmentOperation operation = new InvestmentOperation();
+        operation.setAsset(asset);
+        operation.setAccount(newAccount());
+        operation.setOperationType(type);
+        operation.setTradeDate(tradeDate);
+        operation.setSettlementDate(tradeDate);
+        operation.setCurrency("BRL");
+        if (quantity != null) {
+            operation.setQuantity(new BigDecimal(quantity));
+        }
+        if (netAmount != null) {
+            operation.setNetAmount(new BigDecimal(netAmount));
+        }
+        return operation;
     }
 
     private <T> void setId(T target, Long id, Class<T> type) {

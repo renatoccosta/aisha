@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{finances.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{finances.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="#{finances.heading}"></h2>
+        <p th:text="#{finances.subtitle}"></p>
+    </section>
+
+    <section class="admin-grid">
+        <a class="card admin-nav-card" th:href="@{/entries}">
+            <div class="admin-nav-card-icon">
+                <i data-lucide="file-text" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 th:text="#{finances.entries.heading}"></h3>
+                <p th:text="#{finances.entries.subtitle}"></p>
+            </div>
+        </a>
+
+        <a class="card admin-nav-card" th:href="@{/categories}">
+            <div class="admin-nav-card-icon">
+                <i data-lucide="tag" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 th:text="#{finances.categories.heading}"></h3>
+                <p th:text="#{finances.categories.subtitle}"></p>
+            </div>
+        </a>
+
+        <a class="card admin-nav-card" th:href="@{/accounts}">
+            <div class="admin-nav-card-icon">
+                <i data-lucide="briefcase" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 th:text="#{finances.accounts.heading}"></h3>
+                <p th:text="#{finances.accounts.subtitle}"></p>
+            </div>
+        </a>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

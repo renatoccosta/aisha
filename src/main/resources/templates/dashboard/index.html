@@ -47,12 +47,112 @@
         </article>
     </section>
 
+    <section class="card investments-overview-card">
+        <div class="section-heading">
+            <div>
+                <h2 class="chart-title">
+                    <i data-lucide="landmark" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.investments.heading}"></span>
+                </h2>
+                <p th:text="#{dashboard.investments.subtitle}"></p>
+            </div>
+        </div>
+        <div class="dashboard-card-grid investments-summary-grid">
+            <article class="card summary-card summary-card-balance loading" id="investment-position-cost-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="wallet" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.positionCost}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+            <article class="card summary-card summary-card-expense loading" id="investment-net-flow-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="arrow-right-left" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.netFlow}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+            <article class="card summary-card summary-card-revenue loading" id="investment-income-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.income}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">R$ 0,00</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+            <article class="card summary-card summary-card-neutral loading" id="investment-open-assets-card">
+                <div class="summary-card-head">
+                    <span class="summary-icon" aria-hidden="true">
+                        <i data-lucide="layers-3" aria-hidden="true"></i>
+                    </span>
+                    <h3 th:text="#{dashboard.investments.openAssets}"></h3>
+                </div>
+                <p class="summary-value skeleton-line" data-role="value">0</p>
+                <p class="summary-variation skeleton-line" data-role="variation" th:text="#{dashboard.loading}"></p>
+            </article>
+
+        </div>
+        <p class="chart-meta loading" id="investment-excluded-meta" th:text="#{dashboard.loading}"></p>
+    </section>
+
+    <section class="dashboard-investment-flow-grid">
+        <article class="card chart-card loading" id="investment-allocation-type-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 class="chart-title">
+                        <i data-lucide="pie-chart" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.investments.allocationByType.title}"></span>
+                    </h2>
+                    <p th:text="#{dashboard.investments.allocationByType.subtitle}"></p>
+                </div>
+            </div>
+            <p class="chart-meta" id="investment-allocation-type-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap chart-wrap-donut">
+                <canvas id="investment-allocation-type-chart" th:attr="aria-label=#{dashboard.investments.allocationByType.title}"></canvas>
+            </div>
+        </article>
+
+        <article class="card chart-card loading" id="investment-flow-chart-card">
+            <div class="chart-card-head">
+                <div>
+                    <h2 class="chart-title">
+                        <i data-lucide="chart-column-big" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.investments.flowChart.title}"></span>
+                    </h2>
+                    <p th:text="#{dashboard.investments.flowChart.subtitle}"></p>
+                </div>
+            </div>
+            <p class="chart-meta" id="investment-flow-chart-meta" th:text="#{dashboard.loading}"></p>
+            <div class="chart-wrap">
+                <canvas id="investment-flow-chart" th:attr="aria-label=#{dashboard.investments.flowChart.title}"></canvas>
+            </div>
+        </article>
+    </section>
+
     <section class="dashboard-balance-grid">
         <article class="card chart-card loading" id="account-type-balances-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.accountTypeBalances.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="wallet-cards" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.accountTypeBalances.title}"></span>
+                    </h2>
                 </div>
+                <button class="btn btn-secondary" id="account-type-balances-drill-up" type="button" disabled>
+                    <i data-lucide="arrow-up" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.accountTypeBalances.drillUp}"></span>
+                </button>
             </div>
             <p class="chart-meta" id="account-type-balances-meta" th:text="#{dashboard.loading}"></p>
             <div class="chart-wrap chart-wrap-donut">
@@ -63,7 +163,10 @@
         <article class="card chart-card loading" id="balance-chart-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.chart.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="line-chart" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.chart.title}"></span>
+                    </h2>
                     <p th:text="#{dashboard.chart.subtitle}"></p>
                 </div>
                 <div class="chart-mode-selector" role="group" th:attr="aria-label=#{dashboard.chart.mode.aria}">
@@ -87,7 +190,10 @@
     <section class="card chart-card loading" id="revenues-expenses-chart-card">
         <div class="chart-card-head">
             <div>
-                <h2 th:text="#{dashboard.revenueExpenseChart.title}"></h2>
+                <h2 class="chart-title">
+                    <i data-lucide="bar-chart-3" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.revenueExpenseChart.title}"></span>
+                </h2>
                 <p th:text="#{dashboard.revenueExpenseChart.subtitle}"></p>
             </div>
         </div>
@@ -101,7 +207,10 @@
         <article class="card chart-card loading" id="expense-category-chart-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.expenseCategoryChart.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="pie-chart" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.expenseCategoryChart.title}"></span>
+                    </h2>
                     <p th:text="#{dashboard.expenseCategoryChart.subtitle}"></p>
                 </div>
                 <button class="btn btn-secondary" id="expense-category-drill-up" type="button" disabled>
@@ -118,7 +227,10 @@
         <article class="card chart-card loading" id="revenue-category-chart-card">
             <div class="chart-card-head">
                 <div>
-                    <h2 th:text="#{dashboard.revenueCategoryChart.title}"></h2>
+                    <h2 class="chart-title">
+                        <i data-lucide="chart-pie" aria-hidden="true"></i>
+                        <span th:text="#{dashboard.revenueCategoryChart.title}"></span>
+                    </h2>
                     <p th:text="#{dashboard.revenueCategoryChart.subtitle}"></p>
                 </div>
                 <button class="btn btn-secondary" id="revenue-category-drill-up" type="button" disabled>
@@ -136,7 +248,10 @@
     <section class="card chart-card loading" id="category-totals-chart-card">
         <div class="chart-card-head">
             <div>
-                <h2 th:text="#{dashboard.categoryTotalsChart.title}"></h2>
+                <h2 class="chart-title">
+                    <i data-lucide="chart-column-stacked" aria-hidden="true"></i>
+                    <span th:text="#{dashboard.categoryTotalsChart.title}"></span>
+                </h2>
                 <p th:text="#{dashboard.categoryTotalsChart.subtitle}"></p>
             </div>
             <button class="btn btn-secondary" id="category-totals-drill-up" type="button" disabled>
@@ -158,15 +273,17 @@
         variationUp: /*[[#{dashboard.variation.up}]]*/ "acima do período anterior",
         variationDown: /*[[#{dashboard.variation.down}]]*/ "abaixo do período anterior",
         variationStable: /*[[#{dashboard.variation.stable}]]*/ "igual ao período anterior",
-        chartMeta: /*[[#{dashboard.chart.meta}]]*/ "Período: {0} até {1} ({2})",
         chartGranularityDay: /*[[#{dashboard.chart.granularity.day}]]*/ "diário",
         chartGranularityMonth: /*[[#{dashboard.chart.granularity.month}]]*/ "mensal",
+        chartMetaGranularity: /*[[#{dashboard.chart.metaGranularity}]]*/ "Granularidade: {0}",
         chartSeriesAccumulated: /*[[#{dashboard.chart.series.accumulated}]]*/ "Saldo acumulado",
         chartSeriesPeriod: /*[[#{dashboard.chart.series.period}]]*/ "Movimentação no período",
         chartLoadError: /*[[#{dashboard.chart.error}]]*/ "Não foi possível carregar o gráfico.",
         summaryLoadError: /*[[#{dashboard.summary.error}]]*/ "Não foi possível carregar este indicador.",
         accountTypeBalancesLoadError: /*[[#{dashboard.accountTypeBalances.error}]]*/ "Não foi possível carregar os saldos por tipo de conta.",
         accountTypeBalancesEmpty: /*[[#{dashboard.accountTypeBalances.empty}]]*/ "Sem contas para exibir saldos por tipo.",
+        accountTypeBalancesLevelRoot: /*[[#{dashboard.accountTypeBalances.level.root}]]*/ "Nível: tipos de conta",
+        accountTypeBalancesLevelChild: /*[[#{dashboard.accountTypeBalances.level.child}]]*/ "Nível: contas do tipo {0}",
         revenueExpenseChartSeriesRevenue: /*[[#{dashboard.revenueExpenseChart.series.revenues}]]*/ "Receitas",
         revenueExpenseChartSeriesExpense: /*[[#{dashboard.revenueExpenseChart.series.expenses}]]*/ "Despesas",
         revenueExpenseChartLoadError: /*[[#{dashboard.revenueExpenseChart.error}]]*/ "Não foi possível carregar o gráfico de receitas vs despesas.",
@@ -182,20 +299,45 @@
         categoryTotalsChartEmpty: /*[[#{dashboard.categoryTotalsChart.empty}]]*/ "Sem dados no período",
         categoryTotalsChartLevelRoot: /*[[#{dashboard.categoryTotalsChart.level.root}]]*/ "Nível: categorias raiz",
         categoryTotalsChartLevelChild: /*[[#{dashboard.categoryTotalsChart.level.child}]]*/ "Nível: subcategorias de {0}",
-        chartMetaRange: /*[[#{dashboard.chart.metaRange}]]*/ "Período: {0} até {1}",
+        investmentAllocationByTypeEmpty: /*[[#{dashboard.investments.allocationByType.empty}]]*/ "Sem posição por custo para exibir.",
+        investmentAllocationByTypeError: /*[[#{dashboard.investments.allocationByType.error}]]*/ "Não foi possível carregar a alocação por custo.",
+        investmentFlowChartError: /*[[#{dashboard.investments.flowChart.error}]]*/ "Não foi possível carregar o fluxo do período.",
+        investmentFlowSeriesInflows: /*[[#{dashboard.investments.flowChart.series.inflows}]]*/ "Entradas",
+        investmentFlowSeriesOutflows: /*[[#{dashboard.investments.flowChart.series.outflows}]]*/ "Saídas",
+        investmentFlowSeriesNet: /*[[#{dashboard.investments.flowChart.series.net}]]*/ "Fluxo líquido",
+        investmentExcludedNone: /*[[#{dashboard.investments.excluded.none}]]*/ "Todos os dados de investimentos elegíveis foram consolidados em BRL.",
+        investmentExcludedAssetsOnly: /*[[#{dashboard.investments.excluded.assetsOnly}]]*/ "{0} ativo(s) fora do padrão BRL não entraram na visão consolidada.",
+        investmentExcludedOperationsOnly: /*[[#{dashboard.investments.excluded.operationsOnly}]]*/ "{0} operação(ões) fora do padrão BRL não entraram no fluxo consolidado.",
+        investmentExcludedAssetsAndOperations: /*[[#{dashboard.investments.excluded.assetsAndOperations}]]*/ "{0} ativo(s) e {1} operação(ões) fora do padrão BRL não entraram na visão consolidada.",
         accountTypeChecking: /*[[#{account.type.checking}]]*/ "Corrente",
         accountTypeCredit: /*[[#{account.type.credit}]]*/ "Crédito",
         accountTypeInvestment: /*[[#{account.type.investment}]]*/ "Investimento",
         accountTypeFood: /*[[#{account.type.food}]]*/ "Alimentação",
-        accountTypeOther: /*[[#{account.type.other}]]*/ "Outros"
+        accountTypeOther: /*[[#{account.type.other}]]*/ "Outros",
+        assetTypeStock: /*[[#{asset.type.stock}]]*/ "Ação",
+        assetTypeEtf: /*[[#{asset.type.etf}]]*/ "ETF",
+        assetTypeFii: /*[[#{asset.type.fii}]]*/ "FII",
+        assetTypeBondGov: /*[[#{asset.type.bond_gov}]]*/ "Título público",
+        assetTypeBondBank: /*[[#{asset.type.bond_bank}]]*/ "Título bancário",
+        assetTypeMutualFund: /*[[#{asset.type.mutual_fund}]]*/ "Fundo",
+        assetTypePrivatePension: /*[[#{asset.type.private_pension}]]*/ "Previdência privada",
+        assetTypeCrypto: /*[[#{asset.type.crypto}]]*/ "Cripto",
+        assetTypeOther: /*[[#{asset.type.other}]]*/ "Outro"
     };
 
     const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
     const PERCENT_FORMATTER = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const INTEGER_FORMATTER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
     const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR");
     const MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" });
     let accountTypeBalancesChart = null;
     let accountTypeBalancesPayload = [];
+    let accountBalancesPayload = [];
+    let accountTypeBalancesDrillDownType = null;
+    let investmentAllocationTypeChart = null;
+    let investmentAllocationTypePayload = [];
+    let investmentFlowChart = null;
+    let investmentFlowPayload = null;
     let balanceChart = null;
     let chartPayload = null;
     let revenueExpenseChart = null;
@@ -222,14 +364,6 @@
         return MONTH_FORMATTER.format(new Date(`${isoDate}T00:00:00`));
     }
 
-    function replaceMeta(text, values) {
-        return text.replace("{0}", values[0]).replace("{1}", values[1]).replace("{2}", values[2]);
-    }
-
-    function replaceMetaRange(text, values) {
-        return text.replace("{0}", values[0]).replace("{1}", values[1]);
-    }
-
     function getThemeColor(variableName, fallback) {
         const color = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
         return color || fallback;
@@ -254,10 +388,26 @@
         }
     }
 
+    function assetTypeLabel(assetType) {
+        const key = (assetType || "OTHER").toUpperCase();
+        switch (key) {
+            case "STOCK": return i18n.assetTypeStock;
+            case "ETF": return i18n.assetTypeEtf;
+            case "FII": return i18n.assetTypeFii;
+            case "BOND_GOV": return i18n.assetTypeBondGov;
+            case "BOND_BANK": return i18n.assetTypeBondBank;
+            case "MUTUAL_FUND": return i18n.assetTypeMutualFund;
+            case "PRIVATE_PENSION": return i18n.assetTypePrivatePension;
+            case "CRYPTO": return i18n.assetTypeCrypto;
+            default: return i18n.assetTypeOther;
+        }
+    }
+
     function renderAccountTypeBalances(items) {
         const card = document.getElementById("account-type-balances-card");
         const meta = document.getElementById("account-type-balances-meta");
         const canvas = document.getElementById("account-type-balances-chart");
+        const drillUpButton = document.getElementById("account-type-balances-drill-up");
         if (!card || !meta || !canvas) {
             return;
         }
@@ -266,18 +416,32 @@
         card.classList.remove("loading");
         const rows = Array.isArray(items) ? items : [];
         accountTypeBalancesPayload = rows;
-        const hasBalances = rows.some((item) => Math.abs(Number(item.balance ?? 0)) > 0);
+        const accountRows = Array.isArray(accountBalancesPayload)
+            ? accountBalancesPayload.filter((item) => item.accountType === accountTypeBalancesDrillDownType)
+            : [];
+        const isDrillDown = accountTypeBalancesDrillDownType !== null;
+        const sourceRows = isDrillDown ? accountRows : rows;
+        const hasBalances = sourceRows.some((item) => Math.abs(Number(item.balance ?? 0)) > 0);
         const labels = hasBalances
-            ? rows.map((item) => accountTypeLabel(item.accountType))
+            ? sourceRows.map((item) => isDrillDown ? item.accountTitle : accountTypeLabel(item.accountType))
             : [i18n.accountTypeBalancesEmpty];
         const data = hasBalances
-            ? rows.map((item) => Math.abs(Number(item.balance ?? 0)))
+            ? sourceRows.map((item) => Math.abs(Number(item.balance ?? 0)))
             : [1];
         const colors = hasBalances
             ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7"]
             : ["#d7e0e8"];
 
-        meta.textContent = hasBalances ? "" : i18n.accountTypeBalancesEmpty;
+        if (!hasBalances) {
+            meta.textContent = i18n.accountTypeBalancesEmpty;
+        } else if (isDrillDown) {
+            meta.textContent = i18n.accountTypeBalancesLevelChild.replace("{0}", accountTypeLabel(accountTypeBalancesDrillDownType));
+        } else {
+            meta.textContent = i18n.accountTypeBalancesLevelRoot;
+        }
+        if (drillUpButton) {
+            drillUpButton.disabled = !isDrillDown;
+        }
 
         if (accountTypeBalancesChart) {
             accountTypeBalancesChart.destroy();
@@ -310,11 +474,27 @@
                                 if (!hasBalances) {
                                     return context.label;
                                 }
-                                const item = rows[context.dataIndex];
+                                const item = sourceRows[context.dataIndex];
                                 return `${context.label}: ${formatCurrency(item?.balance)}`;
                             }
                         }
                     }
+                },
+                onClick: (_, elements) => {
+                    if (!hasBalances || isDrillDown || elements.length === 0) {
+                        return;
+                    }
+                    const selectedItem = rows[elements[0].index];
+                    if (!selectedItem) {
+                        return;
+                    }
+                    const selectedType = selectedItem.accountType;
+                    const hasTypeAccounts = accountBalancesPayload.some((item) => item.accountType === selectedType);
+                    if (!hasTypeAccounts) {
+                        return;
+                    }
+                    accountTypeBalancesDrillDownType = selectedType;
+                    renderAccountTypeBalances(accountTypeBalancesPayload);
                 }
             }
         });
@@ -356,11 +536,263 @@
         variationElement.classList.add("variation-stable");
     }
 
+    function renderCountCard(cardId, value, helperText) {
+        const card = document.getElementById(cardId);
+        if (!card) {
+            return;
+        }
+
+        card.classList.remove("loading");
+        const valueElement = card.querySelector('[data-role="value"]');
+        const variationElement = card.querySelector('[data-role="variation"]');
+        valueElement.textContent = INTEGER_FORMATTER.format(Number(value ?? 0));
+        valueElement.classList.remove("skeleton-line");
+        variationElement.textContent = helperText;
+        variationElement.classList.remove("skeleton-line", "variation-up", "variation-down", "variation-stable");
+        variationElement.classList.add("variation-stable");
+    }
+
+    function buildInvestmentExcludedMessage(overview) {
+        const excludedAssets = Number(overview?.excludedAssetCount ?? 0);
+        const excludedOperations = Number(overview?.excludedOperationCount ?? 0);
+        if (excludedAssets > 0 && excludedOperations > 0) {
+            return i18n.investmentExcludedAssetsAndOperations
+                .replace("{0}", INTEGER_FORMATTER.format(excludedAssets))
+                .replace("{1}", INTEGER_FORMATTER.format(excludedOperations));
+        }
+        if (excludedAssets > 0) {
+            return i18n.investmentExcludedAssetsOnly.replace("{0}", INTEGER_FORMATTER.format(excludedAssets));
+        }
+        if (excludedOperations > 0) {
+            return i18n.investmentExcludedOperationsOnly.replace("{0}", INTEGER_FORMATTER.format(excludedOperations));
+        }
+        return i18n.investmentExcludedNone;
+    }
+
+    function renderInvestmentAllocationChart(canvasId, items, emptyMessage, chartRefName, labelMapper = (item) => item.label) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            return null;
+        }
+
+        const chartTheme = getChartTheme();
+        const rows = Array.isArray(items) ? items : [];
+        const hasItems = rows.length > 0;
+        const labels = hasItems ? rows.map(labelMapper) : [emptyMessage];
+        const data = hasItems ? rows.map((item) => Number(item.amount ?? 0)) : [1];
+        const colors = hasItems
+            ? ["#19647e", "#42e2b8", "#eb8a90", "#07004d", "#f0ec57", "#8cb7c7", "#22bf96", "#cf6770"]
+            : ["#d7e0e8"];
+
+        if (chartRefName === "type" && investmentAllocationTypeChart) {
+            investmentAllocationTypeChart.destroy();
+        }
+        const chart = new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderColor: chartTheme.surface,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                if (!hasItems) {
+                                    return context.label;
+                                }
+                                const row = rows[context.dataIndex];
+                                return `${context.label}: ${formatCurrency(row?.amount)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (chartRefName === "type") {
+            investmentAllocationTypeChart = chart;
+        }
+        return chart;
+    }
+
+    function renderInvestmentOverview(overview) {
+        renderMetric("investment-position-cost-card", overview.positionCost);
+        renderMetric("investment-net-flow-card", overview.periodNetFlow);
+        renderMetric("investment-income-card", overview.periodIncome);
+        renderCountCard("investment-open-assets-card", overview.openAssetCount, /*[[#{dashboard.investments.openAssets.helper}]]*/ "Quantidade de ativos com posição aberta em custo histórico.");
+
+        const excludedMeta = document.getElementById("investment-excluded-meta");
+        if (excludedMeta) {
+            excludedMeta.classList.remove("loading");
+            excludedMeta.textContent = buildInvestmentExcludedMessage(overview);
+        }
+
+        const typeCard = document.getElementById("investment-allocation-type-card");
+        const typeMeta = document.getElementById("investment-allocation-type-meta");
+        if (typeCard && typeMeta) {
+            typeCard.classList.remove("loading");
+            investmentAllocationTypePayload = Array.isArray(overview.allocationsByAssetType) ? overview.allocationsByAssetType : [];
+            typeMeta.textContent = investmentAllocationTypePayload.length > 0
+                ? `${investmentAllocationTypePayload.length} categoria(s) com posição por custo`
+                : i18n.investmentAllocationByTypeEmpty;
+            renderInvestmentAllocationChart(
+                "investment-allocation-type-chart",
+                investmentAllocationTypePayload,
+                i18n.investmentAllocationByTypeEmpty,
+                "type",
+                (item) => assetTypeLabel(item.key)
+            );
+            if (investmentAllocationTypePayload.length > 0) {
+                typeMeta.textContent = `${investmentAllocationTypePayload.length} categoria(s) com posição por custo`;
+            }
+        }
+
+    }
+
+    function renderInvestmentFlowChart() {
+        if (!investmentFlowPayload) {
+            return;
+        }
+
+        const chartTheme = getChartTheme();
+        const labels = investmentFlowPayload.points.map((point) => (
+            investmentFlowPayload.granularity === "MONTH" ? formatMonth(point.date) : formatDate(point.date)
+        ));
+        const inflows = investmentFlowPayload.points.map((point) => Number(point.inflows));
+        const outflows = investmentFlowPayload.points.map((point) => Number(point.outflows));
+        const netFlow = investmentFlowPayload.points.map((point) => Number(point.netFlow));
+        const canvas = document.getElementById("investment-flow-chart");
+        if (!canvas) {
+            return;
+        }
+
+        if (investmentFlowChart) {
+            investmentFlowChart.destroy();
+        }
+
+        investmentFlowChart = new Chart(canvas, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: i18n.investmentFlowSeriesInflows,
+                        data: inflows,
+                        backgroundColor: "rgba(34, 191, 150, 0.82)",
+                        borderColor: "#22bf96",
+                        borderWidth: 1.2,
+                        stack: "investmentFlow"
+                    },
+                    {
+                        label: i18n.investmentFlowSeriesOutflows,
+                        data: outflows.map((value) => value * -1),
+                        backgroundColor: "rgba(207, 103, 112, 0.82)",
+                        borderColor: "#cf6770",
+                        borderWidth: 1.2,
+                        stack: "investmentFlow"
+                    },
+                    {
+                        type: "line",
+                        label: i18n.investmentFlowSeriesNet,
+                        data: netFlow,
+                        borderColor: "#19647e",
+                        backgroundColor: "rgba(25, 100, 126, 0.12)",
+                        tension: 0.25,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4,
+                        yAxisID: "y"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {
+                            color: chartTheme.grid
+                        },
+                        ticks: {
+                            color: chartTheme.text,
+                            callback: (value) => formatCurrency(value)
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: chartTheme.text
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function loadInvestmentFlowEvolution() {
+        const card = document.getElementById("investment-flow-chart-card");
+        const meta = document.getElementById("investment-flow-chart-meta");
+        if (!card || !meta) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/dashboard/investment-flow", { headers: { Accept: "application/json" } });
+            if (!response.ok) {
+                throw new Error("investment-flow-failed");
+            }
+            investmentFlowPayload = await response.json();
+            card.classList.remove("loading");
+            const granularityLabel = investmentFlowPayload.granularity === "MONTH"
+                ? i18n.chartGranularityMonth
+                : i18n.chartGranularityDay;
+            meta.textContent = i18n.chartMetaGranularity.replace("{0}", granularityLabel);
+            renderInvestmentFlowChart();
+        } catch (error) {
+            card.classList.remove("loading");
+            meta.textContent = i18n.investmentFlowChartError;
+        }
+    }
+
     async function loadSummary() {
         const cards = [
             document.getElementById("summary-current-balance"),
             document.getElementById("summary-total-expenses"),
-            document.getElementById("summary-total-revenues")
+            document.getElementById("summary-total-revenues"),
+            document.getElementById("investment-position-cost-card"),
+            document.getElementById("investment-net-flow-card"),
+            document.getElementById("investment-income-card"),
+            document.getElementById("investment-open-assets-card")
         ];
 
         try {
@@ -372,13 +804,29 @@
             renderMetric("summary-current-balance", data.currentBalance);
             renderMetric("summary-total-expenses", data.totalExpenses);
             renderMetric("summary-total-revenues", data.totalRevenues);
+            accountBalancesPayload = Array.isArray(data.accountBalances) ? data.accountBalances : [];
+            accountTypeBalancesDrillDownType = null;
             renderAccountTypeBalances(data.accountTypeBalances);
+            if (data.investmentOverview) {
+                renderInvestmentOverview(data.investmentOverview);
+            }
         } catch (error) {
             const balancesMeta = document.getElementById("account-type-balances-meta");
             const balancesCard = document.getElementById("account-type-balances-card");
+            const investmentTypeCard = document.getElementById("investment-allocation-type-card");
+            const investmentTypeMeta = document.getElementById("investment-allocation-type-meta");
+            const investmentExcludedMeta = document.getElementById("investment-excluded-meta");
             if (balancesMeta && balancesCard) {
                 balancesCard.classList.remove("loading");
                 balancesMeta.textContent = i18n.accountTypeBalancesLoadError;
+            }
+            if (investmentTypeCard && investmentTypeMeta) {
+                investmentTypeCard.classList.remove("loading");
+                investmentTypeMeta.textContent = i18n.investmentAllocationByTypeError;
+            }
+            if (investmentExcludedMeta) {
+                investmentExcludedMeta.classList.remove("loading");
+                investmentExcludedMeta.textContent = i18n.summaryLoadError;
             }
             cards.forEach((card) => {
                 if (!card) {
@@ -487,15 +935,8 @@
             chartPayload = await response.json();
             card.classList.remove("loading");
 
-            const granularityLabel = chartPayload.granularity === "MONTH"
-                ? i18n.chartGranularityMonth
-                : i18n.chartGranularityDay;
-
-            meta.textContent = replaceMeta(i18n.chartMeta, [
-                formatDate(chartPayload.startDate),
-                formatDate(chartPayload.endDate),
-                granularityLabel
-            ]);
+            const granularityLabel = chartPayload.granularity === "MONTH" ? i18n.chartGranularityMonth : i18n.chartGranularityDay;
+            meta.textContent = i18n.chartMetaGranularity.replace("{0}", granularityLabel);
 
             renderChart("accumulated");
         } catch (error) {
@@ -605,15 +1046,8 @@
             revenueExpensePayload = await response.json();
             card.classList.remove("loading");
 
-            const granularityLabel = revenueExpensePayload.granularity === "MONTH"
-                ? i18n.chartGranularityMonth
-                : i18n.chartGranularityDay;
-
-            meta.textContent = replaceMeta(i18n.chartMeta, [
-                formatDate(revenueExpensePayload.startDate),
-                formatDate(revenueExpensePayload.endDate),
-                granularityLabel
-            ]);
+            const granularityLabel = revenueExpensePayload.granularity === "MONTH" ? i18n.chartGranularityMonth : i18n.chartGranularityDay;
+            meta.textContent = i18n.chartMetaGranularity.replace("{0}", granularityLabel);
 
             renderRevenueExpenseChart();
         } catch (error) {
@@ -789,14 +1223,10 @@
             expenseCategoryPayload = await response.json();
             card.classList.remove("loading");
 
-            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
-                formatDate(expenseCategoryPayload.startDate),
-                formatDate(expenseCategoryPayload.endDate)
-            ]);
             const levelLabel = expenseCategoryPayload.currentParentCategoryName
                 ? i18n.expenseCategoryChartLevelChild.replace("{0}", expenseCategoryPayload.currentParentCategoryName)
                 : i18n.expenseCategoryChartLevelRoot;
-            meta.textContent = `${periodLabel} • ${levelLabel}`;
+            meta.textContent = levelLabel;
 
             expenseCategoryDrillUpParentId = expenseCategoryPayload.drillUpParentCategoryId;
             if (drillUpButton) {
@@ -834,14 +1264,10 @@
             revenueCategoryPayload = await response.json();
             card.classList.remove("loading");
 
-            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
-                formatDate(revenueCategoryPayload.startDate),
-                formatDate(revenueCategoryPayload.endDate)
-            ]);
             const levelLabel = revenueCategoryPayload.currentParentCategoryName
                 ? i18n.revenueCategoryChartLevelChild.replace("{0}", revenueCategoryPayload.currentParentCategoryName)
                 : i18n.revenueCategoryChartLevelRoot;
-            meta.textContent = `${periodLabel} • ${levelLabel}`;
+            meta.textContent = levelLabel;
 
             revenueCategoryDrillUpParentId = revenueCategoryPayload.drillUpParentCategoryId;
             if (drillUpButton) {
@@ -972,17 +1398,13 @@
             categoryTotalsPayload = await response.json();
             card.classList.remove("loading");
 
-            const periodLabel = replaceMetaRange(i18n.chartMetaRange, [
-                formatDate(categoryTotalsPayload.startDate),
-                formatDate(categoryTotalsPayload.endDate)
-            ]);
             const levelLabel = categoryTotalsPayload.currentParentCategoryName
                 ? i18n.categoryTotalsChartLevelChild.replace("{0}", categoryTotalsPayload.currentParentCategoryName)
                 : i18n.categoryTotalsChartLevelRoot;
             const granularityLabel = categoryTotalsPayload.granularity === "MONTH"
                 ? i18n.chartGranularityMonth
                 : i18n.chartGranularityDay;
-            meta.textContent = `${periodLabel} • ${levelLabel} • ${granularityLabel}`;
+            meta.textContent = `${levelLabel} • ${i18n.chartMetaGranularity.replace("{0}", granularityLabel)}`;
 
             categoryTotalsDrillUpParentId = categoryTotalsPayload.drillUpParentCategoryId;
             if (drillUpButton) {
@@ -1001,6 +1423,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         loadSummary();
+        loadInvestmentFlowEvolution();
         loadBalanceEvolution();
         loadRevenueExpenseEvolution();
         loadExpenseCategoryBreakdown();
@@ -1041,12 +1464,28 @@
             const activeModeButton = document.querySelector(".chart-mode-selector .btn-active");
             const mode = activeModeButton?.dataset.mode ?? "accumulated";
             renderAccountTypeBalances(accountTypeBalancesPayload);
+            renderInvestmentAllocationChart(
+                "investment-allocation-type-chart",
+                investmentAllocationTypePayload,
+                i18n.investmentAllocationByTypeEmpty,
+                "type",
+                (item) => assetTypeLabel(item.key)
+            );
+            renderInvestmentFlowChart();
             renderChart(mode);
             renderRevenueExpenseChart();
             renderExpenseCategoryChart();
             renderRevenueCategoryChart();
             renderCategoryTotalsChart();
         });
+
+        const accountTypeDrillUpButton = document.getElementById("account-type-balances-drill-up");
+        if (accountTypeDrillUpButton) {
+            accountTypeDrillUpButton.addEventListener("click", () => {
+                accountTypeBalancesDrillDownType = null;
+                renderAccountTypeBalances(accountTypeBalancesPayload);
+            });
+        }
     });
 </script>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>

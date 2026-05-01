@@ -1,8 +1,8 @@
 package dev.ccosta.aisha.web.admin;
 
-import dev.ccosta.aisha.application.entry.EntryCategoryModelManager;
-import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingCoordinator;
-import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingTrigger;
+import dev.ccosta.aisha.application.entry.categorization.model.EntryCategoryModelManager;
+import dev.ccosta.aisha.application.entry.categorization.model.EntryCategoryModelTrainingCoordinator;
+import dev.ccosta.aisha.application.entry.categorization.model.EntryCategoryModelTrainingTrigger;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;

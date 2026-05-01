@@ -1,14 +1,14 @@
 package dev.ccosta.aisha.web.entry;
 
-import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingCoordinator;
-import dev.ccosta.aisha.application.entry.EntryCategoryModelTrainingTrigger;
-import dev.ccosta.aisha.application.entry.EntryCsvImportService;
-import dev.ccosta.aisha.application.entry.EntryCsvImportOptions;
-import dev.ccosta.aisha.application.entry.EntryImportFailureCause;
-import dev.ccosta.aisha.application.entry.EntryImportProgressListener;
-import dev.ccosta.aisha.application.entry.EntryImportSummary;
-import dev.ccosta.aisha.application.entry.EntryImportValidationException;
-import dev.ccosta.aisha.application.entry.statement.EntryStatementImportService;
+import dev.ccosta.aisha.application.entry.categorization.model.EntryCategoryModelTrainingCoordinator;
+import dev.ccosta.aisha.application.entry.categorization.model.EntryCategoryModelTrainingTrigger;
+import dev.ccosta.aisha.application.entry.importing.EntryCsvImportService;
+import dev.ccosta.aisha.application.entry.importing.EntryCsvImportOptions;
+import dev.ccosta.aisha.application.entry.importing.EntryImportFailureCause;
+import dev.ccosta.aisha.application.entry.importing.EntryImportProgressListener;
+import dev.ccosta.aisha.application.entry.importing.EntryImportSummary;
+import dev.ccosta.aisha.application.entry.importing.EntryImportValidationException;
+import dev.ccosta.aisha.application.entry.importing.statement.EntryStatementImportService;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;

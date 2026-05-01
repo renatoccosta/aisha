@@ -8,7 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionStatus;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

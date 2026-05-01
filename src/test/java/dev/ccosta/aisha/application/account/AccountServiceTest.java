@@ -9,10 +9,11 @@ import static org.mockito.Mockito.when;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ class AccountServiceTest {
 
     @Mock
     private EntryRepository entryRepository;
+
+    @Mock
+    private InvestmentOperationRepository investmentOperationRepository;
 
     @InjectMocks
     private AccountService accountService;
@@ -141,6 +145,21 @@ class AccountServiceTest {
     }
 
     @Test
+    void shouldPreventDeleteWhenAccountHasInvestmentOperations() {
+        Account existing = newAccount("Conta em uso", "0.00", LocalDate.of(2026, 1, 1));
+
+        when(accountRepository.findById(12L)).thenReturn(Optional.of(existing));
+        when(entryRepository.existsByAccountId(12L)).thenReturn(false);
+        when(investmentOperationRepository.existsByAccountId(12L)).thenReturn(true);
+
+        assertThatThrownBy(() -> accountService.deleteById(12L))
+            .isInstanceOf(AccountInUseException.class)
+            .hasMessageContaining("12");
+
+        verify(accountRepository, never()).deleteById(12L);
+    }
+
+    @Test
     void shouldRemoveDuplicateIdsInBulkDelete() {
         Account existing = newAccount("Conta", "0.00", LocalDate.of(2026, 1, 1));
 
@@ -150,6 +169,9 @@ class AccountServiceTest {
         when(entryRepository.existsByAccountId(1L)).thenReturn(false);
         when(entryRepository.existsByAccountId(2L)).thenReturn(false);
         when(entryRepository.existsByAccountId(3L)).thenReturn(false);
+        when(investmentOperationRepository.existsByAccountId(1L)).thenReturn(false);
+        when(investmentOperationRepository.existsByAccountId(2L)).thenReturn(false);
+        when(investmentOperationRepository.existsByAccountId(3L)).thenReturn(false);
 
         accountService.bulkDelete(List.of(1L, 2L, 1L, 3L));
 

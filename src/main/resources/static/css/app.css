@@ -505,6 +505,12 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+@media (min-width: 900px) {
+  .admin-grid:has(> :nth-child(3)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .admin-nav-card {
   color: inherit;
   text-decoration: none;
@@ -1105,6 +1111,79 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.asset-details-main {
+  display: grid;
+  gap: 1rem;
+}
+
+.asset-memory-baseline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.asset-memory-tabs {
+  display: grid;
+  gap: 1rem;
+}
+
+.asset-memory-tab-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.asset-memory-tab-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.asset-memory-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.asset-memory-tab-label:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--secondary) 40%, var(--line));
+}
+
+#asset-memory-tab-quantity:focus-visible ~ .asset-memory-tab-list .asset-memory-tab-label[for="asset-memory-tab-quantity"],
+#asset-memory-tab-cash:focus-visible ~ .asset-memory-tab-list .asset-memory-tab-label[for="asset-memory-tab-cash"] {
+  outline: 3px solid color-mix(in srgb, var(--color-focus-ring) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.asset-memory-panel {
+  display: none;
+}
+
+#asset-memory-tab-quantity:checked ~ .asset-memory-tab-list .asset-memory-tab-label[for="asset-memory-tab-quantity"],
+#asset-memory-tab-cash:checked ~ .asset-memory-tab-list .asset-memory-tab-label[for="asset-memory-tab-cash"] {
+  background: color-mix(in srgb, var(--secondary) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--secondary) 45%, var(--line));
+  color: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--secondary) 20%, transparent);
+}
+
+#asset-memory-tab-quantity:checked ~ #asset-memory-panel-quantity,
+#asset-memory-tab-cash:checked ~ #asset-memory-panel-cash {
+  display: grid;
+}
+
 .stack-form,
 .import-form {
   display: grid;
@@ -1209,6 +1288,14 @@ body.import-drag-active .import-drop-overlay {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.import-summary-grid > div {
+  min-width: 0;
+}
+
+.import-summary-grid-wide {
+  grid-column: 1 / -1;
+}
+
 .import-summary-grid dt {
   color: var(--muted);
   font-size: 0.88rem;
@@ -1217,6 +1304,11 @@ body.import-drag-active .import-drop-overlay {
 .import-summary-grid dd {
   margin: 0.2rem 0 0;
   font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.breakable-value {
+  word-break: break-word;
 }
 
 .dashboard-main {
@@ -1236,6 +1328,12 @@ body.import-drag-active .import-drop-overlay {
 }
 
 .dashboard-balance-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.dashboard-investment-flow-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: 1fr;
@@ -1319,6 +1417,16 @@ body.import-drag-active .import-drop-overlay {
   color: #0d6b54;
 }
 
+.summary-card-neutral {
+  border-color: #d7e0e8;
+  background: linear-gradient(160deg, #ffffff 0%, #f4f7fa 100%);
+}
+
+.summary-card-neutral .summary-icon {
+  background: rgba(53, 80, 106, 0.14);
+  color: #35506a;
+}
+
 html[data-theme="dark"] .summary-card-balance {
   border-color: #2f5f75;
   background: linear-gradient(160deg, #1a2d3a 0%, #162635 100%);
@@ -1349,6 +1457,16 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
   color: #9af0da;
 }
 
+html[data-theme="dark"] .summary-card-neutral {
+  border-color: #30475a;
+  background: linear-gradient(160deg, #172632 0%, #13202a 100%);
+}
+
+html[data-theme="dark"] .summary-card-neutral .summary-icon {
+  background: rgba(140, 183, 199, 0.18);
+  color: #c0d6df;
+}
+
 .summary-value {
   margin-top: 0.75rem;
   font-size: clamp(1.45rem, 3.4vw, 2.1rem);
@@ -1361,6 +1479,13 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
   margin-top: 0.45rem;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+html[data-values-hidden="true"] .dashboard-main .summary-card [data-role="value"],
+html[data-values-hidden="true"] .dashboard-main .summary-card [data-role="variation"] {
+  color: transparent;
+  text-shadow: 0 0 0.55rem var(--color-text-secondary);
+  user-select: none;
 }
 
 .variation-up {
@@ -1387,6 +1512,17 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
   flex-wrap: wrap;
 }
 
+.chart-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-title .lucide {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 .chart-mode-selector {
   display: inline-flex;
   gap: 0.45rem;
@@ -1406,6 +1542,14 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
 
 .chart-wrap-donut {
   height: min(46vh, 300px);
+}
+
+.investments-overview-card {
+  gap: 1rem;
+}
+
+.investments-summary-grid {
+  margin-top: 1rem;
 }
 
 .loading::after {
@@ -1436,6 +1580,11 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
   .section-heading {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .asset-memory-tab-list {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1473,6 +1622,10 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .investments-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .app-footer-content {
     grid-template-columns: 1.4fr 1fr 1.1fr;
     gap: 1.2rem;
@@ -1481,6 +1634,10 @@ html[data-theme="dark"] .summary-card-revenue .summary-icon {
 
 @media (min-width: 980px) {
   .dashboard-balance-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+
+  .dashboard-investment-flow-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   }
 

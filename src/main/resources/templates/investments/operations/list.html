@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{investments.operations.list.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{investments.operations.list.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card header-actions">
+        <div>
+            <h2 th:text="#{investments.operations.list.heading}"></h2>
+            <p th:text="#{investments.operations.list.subtitle}"></p>
+        </div>
+        <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="@{/investments/brokerage-note-import}">
+                <i data-lucide="file-up" aria-hidden="true"></i>
+                <span th:text="#{investments.operations.list.action.importBrokerageNote}"></span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/investments/operations/new(returnTo=${returnTo})}">
+                <i data-lucide="plus" aria-hidden="true"></i>
+                <span th:text="#{investments.operations.list.action.new}"></span>
+            </a>
+        </div>
+    </section>
+
+    <div id="operations-listing" th:fragment="table" class="listing-stack">
+        <section class="card filter-panel">
+            <div class="filter-panel-header">
+                <h3 th:text="#{investments.operations.list.filters.heading}"></h3>
+                <p th:text="#{investments.operations.list.filters.subtitle}"></p>
+            </div>
+
+            <form
+                class="list-filters"
+                method="get"
+                th:action="@{/investments/operations}"
+                hx-get="/investments/operations/fragments/table"
+                hx-target="#operations-listing"
+                hx-swap="outerHTML"
+                hx-push-url="true"
+                hx-trigger="input changed delay:400ms from:#filter-asset, search from:#filter-asset, change from:#filter-account, change from:#filter-operation-type">
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="filter-asset" th:text="#{investments.operations.list.filter.asset}"></label>
+                        <input
+                            id="filter-asset"
+                            name="asset"
+                            type="search"
+                            th:value="${selectedAsset}"
+                            th:placeholder="#{investments.operations.list.filter.asset.placeholder}">
+                    </div>
+                    <div class="field">
+                        <label for="filter-account" th:text="#{investments.operations.list.filter.account}"></label>
+                        <select id="filter-account" name="accountId">
+                            <option value="" th:text="#{investments.operations.list.filter.allAccounts}"></option>
+                            <option
+                                th:each="account : ${accountOptions}"
+                                th:value="${account.id}"
+                                th:selected="${selectedAccountId != null and selectedAccountId == account.id}"
+                                th:text="${account.title}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="filter-operation-type" th:text="#{investments.operations.list.filter.operationType}"></label>
+                        <select id="filter-operation-type" name="operationType">
+                            <option value="" th:text="#{investments.operations.list.filter.allOperationTypes}"></option>
+                            <option
+                                th:each="operationType : ${operationTypes}"
+                                th:value="${operationType}"
+                                th:selected="${selectedOperationType != null and selectedOperationType == operationType}"
+                                th:text="#{${'investment.operationType.' + operationType.name().toLowerCase()}}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
+            </form>
+        </section>
+
+        <section id="table-container" class="card">
+            <div class="pagination-bar" th:if="${pagination != null}">
+            <div class="pagination-controls">
+                <form
+                    class="pagination-size-form"
+                    method="get"
+                    th:action="@{/investments/operations}"
+                    hx-get="/investments/operations/fragments/table"
+                    hx-target="#operations-listing"
+                    hx-swap="outerHTML">
+                    <input type="hidden" name="asset" th:value="${selectedAsset}">
+                    <input type="hidden" name="accountId" th:value="${selectedAccountId}">
+                    <input type="hidden" name="operationType" th:value="${selectedOperationType}">
+                    <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
+                    <input type="hidden" name="page" value="0">
+                    <label for="operations-page-size" th:text="#{pagination.size.label}"></label>
+                    <select id="operations-page-size" name="size" onchange="this.form.requestSubmit()">
+                        <option
+                            th:each="allowedSize : ${allowedPageSizes}"
+                            th:value="${allowedSize}"
+                            th:selected="${allowedSize == pagination.pageSize}"
+                            th:text="${allowedSize}">
+                        </option>
+                    </select>
+                </form>
+
+                <form
+                    class="pagination-nav-form"
+                    method="get"
+                    th:action="@{/investments/operations}"
+                    hx-get="/investments/operations/fragments/table"
+                    hx-target="#operations-listing"
+                    hx-swap="outerHTML">
+                    <input type="hidden" name="asset" th:value="${selectedAsset}">
+                    <input type="hidden" name="accountId" th:value="${selectedAccountId}">
+                    <input type="hidden" name="operationType" th:value="${selectedOperationType}">
+                    <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
+                    <input type="hidden" name="size" th:value="${pagination.pageSize}">
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.firstPage()}" th:disabled="${!pagination.hasPrevious()}">
+                        <i data-lucide="chevrons-left" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.first}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.previousPage()}" th:disabled="${!pagination.hasPrevious()}">
+                        <i data-lucide="chevron-left" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.previous}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.nextPage()}" th:disabled="${!pagination.hasNext()}">
+                        <i data-lucide="chevron-right" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.next}"></span>
+                    </button>
+                    <button class="btn btn-secondary" type="submit" name="page" th:value="${pagination.lastPage()}" th:disabled="${!pagination.hasNext()}">
+                        <i data-lucide="chevrons-right" aria-hidden="true"></i>
+                        <span th:text="#{pagination.nav.last}"></span>
+                    </button>
+                </form>
+            </div>
+            <div class="pagination-summary">
+                <span th:text="#{pagination.summary.page(${pagination.currentPageDisplay()}, ${pagination.totalPages})}"></span>
+                <span th:text="#{pagination.summary.range(${pagination.rangeStart}, ${pagination.rangeEnd}, ${pagination.totalItems})}"></span>
+            </div>
+            </div>
+
+        <form
+            th:action="@{/investments/operations/bulk-delete}"
+            method="post"
+            hx-post="/investments/operations/bulk-delete"
+            hx-target="#operations-listing"
+            hx-swap="outerHTML"
+            th:attr="hx-confirm=#{investments.operations.list.confirm.bulkDelete}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="asset" th:value="${selectedAsset}">
+            <input type="hidden" name="accountId" th:value="${selectedAccountId}">
+            <input type="hidden" name="operationType" th:value="${selectedOperationType}">
+            <input type="hidden" name="brokerageNoteId" th:value="${selectedBrokerageNoteId}">
+            <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
+            <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
+
+            <div class="table-actions">
+                <span class="selection-counter" aria-live="polite">
+                    <i data-lucide="list-checks" aria-hidden="true"></i>
+                    <span
+                        data-selected-count-display
+                        th:attr="data-label-singular=#{selection.counter.template.singular},data-label-plural=#{selection.counter.template.plural}"
+                        th:text="#{selection.counter.plural(0)}">
+                        0 registros selecionados
+                    </span>
+                </span>
+                <button class="btn btn-danger" type="submit">
+                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                    <span th:text="#{investments.operations.list.action.bulkDelete}"></span>
+                </button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="responsive-list">
+                    <thead>
+                    <tr>
+                        <th>
+                            <button
+                                class="table-select-all-toggle"
+                                type="button"
+                                th:attr="data-label-none=#{selection.toggle.none},data-label-some=#{selection.toggle.some},data-label-all=#{selection.toggle.all}">
+                                <span class="table-heading-label" aria-hidden="true">
+                                    <span data-state-icon="none">
+                                        <i data-lucide="square" aria-hidden="true"></i>
+                                    </span>
+                                    <span data-state-icon="some" hidden>
+                                        <i data-lucide="minus-square" aria-hidden="true"></i>
+                                    </span>
+                                    <span data-state-icon="all" hidden>
+                                        <i data-lucide="check-square" aria-hidden="true"></i>
+                                    </span>
+                                </span>
+                                <span class="sr-only" th:text="#{investments.operations.list.table.select}"></span>
+                            </button>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="calendar-days" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.tradeDate}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="landmark" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.asset}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="briefcase" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.account}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="repeat-2" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.type}"></span>
+                            </span>
+                        </th>
+                        <th class="amount-cell">
+                            <span class="table-heading-label">
+                                <i data-lucide="blocks" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.quantity}"></span>
+                            </span>
+                        </th>
+                        <th class="amount-cell">
+                            <span class="table-heading-label">
+                                <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.netAmount}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="coins" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.currency}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
+                                <i data-lucide="settings" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.actions}"></span>
+                            </span>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(operations)}" class="empty-row">
+                        <td colspan="9" class="empty" th:text="#{investments.operations.list.empty}"></td>
+                    </tr>
+                    <tr th:each="operation : ${operations}">
+                        <td class="cell-select" th:attr="data-label=#{investments.operations.list.table.select}">
+                            <input type="checkbox" name="ids" th:value="${operation.id}" th:attr="aria-label=#{investments.operations.list.table.selectItem}">
+                        </td>
+                        <td
+                            th:attr="data-label=#{investments.operations.list.table.tradeDate}"
+                            th:text="${#temporals.format(operation.tradeDate, 'dd/MM/yyyy')}">
+                        </td>
+                        <td th:attr="data-label=#{investments.operations.list.table.asset}">
+                            <strong th:text="${operation.asset.name}"></strong>
+                            <span th:if="${operation.asset.ticker != null && !operation.asset.ticker.isBlank()}" th:text="${' (' + operation.asset.ticker + ')'}"></span>
+                        </td>
+                        <td th:attr="data-label=#{investments.operations.list.table.account}" th:text="${operation.account.title}"></td>
+                        <td th:attr="data-label=#{investments.operations.list.table.type}" th:text="#{${'investment.operationType.' + operation.operationType.name().toLowerCase()}}"></td>
+                        <td
+                            class="amount-cell"
+                            th:attr="data-label=#{investments.operations.list.table.quantity}"
+                            th:text="${operation.quantity != null ? #numbers.formatDecimal(operation.quantity, 1, 'POINT', 10, 'COMMA') : '-'}">
+                        </td>
+                        <td
+                            class="amount-cell"
+                            th:attr="data-label=#{investments.operations.list.table.netAmount}"
+                            th:text="${operation.netAmount != null ? #numbers.formatDecimal(operation.netAmount, 1, 'POINT', 2, 'COMMA') : '-'}">
+                        </td>
+                        <td th:attr="data-label=#{investments.operations.list.table.currency}" th:text="${operation.currency}"></td>
+                        <td class="cell-actions" th:attr="data-label=#{investments.operations.list.table.actions}">
+                            <details class="action-menu action-menu-row">
+                                <summary class="btn btn-secondary">
+                                    <span class="action-menu-trigger">
+                                        <i data-lucide="settings-2" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.table.actions}"></span>
+                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                                    </span>
+                                </summary>
+                                <div class="action-menu-panel">
+                                    <a class="action-menu-item" th:href="@{/investments/operations/{id}(id=${operation.id},returnTo=${returnTo})}">
+                                        <i data-lucide="eye" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.details}"></span>
+                                    </a>
+                                    <a
+                                        class="action-menu-item"
+                                        th:if="${operation.brokerageNote != null}"
+                                        th:href="@{/investments/brokerage-notes/{id}(id=${operation.brokerageNote.id},returnTo=${returnTo})}">
+                                        <i data-lucide="file-text" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.brokerageNote}"></span>
+                                    </a>
+                                    <a class="action-menu-item" th:href="@{/investments/operations/{id}/edit(id=${operation.id},returnTo=${returnTo})}">
+                                        <i data-lucide="edit-3" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.edit}"></span>
+                                    </a>
+                                    <button
+                                        class="action-menu-item action-menu-item-danger"
+                                        type="button"
+                                        th:attr="hx-post=@{/investments/operations/{id}/delete(id=${operation.id},asset=${selectedAsset},accountId=${selectedAccountId},operationType=${selectedOperationType},brokerageNoteId=${selectedBrokerageNoteId},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{investments.operations.list.confirm.delete}"
+                                        hx-target="#operations-listing"
+                                        hx-swap="outerHTML">
+                                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                                        <span th:text="#{investments.operations.list.action.delete}"></span>
+                                    </button>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+        </section>
+    </div>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

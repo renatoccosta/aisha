@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{investments.assets.details.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{investments.assets.details.header.subtitle})}"></header>
+
+<main class="wrap asset-details-main" th:with="asset=${details.asset},position=${details.currentPosition}">
+    <section class="card header-actions">
+        <div>
+            <h2 th:text="${asset.name}"></h2>
+            <p>
+                <span th:text="#{investments.assets.details.subtitle}"></span>
+                <span th:if="${asset.ticker != null && !asset.ticker.isBlank()}" th:text="${' - ' + asset.ticker}"></span>
+            </p>
+        </div>
+        <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="${returnTo}">
+                <i data-lucide="arrow-left" aria-hidden="true"></i>
+                <span th:text="#{investments.assets.details.action.back}"></span>
+            </a>
+            <a
+                class="btn btn-secondary"
+                th:href="@{/investments/operations(asset=${asset.ticker != null && !asset.ticker.isBlank() ? asset.ticker : asset.name})}">
+                <i data-lucide="repeat-2" aria-hidden="true"></i>
+                <span th:text="#{investments.assets.details.action.operations}"></span>
+            </a>
+            <a class="btn btn-primary" th:href="@{/investments/assets/{id}/edit(id=${asset.id},returnTo=${returnTo})}">
+                <i data-lucide="edit-3" aria-hidden="true"></i>
+                <span th:text="#{investments.assets.details.action.edit}"></span>
+            </a>
+        </div>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{investments.assets.details.section.basicData}"></h3>
+                <p th:text="#{investments.assets.details.section.basicData.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid">
+            <div>
+                <dt th:text="#{investments.assets.details.field.type}"></dt>
+                <dd th:text="#{${'asset.type.' + asset.type.name().toLowerCase()}}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.ticker}"></dt>
+                <dd th:text="${asset.ticker != null && !asset.ticker.isBlank() ? asset.ticker : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.isin}"></dt>
+                <dd th:text="${asset.isin != null && !asset.isin.isBlank() ? asset.isin : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.issuer}"></dt>
+                <dd th:text="${asset.issuer != null && !asset.issuer.isBlank() ? asset.issuer : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.currency}"></dt>
+                <dd th:text="${asset.currency}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.maturityDate}"></dt>
+                <dd th:text="${asset.maturityDate != null ? #temporals.format(asset.maturityDate, 'dd/MM/yyyy') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.indexer}"></dt>
+                <dd>
+                    <span th:text="#{${'asset.indexerType.' + asset.indexerType.name().toLowerCase()}}"></span>
+                    <span th:if="${asset.indexerSpread != null && !asset.indexerSpread.isBlank()}" th:text="${' - ' + asset.indexerSpread}"></span>
+                </dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{investments.assets.details.section.openingPosition}"></h3>
+                <p th:text="#{investments.assets.details.section.openingPosition.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid">
+            <div>
+                <dt th:text="#{investments.assets.details.field.openingPositionDate}"></dt>
+                <dd th:text="${asset.openingPositionDate != null ? #temporals.format(asset.openingPositionDate, 'dd/MM/yyyy') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.openingPositionQuantity}"></dt>
+                <dd th:text="${asset.openingPositionQuantity != null ? #numbers.formatDecimal(asset.openingPositionQuantity, 1, 'POINT', 10, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.openingPositionTotalCost}"></dt>
+                <dd th:text="${asset.openingPositionTotalCost != null ? #numbers.formatDecimal(asset.openingPositionTotalCost, 1, 'POINT', 2, 'COMMA') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{investments.assets.details.field.openingPositionCurrency}"></dt>
+                <dd th:text="${asset.openingPositionCurrency != null && !asset.openingPositionCurrency.isBlank() ? asset.openingPositionCurrency : '-'}"></dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="dashboard-card-grid">
+        <article class="card summary-card summary-card-balance">
+            <div class="summary-card-head">
+                <span class="summary-icon" aria-hidden="true">
+                    <i data-lucide="blocks" aria-hidden="true"></i>
+                </span>
+                <h3 th:text="#{investments.assets.details.currentPosition.quantity}"></h3>
+            </div>
+            <p class="summary-value" th:text="${#numbers.formatDecimal(position.quantity, 1, 'POINT', 10, 'COMMA')}"></p>
+            <p class="summary-variation" th:text="#{investments.assets.details.currentPosition.baseDate(${position.baseDate != null ? #temporals.format(position.baseDate, 'dd/MM/yyyy') : '-'})}"></p>
+        </article>
+
+        <article class="card summary-card summary-card-expense">
+            <div class="summary-card-head">
+                <span class="summary-icon" aria-hidden="true">
+                    <i data-lucide="wallet" aria-hidden="true"></i>
+                </span>
+                <h3 th:text="#{investments.assets.details.currentPosition.totalCost}"></h3>
+            </div>
+            <p class="summary-value" th:text="${#numbers.formatDecimal(position.totalCost, 1, 'POINT', 2, 'COMMA')}"></p>
+            <p class="summary-variation" th:text="${position.currency}"></p>
+        </article>
+
+        <article class="card summary-card summary-card-revenue">
+            <div class="summary-card-head">
+                <span class="summary-icon" aria-hidden="true">
+                    <i data-lucide="calculator" aria-hidden="true"></i>
+                </span>
+                <h3 th:text="#{investments.assets.details.currentPosition.averageCost}"></h3>
+            </div>
+            <p class="summary-value" th:text="${position.averageCost != null ? #numbers.formatDecimal(position.averageCost, 1, 'POINT', 8, 'COMMA') : '-'}"></p>
+            <p class="summary-variation" th:text="${position.currency}"></p>
+        </article>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{investments.assets.details.section.memory}"></h3>
+                <p th:text="#{investments.assets.details.section.memory.subtitle}"></p>
+            </div>
+        </div>
+
+        <div class="asset-memory-baseline">
+            <i data-lucide="history" aria-hidden="true"></i>
+            <span th:text="#{investments.assets.details.memory.baseline(${asset.openingPositionDate != null ? #temporals.format(asset.openingPositionDate, 'dd/MM/yyyy') : '-'}, ${asset.openingPositionQuantity != null ? #numbers.formatDecimal(asset.openingPositionQuantity, 1, 'POINT', 10, 'COMMA') : '-'}, ${asset.openingPositionTotalCost != null ? #numbers.formatDecimal(asset.openingPositionTotalCost, 1, 'POINT', 2, 'COMMA') : '-'})}"></span>
+        </div>
+
+        <div class="asset-memory-tabs">
+            <input class="asset-memory-tab-input" type="radio" name="asset-memory-tab" id="asset-memory-tab-quantity" checked>
+            <input class="asset-memory-tab-input" type="radio" name="asset-memory-tab" id="asset-memory-tab-cash">
+
+            <div class="asset-memory-tab-list">
+                <label class="asset-memory-tab-label" for="asset-memory-tab-quantity">
+                    <i data-lucide="blocks" aria-hidden="true"></i>
+                    <span th:text="#{investments.assets.details.memory.quantityMovements}"></span>
+                </label>
+                <label class="asset-memory-tab-label" for="asset-memory-tab-cash">
+                    <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+                    <span th:text="#{investments.assets.details.memory.cashEvents}"></span>
+                </label>
+            </div>
+
+            <section class="card stack-sm asset-memory-panel" id="asset-memory-panel-quantity">
+                <div class="section-heading">
+                    <div>
+                        <h4 th:text="#{investments.assets.details.memory.quantityMovements}"></h4>
+                        <p th:text="#{investments.assets.details.memory.quantityMovements.subtitle}"></p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="responsive-list">
+                        <thead>
+                        <tr>
+                            <th><span class="table-heading-label"><i data-lucide="calendar-days" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.tradeDate}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="repeat-2" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.operation}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="blocks" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.quantityDelta}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="wallet" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.costDelta}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="badge-dollar-sign" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.cashAmount}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="boxes" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.runningQuantity}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="coins" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.runningCost}"></span></span></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(details.quantityMovements)}" class="empty-row">
+                            <td colspan="7" class="empty" th:text="#{investments.assets.details.memory.quantityMovements.empty}"></td>
+                        </tr>
+                        <tr th:each="step : ${details.quantityMovements}">
+                            <td th:attr="data-label=#{investments.assets.details.memory.table.tradeDate}" th:text="${#temporals.format(step.tradeDate, 'dd/MM/yyyy')}"></td>
+                            <td th:attr="data-label=#{investments.assets.details.memory.table.operation}">
+                                <div class="cell-stack">
+                                    <span th:text="#{${'investment.operationType.' + step.operationType.name().toLowerCase()}}"></span>
+                                    <span class="helper" th:if="${step.notes != null && !step.notes.isBlank()}" th:text="${step.notes}"></span>
+                                </div>
+                            </td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.quantityDelta}" th:text="${#numbers.formatDecimal(step.quantityDelta, 1, 'POINT', 10, 'COMMA')}"></td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.costDelta}" th:text="${#numbers.formatDecimal(step.costDelta, 1, 'POINT', 2, 'COMMA')}"></td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.cashAmount}" th:text="${step.cashAmount != null ? #numbers.formatDecimal(step.cashAmount, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.runningQuantity}" th:text="${#numbers.formatDecimal(step.resultingQuantity, 1, 'POINT', 10, 'COMMA')}"></td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.runningCost}" th:text="${#numbers.formatDecimal(step.resultingTotalCost, 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card stack-sm asset-memory-panel" id="asset-memory-panel-cash">
+                <div class="section-heading">
+                    <div>
+                        <h4 th:text="#{investments.assets.details.memory.cashEvents}"></h4>
+                        <p th:text="#{investments.assets.details.memory.cashEvents.subtitle}"></p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="responsive-list">
+                        <thead>
+                        <tr>
+                            <th><span class="table-heading-label"><i data-lucide="calendar-days" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.tradeDate}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="repeat-2" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.operation}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="badge-dollar-sign" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.cashAmount}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="wallet" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.costDelta}"></span></span></th>
+                            <th><span class="table-heading-label"><i data-lucide="coins" aria-hidden="true"></i><span th:text="#{investments.assets.details.memory.table.runningCost}"></span></span></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(details.cashEvents)}" class="empty-row">
+                            <td colspan="5" class="empty" th:text="#{investments.assets.details.memory.cashEvents.empty}"></td>
+                        </tr>
+                        <tr th:each="step : ${details.cashEvents}">
+                            <td th:attr="data-label=#{investments.assets.details.memory.table.tradeDate}" th:text="${#temporals.format(step.tradeDate, 'dd/MM/yyyy')}"></td>
+                            <td th:attr="data-label=#{investments.assets.details.memory.table.operation}">
+                                <div class="cell-stack">
+                                    <span th:text="#{${'investment.operationType.' + step.operationType.name().toLowerCase()}}"></span>
+                                    <span class="helper" th:if="${step.notes != null && !step.notes.isBlank()}" th:text="${step.notes}"></span>
+                                </div>
+                            </td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.cashAmount}" th:text="${step.cashAmount != null ? #numbers.formatDecimal(step.cashAmount, 1, 'POINT', 2, 'COMMA') : '-'}"></td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.costDelta}" th:text="${#numbers.formatDecimal(step.costDelta, 1, 'POINT', 2, 'COMMA')}"></td>
+                            <td class="amount-cell" th:attr="data-label=#{investments.assets.details.memory.table.runningCost}" th:text="${#numbers.formatDecimal(step.resultingTotalCost, 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

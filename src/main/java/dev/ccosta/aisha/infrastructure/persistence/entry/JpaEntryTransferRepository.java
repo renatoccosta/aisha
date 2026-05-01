@@ -1,6 +1,6 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
-import dev.ccosta.aisha.domain.entry.EntryTransfer;
+import dev.ccosta.aisha.domain.entry.transfer.EntryTransfer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;

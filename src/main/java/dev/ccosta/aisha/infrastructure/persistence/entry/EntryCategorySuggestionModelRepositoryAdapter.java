@@ -1,8 +1,8 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
-import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionModelArtifact;
-import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionModelRepository;
-import dev.ccosta.aisha.domain.entry.EntryCategorySuggestionModelStatus;
+import dev.ccosta.aisha.domain.entry.categorization.model.EntryCategorySuggestionModelArtifact;
+import dev.ccosta.aisha.domain.entry.categorization.model.EntryCategorySuggestionModelRepository;
+import dev.ccosta.aisha.domain.entry.categorization.model.EntryCategorySuggestionModelStatus;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
