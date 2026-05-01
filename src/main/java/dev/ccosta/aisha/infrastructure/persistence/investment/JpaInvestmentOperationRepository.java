@@ -35,6 +35,27 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
           and (:accountId is null or o.account.id = :accountId)
           and (:operationType is null or o.operationType = :operationType)
           and (:brokerageNoteId is null or o.brokerageNote.id = :brokerageNoteId)
+        order by o.tradeDate desc, o.id desc
+        """
+    )
+    Page<InvestmentOperation> searchByFiltersWithoutAsset(
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
+        @Param("accountId") Long accountId,
+        @Param("operationType") InvestmentOperationType operationType,
+        @Param("brokerageNoteId") Long brokerageNoteId,
+        Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"asset", "account", "brokerageNote"})
+    @Query(
+        """
+        select o
+        from InvestmentOperation o
+        where (:brokerageNoteId is not null or o.settlementDate between :startDate and :endDate)
+          and (:accountId is null or o.account.id = :accountId)
+          and (:operationType is null or o.operationType = :operationType)
+          and (:brokerageNoteId is null or o.brokerageNote.id = :brokerageNoteId)
           and (
                 :assetFilter is null
                 or upper(

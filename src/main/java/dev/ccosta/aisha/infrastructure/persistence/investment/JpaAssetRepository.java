@@ -25,6 +25,20 @@ public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
         select a
         from Asset a
         where (:type is null or a.type = :type)
+        order by a.name asc, a.ticker asc, a.id asc
+        """
+    )
+    Page<Asset> searchByFiltersWithoutDescription(
+        @Param("type") AssetType type,
+        Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"openingPosition"})
+    @Query(
+        """
+        select a
+        from Asset a
+        where (:type is null or a.type = :type)
           and (
                 :descriptionFilter is null
                 or upper(
