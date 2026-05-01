@@ -10,6 +10,8 @@ import dev.ccosta.aisha.application.investment.InvestmentOperationEntryLinkReque
 import dev.ccosta.aisha.application.investment.InvestmentOperationNotFoundException;
 import dev.ccosta.aisha.application.investment.InvestmentOperationService;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.investment.Asset;
+import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.investment.BrokerageNote;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
@@ -54,6 +56,7 @@ public class InvestmentOperationController {
     private static final int FORM_OPTION_LIMIT = 100;
     private static final int ENTRY_CANDIDATE_DAYS_BEFORE = 30;
     private static final int ENTRY_CANDIDATE_DAYS_AFTER = 30;
+    private static final Long NEW_ASSET_OPTION_ID = -1L;
 
     private final InvestmentOperationService operationService;
     private final AssetService assetService;
@@ -161,6 +164,7 @@ public class InvestmentOperationController {
      */
     @GetMapping("/fragments/entry-candidates")
     public String entryCandidatesFragment(@ModelAttribute("form") InvestmentOperationForm form, Model model) {
+        model.addAttribute("form", form);
         model.addAttribute("entryCandidates", entryCandidates(form));
         return "investments/operations/form :: entryLinkSelection";
     }
@@ -181,13 +185,15 @@ public class InvestmentOperationController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        validateAssetSelection(form, bindingResult);
         if (bindingResult.hasErrors()) {
             fillFormModel(model, form, "create", null, returnTo, entryCandidates(form));
             return "investments/operations/form";
         }
 
         try {
-            operationService.create(toDomain(form), form.getAssetId(), form.getAccountId(), toLinkRequests(form.getLinkedEntryIds()));
+            Long assetId = resolveAssetId(form);
+            operationService.create(toDomain(form), assetId, form.getAccountId(), toLinkRequests(form.getLinkedEntryIds()));
         } catch (AssetNotFoundException ex) {
             bindingResult.rejectValue("assetId", "investmentOperationForm.assetId.notNull");
             fillFormModel(model, form, "create", null, returnTo, entryCandidates(form));
@@ -242,16 +248,18 @@ public class InvestmentOperationController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        validateAssetSelection(form, bindingResult);
         if (bindingResult.hasErrors()) {
             fillFormModel(model, form, "edit", id, returnTo, entryCandidates(form));
             return "investments/operations/form";
         }
 
         try {
+            Long assetId = resolveAssetId(form);
             operationService.update(
                 id,
                 toDomain(form),
-                form.getAssetId(),
+                assetId,
                 form.getAccountId(),
                 form.getBrokerageNoteId(),
                 toLinkRequests(form.getLinkedEntryIds())
@@ -419,6 +427,7 @@ public class InvestmentOperationController {
         model.addAttribute("mode", mode);
         model.addAttribute("operationId", operationId);
         model.addAttribute("assets", assetService.listPageOrdered(0, FORM_OPTION_LIMIT).items());
+        model.addAttribute("newAssetOptionId", NEW_ASSET_OPTION_ID);
         model.addAttribute("accounts", accountService.listAvailableForEntryForm(form.getAccountId()));
         model.addAttribute("operationTypes", InvestmentOperationType.values());
         model.addAttribute("sourceTypes", sourceTypesFor(form));
@@ -485,6 +494,30 @@ public class InvestmentOperationController {
         operation.setNotes(form.getNotes());
         operation.setSourceType(form.getSourceType());
         return operation;
+    }
+
+    private void validateAssetSelection(InvestmentOperationForm form, BindingResult bindingResult) {
+        if (!isNewAssetSelected(form)) {
+            return;
+        }
+        if (form.getNewAssetName() == null || form.getNewAssetName().isBlank()) {
+            bindingResult.rejectValue("newAssetName", "investmentOperationForm.newAssetName.notBlank");
+        }
+    }
+
+    private Long resolveAssetId(InvestmentOperationForm form) {
+        if (!isNewAssetSelected(form)) {
+            return form.getAssetId();
+        }
+
+        Asset asset = new Asset();
+        asset.setName(form.getNewAssetName().trim());
+        asset.setType(AssetType.OTHER);
+        return assetService.create(asset).getId();
+    }
+
+    private boolean isNewAssetSelected(InvestmentOperationForm form) {
+        return NEW_ASSET_OPTION_ID.equals(form.getAssetId());
     }
 
     private InvestmentOperationForm fromDomain(InvestmentOperation operation) {

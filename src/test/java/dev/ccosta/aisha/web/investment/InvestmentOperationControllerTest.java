@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.application.account.AccountService;
@@ -13,6 +14,8 @@ import dev.ccosta.aisha.application.investment.InvestmentOperationEntryLinkReque
 import dev.ccosta.aisha.application.investment.InvestmentOperationService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.investment.Asset;
+import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
@@ -29,6 +32,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.validation.BeanPropertyBindingResult;
 
@@ -87,6 +91,56 @@ class InvestmentOperationControllerTest {
     }
 
     @Test
+    void shouldCreateNewOtherAssetWhenNewAssetOptionIsSelected() {
+        InvestmentOperationForm form = baseForm();
+        form.setAssetId(-1L);
+        form.setNewAssetName(" Debênture XP ");
+        Asset createdAsset = assetWithId(99L);
+        when(assetService.create(any(Asset.class))).thenReturn(createdAsset);
+
+        String view = operationController.create(
+            form,
+            new BeanPropertyBindingResult(form, "form"),
+            null,
+            new ConcurrentModel()
+        );
+
+        assertThat(view).isEqualTo("redirect:/investments/operations");
+        ArgumentCaptor<Asset> assetCaptor = ArgumentCaptor.forClass(Asset.class);
+        verify(assetService).create(assetCaptor.capture());
+        assertThat(assetCaptor.getValue().getName()).isEqualTo("Debênture XP");
+        assertThat(assetCaptor.getValue().getType()).isEqualTo(AssetType.OTHER);
+        verify(operationService).create(any(InvestmentOperation.class), eq(99L), eq(20L), any());
+    }
+
+    @Test
+    void shouldRejectBlankNewAssetName() {
+        InvestmentOperationForm form = baseForm();
+        form.setAssetId(-1L);
+        form.setNewAssetName(" ");
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(form, "form");
+        when(entryService.listMostRecentBySettlementDateBetweenAndFilters(
+            LocalDate.of(2026, 3, 21),
+            LocalDate.of(2026, 5, 20),
+            20L,
+            null,
+            null,
+            false,
+            false,
+            0,
+            100
+        )).thenReturn(new PagedResult<>(List.of(), 0, 100, 0, 0));
+        when(assetService.listPageOrdered(0, 100)).thenReturn(new PagedResult<>(List.of(), 0, 100, 0, 0));
+
+        String view = operationController.create(form, bindingResult, null, new ConcurrentModel());
+
+        assertThat(view).isEqualTo("investments/operations/form");
+        assertThat(bindingResult.getFieldError("newAssetName")).isNotNull();
+        verify(assetService, never()).create(any(Asset.class));
+        verify(operationService, never()).create(any(), any(), any(), any());
+    }
+
+    @Test
     void shouldRefreshEntryCandidatesFromAccountAndDate() {
         InvestmentOperationForm form = baseForm();
         Entry entry = new Entry();
@@ -106,6 +160,7 @@ class InvestmentOperationControllerTest {
         String view = operationController.entryCandidatesFragment(form, model);
 
         assertThat(view).isEqualTo("investments/operations/form :: entryLinkSelection");
+        assertThat(model.getAttribute("form")).isSameAs(form);
         assertThat(model.getAttribute("entryCandidates")).isEqualTo(List.of(entry));
     }
 
@@ -204,6 +259,12 @@ class InvestmentOperationControllerTest {
         DateFilterState state = new DateFilterState();
         state.applyCustom(LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30));
         return state;
+    }
+
+    private Asset assetWithId(Long id) {
+        Asset asset = new Asset();
+        ReflectionTestUtils.setField(asset, "id", id);
+        return asset;
     }
 
 }

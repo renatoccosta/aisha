@@ -21,6 +21,9 @@ public class InvestmentOperationForm {
     @NotNull(message = "{investmentOperationForm.assetId.notNull}")
     private Long assetId;
 
+    @Size(max = 200, message = "{investmentOperationForm.newAssetName.size}")
+    private String newAssetName;
+
     @NotNull(message = "{investmentOperationForm.accountId.notNull}")
     private Long accountId;
 
@@ -72,6 +75,14 @@ public class InvestmentOperationForm {
 
     public void setAssetId(Long assetId) {
         this.assetId = assetId;
+    }
+
+    public String getNewAssetName() {
+        return newAssetName;
+    }
+
+    public void setNewAssetName(String newAssetName) {
+        this.newAssetName = newAssetName;
     }
 
     public Long getAccountId() {

@@ -39,9 +39,16 @@
                         hx-target="#entry-link-selection"
                         hx-swap="outerHTML">
                         <option value="" th:text="#{investments.operations.form.option.selectAsset}"></option>
+                        <option th:value="${newAssetOptionId}" th:text="#{investments.operations.form.option.newAsset}"></option>
                         <option th:each="asset : ${assets}" th:value="${asset.id}" th:text="${asset.ticker != null && !asset.ticker.isBlank() ? asset.name + ' (' + asset.ticker + ')' : asset.name}"></option>
                     </select>
                     <p class="error" th:if="${#fields.hasErrors('assetId')}" th:errors="*{assetId}"></p>
+                </div>
+
+                <div id="new-asset-name-field" class="field" th:hidden="${form.assetId != newAssetOptionId}">
+                    <label for="newAssetName" th:text="#{investments.operations.form.field.newAssetName.required}"></label>
+                    <input id="newAssetName" type="text" th:field="*{newAssetName}" maxlength="200" th:required="${form.assetId == newAssetOptionId}">
+                    <p class="error" th:if="${#fields.hasErrors('newAssetName')}" th:errors="*{newAssetName}"></p>
                 </div>
 
                 <div class="field">
@@ -156,7 +163,7 @@
                 <p class="error" th:if="${#fields.hasErrors('currency')}" th:errors="*{currency}"></p>
             </div>
 
-            <div id="entry-link-selection" th:fragment="entryLinkSelection" class="field">
+            <div id="entry-link-selection" th:fragment="entryLinkSelection" th:object="${form}" class="field">
                 <label for="linkedEntryIds" th:text="#{investments.operations.form.field.linkedEntryIds}"></label>
                 <select id="linkedEntryIds" th:field="*{linkedEntryIds}">
                     <option value="" th:text="#{common.select.none}"></option>
@@ -190,5 +197,26 @@
     </section>
 </main>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>
+<script th:inline="javascript">
+    (() => {
+        const newAssetOptionId = String(/*[[${newAssetOptionId}]]*/ '-1');
+        const assetSelect = document.getElementById('assetId');
+        const newAssetField = document.getElementById('new-asset-name-field');
+        const newAssetInput = document.getElementById('newAssetName');
+
+        if (!assetSelect || !newAssetField || !newAssetInput) {
+            return;
+        }
+
+        const toggleNewAssetField = () => {
+            const isNewAssetSelected = assetSelect.value === newAssetOptionId;
+            newAssetField.hidden = !isNewAssetSelected;
+            newAssetInput.required = isNewAssetSelected;
+        };
+
+        assetSelect.addEventListener('change', toggleNewAssetField);
+        toggleNewAssetField();
+    })();
+</script>
 </body>
 </html>
