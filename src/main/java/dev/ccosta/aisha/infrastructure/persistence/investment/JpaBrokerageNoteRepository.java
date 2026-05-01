@@ -27,10 +27,30 @@ public interface JpaBrokerageNoteRepository extends JpaRepository<BrokerageNote,
      * @param accountId optional account identifier
      * @param tradeStartDate optional inclusive trade start date
      * @param tradeEndDate optional inclusive trade end date
-     * @param noteNumberPrefix optional broker note number prefix
      * @param pageable pagination request
      * @return matching brokerage notes
      */
+    @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
+    @Query(
+        """
+        select n
+        from BrokerageNote n
+        where n.settlementDate between :settlementStartDate and :settlementEndDate
+          and (:accountId is null or n.netEntry.account.id = :accountId)
+          and (:tradeStartDate is null or n.tradeDate >= :tradeStartDate)
+          and (:tradeEndDate is null or n.tradeDate <= :tradeEndDate)
+        order by n.settlementDate desc, n.tradeDate desc, n.id desc
+        """
+    )
+    Page<BrokerageNote> searchByFiltersWithoutNoteNumber(
+        @Param("settlementStartDate") LocalDate settlementStartDate,
+        @Param("settlementEndDate") LocalDate settlementEndDate,
+        @Param("accountId") Long accountId,
+        @Param("tradeStartDate") LocalDate tradeStartDate,
+        @Param("tradeEndDate") LocalDate tradeEndDate,
+        Pageable pageable
+    );
+
     @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
     @Query(
         """

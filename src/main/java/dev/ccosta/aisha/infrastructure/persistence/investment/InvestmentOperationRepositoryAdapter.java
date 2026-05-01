@@ -48,15 +48,26 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
         int page,
         int pageSize
     ) {
-        Page<InvestmentOperation> result = jpaInvestmentOperationRepository.searchByFilters(
-            startDate,
-            endDate,
-            normalizeTextFilter(assetFilter),
-            accountId,
-            operationType,
-            brokerageNoteId,
-            PageRequest.of(page, pageSize)
-        );
+        PageRequest pageRequest = PageRequest.of(page, pageSize);
+        String normalizedAssetFilter = normalizeTextFilter(assetFilter);
+        Page<InvestmentOperation> result = normalizedAssetFilter == null
+            ? jpaInvestmentOperationRepository.searchByFiltersWithoutAsset(
+                startDate,
+                endDate,
+                accountId,
+                operationType,
+                brokerageNoteId,
+                pageRequest
+            )
+            : jpaInvestmentOperationRepository.searchByFilters(
+                startDate,
+                endDate,
+                normalizedAssetFilter,
+                accountId,
+                operationType,
+                brokerageNoteId,
+                pageRequest
+            );
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 

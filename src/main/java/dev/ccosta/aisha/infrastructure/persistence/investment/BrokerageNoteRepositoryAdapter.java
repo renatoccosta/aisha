@@ -34,15 +34,26 @@ public class BrokerageNoteRepositoryAdapter implements BrokerageNoteRepository {
         int page,
         int pageSize
     ) {
-        Page<BrokerageNote> result = jpaBrokerageNoteRepository.searchByFilters(
-            settlementStartDate,
-            settlementEndDate,
-            accountId,
-            tradeStartDate,
-            tradeEndDate,
-            normalizePrefixFilter(noteNumberPrefix),
-            PageRequest.of(page, pageSize)
-        );
+        PageRequest pageRequest = PageRequest.of(page, pageSize);
+        String normalizedNoteNumberPrefix = normalizePrefixFilter(noteNumberPrefix);
+        Page<BrokerageNote> result = normalizedNoteNumberPrefix == null
+            ? jpaBrokerageNoteRepository.searchByFiltersWithoutNoteNumber(
+                settlementStartDate,
+                settlementEndDate,
+                accountId,
+                tradeStartDate,
+                tradeEndDate,
+                pageRequest
+            )
+            : jpaBrokerageNoteRepository.searchByFilters(
+                settlementStartDate,
+                settlementEndDate,
+                accountId,
+                tradeStartDate,
+                tradeEndDate,
+                normalizedNoteNumberPrefix,
+                pageRequest
+            );
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
