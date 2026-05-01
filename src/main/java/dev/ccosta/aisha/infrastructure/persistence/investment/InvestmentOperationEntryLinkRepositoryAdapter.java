@@ -4,6 +4,7 @@ import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -23,6 +24,11 @@ public class InvestmentOperationEntryLinkRepositoryAdapter implements Investment
     @Override
     public List<InvestmentOperationEntryLink> findAllByEntryId(Long entryId) {
         return jpaLinkRepository.findAllByEntryIdOrderByIdAsc(entryId);
+    }
+
+    @Override
+    public Optional<InvestmentOperationEntryLink> findByEntryId(Long entryId) {
+        return jpaLinkRepository.findByEntryId(entryId);
     }
 
     @Override

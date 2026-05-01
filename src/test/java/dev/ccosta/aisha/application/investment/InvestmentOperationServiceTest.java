@@ -3,6 +3,7 @@ package dev.ccosta.aisha.application.investment;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -118,6 +119,67 @@ class InvestmentOperationServiceTest {
         );
 
         verify(linkRepository).save(any(InvestmentOperationEntryLink.class));
+    }
+
+    @Test
+    void shouldRejectMultipleDistinctEntryLinks() {
+        Asset asset = new Asset();
+        Account account = new Account();
+        InvestmentOperation operation = new InvestmentOperation();
+        operation.setOperationType(InvestmentOperationType.DIVIDEND);
+        operation.setTradeDate(LocalDate.of(2026, 4, 20));
+        setId(operation, 30L);
+
+        when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
+        when(accountService.findById(20L)).thenReturn(account);
+        when(investmentOperationRepository.save(operation)).thenReturn(operation);
+
+        assertThatThrownBy(() -> investmentOperationService.create(
+            operation,
+            10L,
+            20L,
+            List.of(
+                new InvestmentOperationEntryLinkRequest(40L, BigDecimal.ONE),
+                new InvestmentOperationEntryLinkRequest(41L, BigDecimal.TEN)
+            )
+        ))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Investment operation can be linked to only one financial entry");
+
+        verify(linkRepository, never()).deleteByOperationId(30L);
+        verify(linkRepository, never()).save(any(InvestmentOperationEntryLink.class));
+    }
+
+    @Test
+    void shouldRejectEntryLinkedToAnotherOperation() {
+        Asset asset = new Asset();
+        Account account = new Account();
+        InvestmentOperation operation = new InvestmentOperation();
+        operation.setOperationType(InvestmentOperationType.DIVIDEND);
+        operation.setTradeDate(LocalDate.of(2026, 4, 20));
+        setId(operation, 30L);
+
+        InvestmentOperation linkedOperation = new InvestmentOperation();
+        setId(linkedOperation, 99L);
+        InvestmentOperationEntryLink existingLink = new InvestmentOperationEntryLink();
+        existingLink.setOperation(linkedOperation);
+
+        when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
+        when(accountService.findById(20L)).thenReturn(account);
+        when(investmentOperationRepository.save(operation)).thenReturn(operation);
+        when(linkRepository.findByEntryId(40L)).thenReturn(Optional.of(existingLink));
+
+        assertThatThrownBy(() -> investmentOperationService.create(
+            operation,
+            10L,
+            20L,
+            List.of(new InvestmentOperationEntryLinkRequest(40L, BigDecimal.ONE))
+        ))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Financial entry is already linked to another investment operation");
+
+        verify(linkRepository).deleteByOperationId(30L);
+        verify(linkRepository, never()).save(any(InvestmentOperationEntryLink.class));
     }
 
     @Test

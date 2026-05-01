@@ -19,7 +19,10 @@ import java.math.BigDecimal;
 @Entity
 @Table(
     name = "investment_operation_entries",
-    uniqueConstraints = @UniqueConstraint(name = "uk_investment_operation_entries_pair", columnNames = {"operation_id", "entry_id"})
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_investment_operation_entries_operation", columnNames = "operation_id"),
+        @UniqueConstraint(name = "uk_investment_operation_entries_entry", columnNames = "entry_id")
+    }
 )
 public class InvestmentOperationEntryLink {
 

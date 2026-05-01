@@ -16,8 +16,12 @@ import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -331,22 +335,41 @@ public class InvestmentOperationService {
     }
 
     private void replaceLinks(InvestmentOperation operation, Collection<InvestmentOperationEntryLinkRequest> links) {
+        Optional<InvestmentOperationEntryLinkRequest> linkRequest = singleLinkRequest(links);
         linkRepository.deleteByOperationId(operation.getId());
-        if (links == null || links.isEmpty()) {
+        if (linkRequest.isEmpty()) {
             return;
         }
 
-        LinkedHashSet<Long> linkedEntryIds = new LinkedHashSet<>();
-        for (InvestmentOperationEntryLinkRequest request : links) {
-            if (request == null || request.entryId() == null || !linkedEntryIds.add(request.entryId())) {
-                continue;
+        InvestmentOperationEntryLinkRequest request = linkRequest.get();
+        linkRepository.findByEntryId(request.entryId()).ifPresent(existingLink -> {
+            if (!Objects.equals(existingLink.getOperation().getId(), operation.getId())) {
+                throw new IllegalArgumentException("Financial entry is already linked to another investment operation");
             }
-            Entry entry = entryService.findById(request.entryId());
-            InvestmentOperationEntryLink link = new InvestmentOperationEntryLink();
-            link.setOperation(operation);
-            link.setEntry(entry);
-            link.setAllocatedAmount(request.allocatedAmount());
-            linkRepository.save(link);
+        });
+
+        Entry entry = entryService.findById(request.entryId());
+        InvestmentOperationEntryLink link = new InvestmentOperationEntryLink();
+        link.setOperation(operation);
+        link.setEntry(entry);
+        link.setAllocatedAmount(request.allocatedAmount());
+        linkRepository.save(link);
+    }
+
+    private Optional<InvestmentOperationEntryLinkRequest> singleLinkRequest(Collection<InvestmentOperationEntryLinkRequest> links) {
+        if (links == null || links.isEmpty()) {
+            return Optional.empty();
         }
+
+        Map<Long, InvestmentOperationEntryLinkRequest> validLinks = new LinkedHashMap<>();
+        for (InvestmentOperationEntryLinkRequest request : links) {
+            if (request != null && request.entryId() != null) {
+                validLinks.putIfAbsent(request.entryId(), request);
+            }
+        }
+        if (validLinks.size() > 1) {
+            throw new IllegalArgumentException("Investment operation can be linked to only one financial entry");
+        }
+        return validLinks.values().stream().findFirst();
     }
 }

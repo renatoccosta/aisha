@@ -51,9 +51,9 @@ class InvestmentOperationControllerTest {
     private InvestmentOperationController operationController;
 
     @Test
-    void shouldCreateOperationFromFormWithLinkedEntries() {
+    void shouldCreateOperationFromFormWithLinkedEntry() {
         InvestmentOperationForm form = baseForm();
-        form.setLinkedEntryIds(List.of(30L, 30L, 31L));
+        form.setLinkedEntryIds(List.of(30L));
 
         String view = operationController.create(
             form,
@@ -69,7 +69,7 @@ class InvestmentOperationControllerTest {
         assertThat(operationCaptor.getValue().getOperationType()).isEqualTo(InvestmentOperationType.BUY);
         assertThat(operationCaptor.getValue().getTradeDate()).isEqualTo(LocalDate.of(2026, 4, 20));
         assertThat(operationCaptor.getValue().getNetAmount()).isEqualByComparingTo("125.50");
-        assertThat(linksCaptor.getValue()).extracting(InvestmentOperationEntryLinkRequest::entryId).containsExactly(30L, 31L);
+        assertThat(linksCaptor.getValue()).extracting(InvestmentOperationEntryLinkRequest::entryId).containsExactly(30L);
     }
 
     @Test

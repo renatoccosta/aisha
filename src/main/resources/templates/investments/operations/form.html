@@ -158,7 +158,8 @@
 
             <div id="entry-link-selection" th:fragment="entryLinkSelection" class="field">
                 <label for="linkedEntryIds" th:text="#{investments.operations.form.field.linkedEntryIds}"></label>
-                <select id="linkedEntryIds" th:field="*{linkedEntryIds}" multiple size="6">
+                <select id="linkedEntryIds" th:field="*{linkedEntryIds}">
+                    <option value="" th:text="#{common.select.none}"></option>
                     <option
                         th:each="entry : ${entryCandidates}"
                         th:value="${entry.id}"
