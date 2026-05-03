@@ -269,11 +269,10 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
     }
 
     private String operationNotes(String marketType, AssetDescriptor assetDescriptor) {
-        String notes = "Rico " + marketType + " - " + assetDescriptor.cleanedSpecification();
-        if (!assetDescriptor.observations().isEmpty()) {
-            notes += ". Observações: " + String.join("; ", assetDescriptor.observations());
+        if (assetDescriptor.observations().isEmpty()) {
+            return "Rico " + marketType + " - " + assetDescriptor.cleanedSpecification();
         }
-        return notes;
+        return String.join("; ", assetDescriptor.observations());
     }
 
     private InvestmentOperationType toOperationType(String side) {
@@ -283,7 +282,7 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
     private AssetDescriptor describeAsset(String rawSpecification, Map<String, String> observationLegend) {
         List<String> tokens = new ArrayList<>(List.of(rawSpecification.trim().replaceAll("\\s+", " ").split(" ")));
         List<String> observations = new ArrayList<>();
-        while (!tokens.isEmpty() && TRAILING_MARKER_PATTERN.matcher(tokens.getLast()).matches()) {
+        while (!tokens.isEmpty() && isTrailingMarker(tokens.getLast(), observationLegend)) {
             String marker = tokens.removeLast();
             observations.addAll(0, expandObservationMarker(marker, observationLegend));
         }
@@ -302,7 +301,14 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         return new AssetDescriptor(String.join(" ", tokens), name, ticker, type, List.copyOf(observations));
     }
 
+    private boolean isTrailingMarker(String token, Map<String, String> observationLegend) {
+        return TRAILING_MARKER_PATTERN.matcher(token).matches() || observationLegend.containsKey(token);
+    }
+
     private List<String> expandObservationMarker(String marker, Map<String, String> observationLegend) {
+        if (observationLegend.containsKey(marker)) {
+            return List.of(observationLegend.get(marker));
+        }
         if (!OBSERVATION_REFERENCE_PATTERN.matcher(marker).matches()) {
             return List.of();
         }
