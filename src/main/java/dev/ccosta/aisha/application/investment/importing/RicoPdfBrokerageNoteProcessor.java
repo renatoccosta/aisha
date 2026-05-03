@@ -43,7 +43,26 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
     );
     private static final Pattern NET_SETTLEMENT_PATTERN = Pattern.compile("Líquido para\\s+(\\d{2}/\\d{2}/\\d{4})\\s+([\\d.]+,\\d{2})\\s+([CD])");
     private static final Pattern TICKER_PATTERN = Pattern.compile("^[A-Z]{4}\\d{1,2}[A-Z]?$");
-    private static final Pattern TRAILING_MARKER_PATTERN = Pattern.compile("^(?:@.*|#.*|EDJ|EJ|EDR|ED|EB|ER|NM|N1|N2)$");
+    private static final List<String> ASSET_CLASS_TOKENS = List.of("PNA", "PNB", "PNC", "PND", "ON", "PN", "UNT", "CI");
+    private static final List<String> ASSET_QUALIFIER_TOKENS = List.of(
+        "EDJ",
+        "EDR",
+        "EDB",
+        "EJB",
+        "EJS",
+        "ATZ",
+        "NM",
+        "N1",
+        "N2",
+        "EJ",
+        "ED",
+        "EB",
+        "ER",
+        "EX",
+        "MA",
+        "MB"
+    );
+    private static final Pattern TRAILING_MARKER_PATTERN = Pattern.compile("^(?:@.*|#.*)$");
     private static final Pattern OBSERVATION_REFERENCE_PATTERN = Pattern.compile("^(?:[@#0-9]+)$");
     private static final Pattern OBSERVATION_LEGEND_PATTERN = Pattern.compile("(?<![A-Za-z0-9])([A-Z0-9#@])\\s+-\\s+");
 
@@ -280,7 +299,7 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
     }
 
     private AssetDescriptor describeAsset(String rawSpecification, Map<String, String> observationLegend) {
-        List<String> tokens = new ArrayList<>(List.of(rawSpecification.trim().replaceAll("\\s+", " ").split(" ")));
+        List<String> tokens = normalizeAssetTokens(rawSpecification);
         List<String> observations = new ArrayList<>();
         while (!tokens.isEmpty() && isTrailingMarker(tokens.getLast(), observationLegend)) {
             String marker = tokens.removeLast();
@@ -301,18 +320,70 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         return new AssetDescriptor(String.join(" ", tokens), name, ticker, type, List.copyOf(observations));
     }
 
+    private List<String> normalizeAssetTokens(String rawSpecification) {
+        List<String> rawTokens = List.of(rawSpecification.trim().replaceAll("\\s+", " ").split(" "));
+        List<String> normalizedTokens = new ArrayList<>();
+        for (String token : rawTokens) {
+            normalizedTokens.addAll(splitAttachedAssetQualifier(token));
+        }
+        return normalizedTokens;
+    }
+
+    private List<String> splitAttachedAssetQualifier(String token) {
+        for (String assetClass : ASSET_CLASS_TOKENS) {
+            if (token.startsWith(assetClass) && token.length() > assetClass.length()) {
+                String suffix = token.substring(assetClass.length());
+                List<String> qualifiers = splitQualifierSuffix(suffix);
+                if (!qualifiers.isEmpty()) {
+                    List<String> splitTokens = new ArrayList<>();
+                    splitTokens.add(assetClass);
+                    splitTokens.addAll(qualifiers);
+                    return splitTokens;
+                }
+            }
+        }
+        return List.of(token);
+    }
+
+    private List<String> splitQualifierSuffix(String suffix) {
+        List<String> qualifiers = new ArrayList<>();
+        String remaining = suffix;
+        while (StringUtils.hasText(remaining)) {
+            String matchedQualifier = ASSET_QUALIFIER_TOKENS.stream()
+                .filter(remaining::startsWith)
+                .findFirst()
+                .orElse(null);
+            if (matchedQualifier == null) {
+                return List.of();
+            }
+            qualifiers.add(matchedQualifier);
+            remaining = remaining.substring(matchedQualifier.length());
+        }
+        return qualifiers;
+    }
+
     private boolean isTrailingMarker(String token, Map<String, String> observationLegend) {
-        return TRAILING_MARKER_PATTERN.matcher(token).matches() || observationLegend.containsKey(token);
+        return TRAILING_MARKER_PATTERN.matcher(token).matches()
+            || ASSET_QUALIFIER_TOKENS.contains(token)
+            || observationLegend.containsKey(token)
+            || isCompoundObservationMarker(token, observationLegend);
     }
 
     private List<String> expandObservationMarker(String marker, Map<String, String> observationLegend) {
         if (observationLegend.containsKey(marker)) {
             return List.of(observationLegend.get(marker));
         }
+        if (isCompoundObservationMarker(marker, observationLegend)) {
+            return expandObservationCodes(marker, observationLegend);
+        }
         if (!OBSERVATION_REFERENCE_PATTERN.matcher(marker).matches()) {
             return List.of();
         }
 
+        return expandObservationCodes(marker, observationLegend);
+    }
+
+    private List<String> expandObservationCodes(String marker, Map<String, String> observationLegend) {
         List<String> observations = new ArrayList<>();
         for (int index = 0; index < marker.length(); index++) {
             String code = String.valueOf(marker.charAt(index));
@@ -324,15 +395,28 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         return observations;
     }
 
+    private boolean isCompoundObservationMarker(String token, Map<String, String> observationLegend) {
+        if (token.length() < 2 || ASSET_CLASS_TOKENS.contains(token)) {
+            return false;
+        }
+        for (int index = 0; index < token.length(); index++) {
+            String code = String.valueOf(token.charAt(index));
+            if (!observationLegend.containsKey(code)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private AssetType assetType(List<String> tokens) {
         if (!tokens.isEmpty() && "FII".equals(tokens.getFirst())) {
             return AssetType.FII;
         }
-        if (tokens.contains("ON") || tokens.contains("PN")) {
-            return AssetType.STOCK;
-        }
         if (tokens.contains("CI")) {
             return AssetType.ETF;
+        }
+        if (tokens.stream().anyMatch(ASSET_CLASS_TOKENS::contains)) {
+            return AssetType.STOCK;
         }
         return AssetType.OTHER;
     }

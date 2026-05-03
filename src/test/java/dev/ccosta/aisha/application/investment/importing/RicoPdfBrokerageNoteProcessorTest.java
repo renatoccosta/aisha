@@ -156,6 +156,75 @@ class RicoPdfBrokerageNoteProcessorTest {
         assertThat(parsedNotes.getFirst().operations().get(1).getNotes()).isEqualTo("Home Broker");
     }
 
+    @Test
+    void shouldSplitCompoundLegacyObservationColumnMarkers() throws IOException {
+        byte[] pdf = pdfWithPages(List.of(List.of(
+            "NOTA DE NEGOCIAÇÃO",
+            "Nr. nota Folha Data pregão",
+            "26881 1 22/01/2016",
+            "Rico Investimentos - Grupo XP",
+            "C.N.P.J: 02.332.886/0016-82 Carta Patente:",
+            "Negócios realizados",
+            "Q Negociação C/V Tipo mercado Prazo Especificação do título Obs. (*) Quantidade Preço / Ajuste Valor Operação / Ajuste D/C",
+            "1-BOVESPA C VISTA BRASIL          ON NM H 100 12,90 1.290,00 D",
+            "1-BOVESPA C VISTA PETROBRAS          PN HD 200 4,70 940,00 D",
+            "1-BOVESPA V VISTA PETROBRAS          PN HD 200 4,40 880,00 C",
+            "Taxa de liquidação 0,38 D",
+            "Total Bovespa / Soma 0,10 D",
+            "Total Custos / Despesas 30,32 D",
+            "Líquido para 28/01/2016 1.381,80 D",
+            "(*) Observações A - Posição futuro T - Liquidação pelo Bruto",
+            "8 - Liquidação Institucional H - Home Broker",
+            "D - Day Trade X - Box",
+            "Capitais e regiões metropolitanas: 3003-5465"
+        )));
+
+        List<ParsedBrokerageNote> parsedNotes = processor.process(request("rico-2016.pdf", pdf));
+
+        assertThat(parsedNotes).hasSize(1);
+        assertThat(parsedNotes.getFirst().operations()).hasSize(3);
+        assertThat(parsedNotes.getFirst().operations().getFirst().getAsset().getName()).isEqualTo("BRASIL ON");
+        assertThat(parsedNotes.getFirst().operations().getFirst().getNotes()).isEqualTo("Home Broker");
+        assertThat(parsedNotes.getFirst().operations().get(1).getAsset().getName()).isEqualTo("PETROBRAS PN");
+        assertThat(parsedNotes.getFirst().operations().get(1).getNotes()).isEqualTo("Home Broker; Day Trade");
+        assertThat(parsedNotes.getFirst().operations().get(2).getAsset().getName()).isEqualTo("PETROBRAS PN");
+        assertThat(parsedNotes.getFirst().operations().get(2).getNotes()).isEqualTo("Home Broker; Day Trade");
+    }
+
+    @Test
+    void shouldRemoveTradingQualifiersFromCanonicalAssetName() throws IOException {
+        byte[] pdf = pdfWithPages(List.of(List.of(
+            "NOTA DE NEGOCIAÇÃO",
+            "Nr. nota Folha Data pregão",
+            "71429 1 15/02/2016",
+            "Rico Investimentos - Grupo XP",
+            "C.N.P.J: 02.332.886/0016-82 Carta Patente:",
+            "Negócios realizados",
+            "Q Negociação C/V Tipo mercado Prazo Especificação do título Obs. (*) Quantidade Preço / Ajuste Valor Operação / Ajuste D/C",
+            "1-BOVESPA C VISTA PETROBRAS          PNATZ N2 100 5,10 510,00 D",
+            "1-BOVESPA C VISTA PETRORIO          ON ATZ NM 100 7,20 720,00 D",
+            "1-BOVESPA C VISTA UNIPAR          PNB ED 100 10,00 1.000,00 D",
+            "Taxa de liquidação 0,60 D",
+            "Total Bovespa / Soma 0,15 D",
+            "Total Custos / Despesas 20,00 D",
+            "Líquido para 18/02/2016 2.250,75 D",
+            "(*) Observações A - Posição futuro T - Liquidação pelo Bruto",
+            "Capitais e regiões metropolitanas: 3003-5465"
+        )));
+
+        List<ParsedBrokerageNote> parsedNotes = processor.process(request("rico-2016-qualifiers.pdf", pdf));
+
+        assertThat(parsedNotes).hasSize(1);
+        assertThat(parsedNotes.getFirst().operations()).hasSize(3);
+        assertThat(parsedNotes.getFirst().operations().getFirst().getAsset().getName()).isEqualTo("PETROBRAS PN");
+        assertThat(parsedNotes.getFirst().operations().getFirst().getAsset().getType()).isEqualTo(AssetType.STOCK);
+        assertThat(parsedNotes.getFirst().operations().getFirst().getNotes()).isEqualTo("Rico VISTA - PETROBRAS PN");
+        assertThat(parsedNotes.getFirst().operations().get(1).getAsset().getName()).isEqualTo("PETRORIO ON");
+        assertThat(parsedNotes.getFirst().operations().get(1).getAsset().getType()).isEqualTo(AssetType.STOCK);
+        assertThat(parsedNotes.getFirst().operations().get(2).getAsset().getName()).isEqualTo("UNIPAR PNB");
+        assertThat(parsedNotes.getFirst().operations().get(2).getAsset().getType()).isEqualTo(AssetType.STOCK);
+    }
+
     private BrokerageNoteProcessingRequest request(String fileName, byte[] pdf) {
         return new BrokerageNoteProcessingRequest(10L, fileName, "hash", pdf);
     }
