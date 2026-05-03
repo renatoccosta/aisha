@@ -64,8 +64,7 @@ class RicoPdfBrokerageNoteProcessorTest {
         assertThat(parsedNote.operations().get(1).getAsset().getType()).isEqualTo(AssetType.FII);
         assertThat(parsedNote.operations().get(1).getAsset().getTicker()).isEqualTo("XPML11");
         assertThat(parsedNote.operations().get(1).getNotes())
-            .contains("Observações: Negócio direto; Corretora ou pessoa vinculada atuou na contra parte.")
-            .doesNotContain("#2");
+            .isEqualTo("Negócio direto; Corretora ou pessoa vinculada atuou na contra parte.");
     }
 
     @Test
@@ -122,6 +121,39 @@ class RicoPdfBrokerageNoteProcessorTest {
         assertThat(parsedNotes.get(1).brokerageNote().getNoteNumber()).isEqualTo("127651096");
         assertThat(parsedNotes.get(1).brokerageNote().getTotalCosts()).isEqualByComparingTo("2.83");
         assertThat(parsedNotes.get(1).operations()).hasSize(1);
+    }
+
+    @Test
+    void shouldRemoveLegacyObservationColumnMarkerFromAssetName() throws IOException {
+        byte[] pdf = pdfWithPages(List.of(List.of(
+            "NOTA DE NEGOCIAÇÃO",
+            "Nr. nota Folha Data pregão",
+            "46027 1 09/02/2015",
+            "Rico Investimentos - Grupo XP",
+            "C.N.P.J: 02.332.886/0016-82 Carta Patente:",
+            "Negócios realizados",
+            "Q Negociação C/V Tipo mercado Prazo Especificação do título Obs. (*) Quantidade Preço / Ajuste Valor Operação / Ajuste D/C",
+            "1-BOVESPA C VISTA ISHARES BOVA          CI H 50 47,10 2.355,00 D",
+            "1-BOVESPA C VISTA PETROBRAS          PN H 100 8,90 890,00 D",
+            "Taxa de liquidação 0,89 D",
+            "Total Bovespa / Soma 0,00 D",
+            "Total Custos / Despesas 19,60 D",
+            "Líquido para 12/02/2015 3.266,72 D",
+            "(*) Observações A - Posição futuro T - Liquidação pelo Bruto",
+            "8 - Liquidação Institucional H - Home Broker",
+            "Capitais e regiões metropolitanas: 3003-5465"
+        )));
+
+        List<ParsedBrokerageNote> parsedNotes = processor.process(request("rico-2015.pdf", pdf));
+
+        assertThat(parsedNotes).hasSize(1);
+        assertThat(parsedNotes.getFirst().operations()).hasSize(2);
+        assertThat(parsedNotes.getFirst().operations().getFirst().getAsset().getName()).isEqualTo("ISHARES BOVA CI");
+        assertThat(parsedNotes.getFirst().operations().getFirst().getAsset().getType()).isEqualTo(AssetType.ETF);
+        assertThat(parsedNotes.getFirst().operations().getFirst().getNotes()).isEqualTo("Home Broker");
+        assertThat(parsedNotes.getFirst().operations().get(1).getAsset().getName()).isEqualTo("PETROBRAS PN");
+        assertThat(parsedNotes.getFirst().operations().get(1).getAsset().getType()).isEqualTo(AssetType.STOCK);
+        assertThat(parsedNotes.getFirst().operations().get(1).getNotes()).isEqualTo("Home Broker");
     }
 
     private BrokerageNoteProcessingRequest request(String fileName, byte[] pdf) {
