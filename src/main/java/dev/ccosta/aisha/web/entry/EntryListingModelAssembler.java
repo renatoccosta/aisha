@@ -139,6 +139,43 @@ class EntryListingModelAssembler {
         fillCategoryOptions(model);
     }
 
+    /**
+     * Populates the listing after an action that can remove rows from the current filtered result.
+     *
+     * @param model the view model to populate
+     * @param globalDateFilter current global date filter
+     * @param accountId selected account filter
+     * @param categoryId selected category filter
+     * @param description selected description filter
+     * @param pendingSuggestions whether only pending category suggestions should be listed
+     * @param page requested page index
+     * @param size requested page size
+     */
+    void fillListingAfterMutation(
+        Model model,
+        DateFilterState globalDateFilter,
+        Long accountId,
+        Long categoryId,
+        String description,
+        boolean pendingSuggestions,
+        Integer page,
+        Integer size
+    ) {
+        fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+        if (hasActiveLocalFilter(accountId, categoryId, description, pendingSuggestions) && isCurrentListingEmpty(model)) {
+            fillListing(model, globalDateFilter, null, null, null, false, 0, size);
+        }
+    }
+
+    private boolean hasActiveLocalFilter(Long accountId, Long categoryId, String description, boolean pendingSuggestions) {
+        return accountId != null || categoryId != null || normalizeDescriptionFilter(description) != null || pendingSuggestions;
+    }
+
+    private boolean isCurrentListingEmpty(Model model) {
+        Object entries = model.getAttribute("entries");
+        return entries instanceof List<?> list && list.isEmpty();
+    }
+
     private DateFilterState resolveGlobalDateFilter(Model model, DateFilterState globalDateFilter) {
         if (globalDateFilter != null) {
             return globalDateFilter;

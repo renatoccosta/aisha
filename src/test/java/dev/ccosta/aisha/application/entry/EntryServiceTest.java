@@ -19,6 +19,7 @@ import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransfer;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransferRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -40,6 +41,9 @@ class EntryServiceTest {
 
     @Mock
     private EntryTransferRepository entryTransferRepository;
+
+    @Mock
+    private InvestmentOperationEntryLinkRepository investmentOperationEntryLinkRepository;
 
     @Mock
     private AccountService accountService;
@@ -118,6 +122,32 @@ class EntryServiceTest {
 
         verify(entryRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
         verify(entryRepository, never()).save(org.mockito.ArgumentMatchers.any(Entry.class));
+    }
+
+    @Test
+    void shouldPreventDeletingEntryLinkedToInvestmentOperation() {
+        Entry entry = newEntry("Compra PETR4", new BigDecimal("-125.50"));
+        when(entryRepository.findById(10L)).thenReturn(Optional.of(entry));
+        when(investmentOperationEntryLinkRepository.existsByEntryId(10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> entryService.deleteById(10L))
+            .isInstanceOf(EntryInUseException.class)
+            .hasMessageContaining("10");
+
+        verify(entryRepository, never()).deleteById(10L);
+    }
+
+    @Test
+    void shouldPreventBulkDeletingEntryLinkedToInvestmentOperation() {
+        doReturn(List.of()).when(entryTransferRepository).findAllByEntryIds(org.mockito.ArgumentMatchers.anyCollection());
+        when(investmentOperationEntryLinkRepository.existsByEntryId(10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> entryService.bulkDelete(List.of(10L, 11L)))
+            .isInstanceOf(EntryInUseException.class)
+            .hasMessageContaining("10");
+
+        verify(entryTransferRepository, never()).deleteAllByEntryIds(org.mockito.ArgumentMatchers.anyCollection());
+        verify(entryRepository, never()).deleteByIds(org.mockito.ArgumentMatchers.anyCollection());
     }
 
     @Test

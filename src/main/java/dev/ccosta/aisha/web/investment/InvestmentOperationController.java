@@ -329,7 +329,7 @@ public class InvestmentOperationController {
     ) {
         operationService.deleteById(id);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
+            fillListingAfterDelete(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
             return "investments/operations/list :: table";
         }
         return "redirect:/investments/operations";
@@ -360,7 +360,7 @@ public class InvestmentOperationController {
     ) {
         operationService.bulkDelete(ids);
         if (isHtmx(request)) {
-            fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
+            fillListingAfterDelete(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
             return "investments/operations/list :: table";
         }
         return "redirect:/investments/operations";
@@ -441,6 +441,36 @@ public class InvestmentOperationController {
                 "size", pagination.pageSize()
             )
         );
+    }
+
+    private void fillListingAfterDelete(
+        Model model,
+        DateFilterState globalDateFilter,
+        String asset,
+        Long accountId,
+        InvestmentOperationType operationType,
+        Long brokerageNoteId,
+        Integer page,
+        Integer size
+    ) {
+        fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
+        if (hasActiveFilter(asset, accountId, operationType, brokerageNoteId) && isCurrentListingEmpty(model)) {
+            fillListing(model, globalDateFilter, null, null, null, null, 0, size);
+        }
+    }
+
+    private boolean hasActiveFilter(
+        String asset,
+        Long accountId,
+        InvestmentOperationType operationType,
+        Long brokerageNoteId
+    ) {
+        return normalizeFilter(asset) != null || accountId != null || operationType != null || brokerageNoteId != null;
+    }
+
+    private boolean isCurrentListingEmpty(Model model) {
+        Object operations = model.getAttribute("operations");
+        return operations instanceof List<?> list && list.isEmpty();
     }
 
     private void fillFormModel(

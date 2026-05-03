@@ -83,16 +83,12 @@
             </div>
         </div>
 
-        <form
-            th:action="@{/local-users/bulk-delete}"
-            method="post"
-            hx-post="/local-users/bulk-delete"
-            hx-target="#table-container"
-            hx-swap="outerHTML"
-            th:attr="hx-confirm=#{localUsers.list.confirm.bulkDelete}">
+        <div data-selection-scope>
+            <div id="local-users-bulk-delete-state">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
             <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
+            </div>
 
             <div class="table-actions">
                 <span
@@ -106,14 +102,21 @@
                         0 registros selecionados
                     </span>
                 </span>
-                <button class="btn btn-danger" type="submit">
+                <button
+                    class="btn btn-danger"
+                    type="button"
+                    hx-post="/local-users/bulk-delete"
+                    hx-target="#table-container"
+                    hx-swap="outerHTML"
+                    hx-include="#local-users-bulk-delete-state input, #local-users-table input[name='ids']:checked"
+                    th:attr="hx-confirm=#{localUsers.list.confirm.bulkDelete}">
                     <i data-lucide="trash-2" aria-hidden="true"></i>
                     <span th:text="#{localUsers.list.action.bulkDelete}"></span>
                 </button>
             </div>
 
             <div class="table-wrap">
-                <table class="responsive-list">
+                <table id="local-users-table" class="responsive-list">
                     <thead>
                     <tr>
                         <th>
@@ -184,7 +187,8 @@
                                     th:disabled="${currentUsername != null && #strings.toLowerCase(localUser.username) == #strings.toLowerCase(currentUsername)}"
                                     th:attr="hx-post=@{/local-users/{id}/delete(id=${localUser.id},page=${pagination != null ? pagination.page : 0},size=${pagination != null ? pagination.pageSize : 25})},hx-confirm=#{localUsers.list.confirm.delete}"
                                     hx-target="#table-container"
-                                    hx-swap="outerHTML">
+                                    hx-swap="outerHTML"
+                                    hx-include="#local-users-bulk-delete-state input">
                                     <i data-lucide="trash-2" aria-hidden="true"></i>
                                     <span th:text="#{localUsers.list.action.delete}"></span>
                                 </button>
@@ -194,7 +198,7 @@
                     </tbody>
                 </table>
             </div>
-        </form>
+        </div>
 
     </section>
 </main>

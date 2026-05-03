@@ -2,6 +2,7 @@ package dev.ccosta.aisha.web.entry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +10,7 @@ import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
+import dev.ccosta.aisha.application.entry.EntryInUseException;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
@@ -138,6 +140,47 @@ class EntryControllerTest {
 
         assertThat(view).isEqualTo("entries/list :: listing");
         verify(entryService).bulkConfirmCategorySuggestions(List.of(1L, 2L));
+    }
+
+    @Test
+    void shouldReturnListingToastWhenDeletingEntryLinkedToInvestmentOperationForHtmx() {
+        ConcurrentModel model = new ConcurrentModel();
+        DateFilterState dateFilter = baseDateFilter();
+        doThrow(new EntryInUseException(7L)).when(entryService).deleteById(7L);
+        when(messageSource.getMessage(
+            "entries.list.toast.delete.inUse",
+            null,
+            org.springframework.context.i18n.LocaleContextHolder.getLocale()
+        )).thenReturn("Este lançamento possui uma operação de investimento associada e não pode ser excluído.");
+
+        String view = entryController.delete(7L, dateFilter, 3L, 4L, "PETR4", false, 0, 25, htmxRequest(), model);
+
+        assertThat(view).isEqualTo("entries/list :: listing");
+        assertThat(model.getAttribute("toastLevel")).isEqualTo("error");
+        assertThat(model.getAttribute("toastMessage"))
+            .isEqualTo("Este lançamento possui uma operação de investimento associada e não pode ser excluído.");
+        verify(listingModelAssembler).fillListing(model, dateFilter, 3L, 4L, "PETR4", false, 0, 25);
+    }
+
+    @Test
+    void shouldReturnListingToastWhenBulkDeletingEntryLinkedToInvestmentOperationForHtmx() {
+        ConcurrentModel model = new ConcurrentModel();
+        DateFilterState dateFilter = baseDateFilter();
+        List<Long> ids = List.of(7L, 8L);
+        doThrow(new EntryInUseException(7L)).when(entryService).bulkDelete(ids);
+        when(messageSource.getMessage(
+            "entries.list.toast.delete.inUse",
+            null,
+            org.springframework.context.i18n.LocaleContextHolder.getLocale()
+        )).thenReturn("Este lançamento possui uma operação de investimento associada e não pode ser excluído.");
+
+        String view = entryController.bulkDelete(ids, dateFilter, 3L, 4L, "PETR4", false, 0, 25, htmxRequest(), model);
+
+        assertThat(view).isEqualTo("entries/list :: listing");
+        assertThat(model.getAttribute("toastLevel")).isEqualTo("error");
+        assertThat(model.getAttribute("toastMessage"))
+            .isEqualTo("Este lançamento possui uma operação de investimento associada e não pode ser excluído.");
+        verify(listingModelAssembler).fillListing(model, dateFilter, 3L, 4L, "PETR4", false, 0, 25);
     }
 
     private DateFilterState baseDateFilter() {

@@ -2,9 +2,12 @@ package dev.ccosta.aisha.web.investment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.ccosta.aisha.application.investment.AssetInUseException;
 import dev.ccosta.aisha.application.investment.AssetPositionDetails;
 import dev.ccosta.aisha.application.investment.AssetPositionService;
 import dev.ccosta.aisha.application.investment.AssetService;
@@ -63,6 +66,41 @@ class AssetControllerTest {
     }
 
     @Test
+    void shouldCreateAssetWithoutOpeningPositionWhenOpeningFieldsAreBlank() {
+        AssetForm form = baseForm();
+        form.setOpeningPositionDate(null);
+        form.setOpeningPositionQuantity(null);
+        form.setOpeningPositionTotalCost(null);
+        form.setOpeningPositionCurrency("");
+
+        String view = assetController.create(
+            form,
+            new BeanPropertyBindingResult(form, "form"),
+            "/investments/assets",
+            new ConcurrentModel()
+        );
+
+        assertThat(view).isEqualTo("redirect:/investments/assets");
+        ArgumentCaptor<Asset> assetCaptor = ArgumentCaptor.forClass(Asset.class);
+        verify(assetService).create(assetCaptor.capture());
+        assertThat(assetCaptor.getValue().getOpeningPosition()).isNull();
+    }
+
+    @Test
+    void shouldReturnFormErrorWhenOpeningPositionIsPartial() {
+        AssetForm form = baseForm();
+        form.setOpeningPositionDate(null);
+
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(form, "form");
+        ConcurrentModel model = new ConcurrentModel();
+        String view = assetController.create(form, bindingResult, "/investments/assets", model);
+
+        assertThat(view).isEqualTo("investments/assets/form");
+        assertThat(bindingResult.hasFieldErrors("openingPositionDate")).isTrue();
+        verify(assetService, never()).create(any());
+    }
+
+    @Test
     void shouldFallbackToAssetListingWhenReturnPathIsUnsafe() {
         AssetForm form = baseForm();
 
@@ -97,6 +135,36 @@ class AssetControllerTest {
 
         assertThat(view).isEqualTo("investments/assets/list :: table");
         verify(assetService).bulkDelete(List.of(1L, 2L));
+        verify(assetService).listPageOrdered(null, null, 0, 25);
+    }
+
+    @Test
+    void shouldReturnListingErrorWhenDeletingAssetInUseForHtmx() {
+        doThrow(new AssetInUseException(7L)).when(assetService).deleteById(7L);
+        when(assetService.listPageOrdered(AssetType.STOCK, "PETR4", 1, 50))
+            .thenReturn(new PagedResult<>(List.of(), 1, 50, 51, 2));
+
+        ConcurrentModel model = new ConcurrentModel();
+        String view = assetController.delete(7L, AssetType.STOCK, " PETR4 ", 1, 50, htmxRequest(), model);
+
+        assertThat(view).isEqualTo("investments/assets/list :: table");
+        assertThat(model.getAttribute("hasError")).isEqualTo(true);
+        assertThat(model.getAttribute("selectedAssetType")).isEqualTo(AssetType.STOCK);
+        assertThat(model.getAttribute("selectedDescription")).isEqualTo("PETR4");
+        verify(assetService).listPageOrdered(AssetType.STOCK, "PETR4", 1, 50);
+    }
+
+    @Test
+    void shouldReturnListingErrorWhenBulkDeletingAssetInUseForHtmx() {
+        List<Long> ids = List.of(7L, 8L);
+        doThrow(new AssetInUseException(7L)).when(assetService).bulkDelete(ids);
+        when(assetService.listPageOrdered(null, null, 0, 25)).thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
+
+        ConcurrentModel model = new ConcurrentModel();
+        String view = assetController.bulkDelete(ids, null, null, null, null, htmxRequest(), model);
+
+        assertThat(view).isEqualTo("investments/assets/list :: table");
+        assertThat(model.getAttribute("hasError")).isEqualTo(true);
         verify(assetService).listPageOrdered(null, null, 0, 25);
     }
 

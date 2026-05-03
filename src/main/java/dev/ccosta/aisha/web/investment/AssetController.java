@@ -117,6 +117,7 @@ public class AssetController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        validateOpeningPosition(form, bindingResult);
         if (bindingResult.hasErrors()) {
             fillFormModel(model, form, "create", null, returnTo);
             return "investments/assets/form";
@@ -182,6 +183,7 @@ public class AssetController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        validateOpeningPosition(form, bindingResult);
         if (bindingResult.hasErrors()) {
             fillFormModel(model, form, "edit", id, returnTo);
             return "investments/assets/form";
@@ -211,9 +213,16 @@ public class AssetController {
         HttpServletRequest request,
         Model model
     ) {
-        assetService.deleteById(id);
+        try {
+            assetService.deleteById(id);
+        } catch (AssetInUseException ex) {
+            if (isHtmx(request)) {
+                return handleHtmxInUse(ex, request, model, type, description, page, size);
+            }
+            throw ex;
+        }
         if (isHtmx(request)) {
-            fillListing(model, type, description, page, size);
+            fillListingAfterDelete(model, type, description, page, size);
             return "investments/assets/list :: table";
         }
         return "redirect:/investments/assets";
@@ -239,9 +248,16 @@ public class AssetController {
         HttpServletRequest request,
         Model model
     ) {
-        assetService.bulkDelete(ids);
+        try {
+            assetService.bulkDelete(ids);
+        } catch (AssetInUseException ex) {
+            if (isHtmx(request)) {
+                return handleHtmxInUse(ex, request, model, type, description, page, size);
+            }
+            throw ex;
+        }
         if (isHtmx(request)) {
-            fillListing(model, type, description, page, size);
+            fillListingAfterDelete(model, type, description, page, size);
             return "investments/assets/list :: table";
         }
         return "redirect:/investments/assets";
@@ -250,6 +266,31 @@ public class AssetController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(AssetInUseException.class)
     public String handleInUse(AssetInUseException ex, HttpServletRequest request, Model model) {
+        logBusinessError(ex, request);
+        fillListing(model, null, null, null, null);
+        model.addAttribute("hasError", true);
+        if (isHtmx(request)) {
+            return "investments/assets/list :: table";
+        }
+        return "investments/assets/list";
+    }
+
+    private String handleHtmxInUse(
+        AssetInUseException ex,
+        HttpServletRequest request,
+        Model model,
+        AssetType type,
+        String description,
+        Integer page,
+        Integer size
+    ) {
+        logBusinessError(ex, request);
+        fillListing(model, type, description, page, size);
+        model.addAttribute("hasError", true);
+        return "investments/assets/list :: table";
+    }
+
+    private void logBusinessError(RuntimeException ex, HttpServletRequest request) {
         String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
         log.warn(
             "Business error returned to user. correlationId={}, type={}, method={}, path={}, message={}",
@@ -260,12 +301,6 @@ public class AssetController {
             ex.getMessage(),
             ex
         );
-        fillListing(model, null, null, null, null);
-        model.addAttribute("hasError", true);
-        if (isHtmx(request)) {
-            return "investments/assets/list :: table";
-        }
-        return "investments/assets/list";
     }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -313,6 +348,22 @@ public class AssetController {
         );
     }
 
+    private void fillListingAfterDelete(Model model, AssetType type, String description, Integer page, Integer size) {
+        fillListing(model, type, description, page, size);
+        if (hasActiveFilter(type, description) && isCurrentListingEmpty(model)) {
+            fillListing(model, null, null, 0, size);
+        }
+    }
+
+    private boolean hasActiveFilter(AssetType type, String description) {
+        return type != null || normalizeFilter(description) != null;
+    }
+
+    private boolean isCurrentListingEmpty(Model model) {
+        Object assets = model.getAttribute("assets");
+        return assets instanceof List<?> list && list.isEmpty();
+    }
+
     private void fillFormModel(Model model, AssetForm form, String mode, Long assetId, String returnTo) {
         model.addAttribute("form", form);
         model.addAttribute("mode", mode);
@@ -340,8 +391,34 @@ public class AssetController {
         asset.setOpeningPositionDate(form.getOpeningPositionDate());
         asset.setOpeningPositionQuantity(form.getOpeningPositionQuantity());
         asset.setOpeningPositionTotalCost(form.getOpeningPositionTotalCost());
-        asset.setOpeningPositionCurrency(form.getOpeningPositionCurrency());
+        asset.setOpeningPositionCurrency(normalizeFilter(form.getOpeningPositionCurrency()));
         return asset;
+    }
+
+    private void validateOpeningPosition(AssetForm form, BindingResult bindingResult) {
+        if (!hasOpeningPositionInput(form)) {
+            return;
+        }
+        if (form.getOpeningPositionDate() == null) {
+            bindingResult.rejectValue("openingPositionDate", "assetForm.openingPositionDate.requiredWhenPresent");
+        }
+        if (form.getOpeningPositionQuantity() == null) {
+            bindingResult.rejectValue("openingPositionQuantity", "assetForm.openingPositionQuantity.requiredWhenPresent");
+        } else if (form.getOpeningPositionQuantity().signum() <= 0) {
+            bindingResult.rejectValue("openingPositionQuantity", "assetForm.openingPositionQuantity.positive");
+        }
+        if (form.getOpeningPositionTotalCost() == null) {
+            bindingResult.rejectValue("openingPositionTotalCost", "assetForm.openingPositionTotalCost.requiredWhenPresent");
+        } else if (form.getOpeningPositionTotalCost().signum() < 0) {
+            bindingResult.rejectValue("openingPositionTotalCost", "assetForm.openingPositionTotalCost.positiveOrZero");
+        }
+    }
+
+    private boolean hasOpeningPositionInput(AssetForm form) {
+        return form.getOpeningPositionDate() != null
+            || form.getOpeningPositionQuantity() != null
+            || form.getOpeningPositionTotalCost() != null
+            || normalizeFilter(form.getOpeningPositionCurrency()) != null;
     }
 
     private AssetForm fromDomain(Asset asset) {
