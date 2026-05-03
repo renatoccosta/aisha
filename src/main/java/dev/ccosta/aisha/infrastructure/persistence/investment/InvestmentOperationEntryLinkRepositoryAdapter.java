@@ -32,6 +32,11 @@ public class InvestmentOperationEntryLinkRepositoryAdapter implements Investment
     }
 
     @Override
+    public boolean existsByEntryId(Long entryId) {
+        return jpaLinkRepository.existsByEntryId(entryId);
+    }
+
+    @Override
     public InvestmentOperationEntryLink save(InvestmentOperationEntryLink link) {
         return jpaLinkRepository.save(link);
     }

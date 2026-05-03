@@ -11,6 +11,7 @@ import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransfer;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransferRepository;
 import dev.ccosta.aisha.domain.entry.EntryType;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -25,17 +26,20 @@ public class EntryService {
 
     private final EntryRepository entryRepository;
     private final EntryTransferRepository entryTransferRepository;
+    private final InvestmentOperationEntryLinkRepository investmentOperationEntryLinkRepository;
     private final AccountService accountService;
     private final CategoryService categoryService;
 
     public EntryService(
         EntryRepository entryRepository,
         EntryTransferRepository entryTransferRepository,
+        InvestmentOperationEntryLinkRepository investmentOperationEntryLinkRepository,
         AccountService accountService,
         CategoryService categoryService
     ) {
         this.entryRepository = entryRepository;
         this.entryTransferRepository = entryTransferRepository;
+        this.investmentOperationEntryLinkRepository = investmentOperationEntryLinkRepository;
         this.accountService = accountService;
         this.categoryService = categoryService;
     }
@@ -142,6 +146,7 @@ public class EntryService {
     @Transactional
     public void deleteById(Long id) {
         findById(id);
+        ensureEntryIsNotLinkedToInvestmentOperation(id);
         entryRepository.deleteById(id);
     }
 
@@ -158,8 +163,17 @@ public class EntryService {
             effectiveIds.add(transfer.getOriginEntry().getId());
             effectiveIds.add(transfer.getDestinationEntry().getId());
         }
+        for (Long id : effectiveIds) {
+            ensureEntryIsNotLinkedToInvestmentOperation(id);
+        }
         entryTransferRepository.deleteAllByEntryIds(effectiveIds);
         entryRepository.deleteByIds(effectiveIds);
+    }
+
+    private void ensureEntryIsNotLinkedToInvestmentOperation(Long id) {
+        if (investmentOperationEntryLinkRepository.existsByEntryId(id)) {
+            throw new EntryInUseException(id);
+        }
     }
 
     private boolean hasPendingCategorySuggestionConfirmation(Entry entry) {

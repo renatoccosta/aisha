@@ -235,6 +235,51 @@ class InvestmentOperationControllerTest {
     }
 
     @Test
+    void shouldShowUnfilteredOperationsAfterDeleteEmptiesCurrentFilter() {
+        DateFilterState globalDateFilter = baseDateFilter();
+        InvestmentOperation fallbackOperation = new InvestmentOperation();
+        when(operationService.listPageOrdered(
+            globalDateFilter.getStartDate(),
+            globalDateFilter.getEndDate(),
+            "PETR4",
+            null,
+            null,
+            null,
+            0,
+            25
+        )).thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
+        when(operationService.listPageOrdered(
+            globalDateFilter.getStartDate(),
+            globalDateFilter.getEndDate(),
+            null,
+            null,
+            null,
+            null,
+            0,
+            25
+        )).thenReturn(new PagedResult<>(List.of(fallbackOperation), 0, 25, 1, 1));
+
+        ConcurrentModel model = new ConcurrentModel();
+        String view = operationController.delete(
+            globalDateFilter,
+            1L,
+            "PETR4",
+            null,
+            null,
+            null,
+            0,
+            25,
+            htmxRequest(),
+            model
+        );
+
+        assertThat(view).isEqualTo("investments/operations/list :: table");
+        assertThat(model.getAttribute("operations")).isEqualTo(List.of(fallbackOperation));
+        assertThat(model.getAttribute("selectedAsset")).isNull();
+        verify(operationService).deleteById(1L);
+    }
+
+    @Test
     void shouldApplyListingFilters() {
         DateFilterState globalDateFilter = baseDateFilter();
         when(operationService.listPageOrdered(

@@ -184,10 +184,8 @@
             </div>
             </div>
 
-            <form
-                method="post"
-                hx-target="#entries-listing"
-                hx-swap="outerHTML">
+            <div data-selection-scope>
+                <div id="entries-listing-state">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                 <input type="hidden" name="categoryId" th:value="${selectedCategoryId}">
@@ -196,6 +194,7 @@
                 <input type="hidden" name="page" th:value="${pagination != null ? pagination.page : 0}">
                 <input type="hidden" name="size" th:value="${pagination != null ? pagination.pageSize : 25}">
                 <input type="hidden" name="returnTo" th:value="${returnTo}">
+                </div>
 
                 <div class="table-actions">
                     <span
@@ -220,21 +219,21 @@
                         <div class="action-menu-panel">
                             <button
                                 class="action-menu-item"
-                                type="submit"
-                                th:formaction="@{/entries/bulk-confirm-category-suggestions}"
+                                type="button"
                                 th:attr="hx-post=@{/entries/bulk-confirm-category-suggestions}"
                                 hx-target="#entries-listing"
-                                hx-swap="outerHTML">
+                                hx-swap="outerHTML"
+                                hx-include="#entries-listing-state input, #entries-table input[name='ids']:checked">
                                 <i data-lucide="check-check" aria-hidden="true"></i>
                                 <span th:text="#{entries.list.action.confirmSuggestion}"></span>
                             </button>
                             <button
                                 class="action-menu-item action-menu-item-danger"
-                                type="submit"
-                                th:formaction="@{/entries/bulk-delete}"
+                                type="button"
                                 th:attr="hx-post=@{/entries/bulk-delete},hx-confirm=#{entries.list.confirm.bulkDelete}"
                                 hx-target="#entries-listing"
-                                hx-swap="outerHTML">
+                                hx-swap="outerHTML"
+                                hx-include="#entries-listing-state input, #entries-table input[name='ids']:checked">
                                 <i data-lucide="trash-2" aria-hidden="true"></i>
                                 <span th:text="#{entries.list.action.bulkDelete}"></span>
                             </button>
@@ -243,7 +242,7 @@
                 </div>
 
                 <div class="table-wrap">
-                    <table class="responsive-list">
+                    <table id="entries-table" class="responsive-list">
                     <thead>
                     <tr>
                         <th>
@@ -335,7 +334,8 @@
                                         th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
                                         th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id})},hx-confirm='unset'"
                                         hx-target="#entries-listing"
-                                        hx-swap="outerHTML">
+                                        hx-swap="outerHTML"
+                                        hx-include="#entries-listing-state input">
                                         <i data-lucide="check-check" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.confirmSuggestion}"></span>
                                     </button>
@@ -373,29 +373,34 @@
                                         type="button"
                                         th:attr="hx-post=@{/entries/{id}/transfer-link(id=${entry.id})}"
                                         data-preserve-scroll="true"
-                                        hx-include="closest form"
+                                        hx-include="#entries-listing-state input, #entries-table input[name='ids']:checked"
                                         hx-target="#entries-listing"
                                         hx-swap="outerHTML show:none">
                                         <i data-lucide="link" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.linkTransfer}"></span>
                                     </button>
-                                    <button
-                                        class="action-menu-item"
+                                    <form
                                         th:if="${transferViewsByEntryId[entry.id] != null}"
-                                        type="submit"
-                                        th:formaction="@{/entries/{id}/transfer-unlink(id=${entry.id})}"
-                                        formmethod="post"
-                                        th:attr="onclick=|return confirm('${#messages.msg('entries.list.confirm.unlinkTransfer')}');|">
-                                        <i data-lucide="unlink" aria-hidden="true"></i>
-                                        <span th:text="#{entries.list.action.unlinkTransfer}"></span>
-                                    </button>
+                                        th:action="@{/entries/{id}/transfer-unlink(id=${entry.id})}"
+                                        method="post">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                        <input type="hidden" name="returnTo" th:value="${returnTo}">
+                                        <button
+                                            class="action-menu-item"
+                                            type="submit"
+                                            th:attr="onclick=|return confirm('${#messages.msg('entries.list.confirm.unlinkTransfer')}');|">
+                                            <i data-lucide="unlink" aria-hidden="true"></i>
+                                            <span th:text="#{entries.list.action.unlinkTransfer}"></span>
+                                        </button>
+                                    </form>
                                     <button
                                         class="action-menu-item action-menu-item-danger"
                                         th:if="${transferViewsByEntryId[entry.id] == null}"
                                         type="button"
                                         th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
                                         hx-target="#entries-listing"
-                                        hx-swap="outerHTML">
+                                        hx-swap="outerHTML"
+                                        hx-include="#entries-listing-state input">
                                         <i data-lucide="trash-2" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.delete}"></span>
                                     </button>
@@ -406,7 +411,7 @@
                     </tbody>
                     </table>
                 </div>
-            </form>
+            </div>
         </section>
     </div>
 </main>

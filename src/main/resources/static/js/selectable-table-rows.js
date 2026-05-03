@@ -39,8 +39,8 @@
             return null;
         }
 
-        const form = scope.closest("form");
-        return form ? form.querySelector("[data-selected-count-display]") : null;
+        const selectionScope = scope.closest("[data-selection-scope]") || scope.closest("form");
+        return selectionScope ? selectionScope.querySelector("[data-selected-count-display]") : null;
     }
 
     function getSelectionState(scope) {

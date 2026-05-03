@@ -18,6 +18,8 @@ public interface JpaInvestmentOperationEntryLinkRepository extends JpaRepository
     @EntityGraph(attributePaths = {"operation", "entry"})
     Optional<InvestmentOperationEntryLink> findByEntryId(Long entryId);
 
+    boolean existsByEntryId(Long entryId);
+
     void deleteAllByOperationId(Long operationId);
 
     void deleteAllByOperationIdIn(Collection<Long> operationIds);

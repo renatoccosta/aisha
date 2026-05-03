@@ -12,6 +12,8 @@ public interface InvestmentOperationEntryLinkRepository {
 
     Optional<InvestmentOperationEntryLink> findByEntryId(Long entryId);
 
+    boolean existsByEntryId(Long entryId);
+
     InvestmentOperationEntryLink save(InvestmentOperationEntryLink link);
 
     void deleteByOperationId(Long operationId);

@@ -6,6 +6,7 @@ import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
+import dev.ccosta.aisha.application.entry.EntryInUseException;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
@@ -323,9 +324,25 @@ public class EntryController {
         HttpServletRequest request,
         Model model
     ) {
-        entryService.deleteById(id);
+        try {
+            entryService.deleteById(id);
+        } catch (EntryInUseException ex) {
+            if (isHtmx(request)) {
+                return handleHtmxInUse(ex, request, model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            }
+            throw ex;
+        }
         if (isHtmx(request)) {
-            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListingAfterMutation(
+                model,
+                globalDateFilter,
+                accountId,
+                categoryId,
+                description,
+                pendingSuggestions,
+                page,
+                size
+            );
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -346,7 +363,16 @@ public class EntryController {
     ) {
         entryService.confirmCategorySuggestion(id);
         if (isHtmx(request)) {
-            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListingAfterMutation(
+                model,
+                globalDateFilter,
+                accountId,
+                categoryId,
+                description,
+                pendingSuggestions,
+                page,
+                size
+            );
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -365,9 +391,25 @@ public class EntryController {
         HttpServletRequest request,
         Model model
     ) {
-        entryService.bulkDelete(ids);
+        try {
+            entryService.bulkDelete(ids);
+        } catch (EntryInUseException ex) {
+            if (isHtmx(request)) {
+                return handleHtmxInUse(ex, request, model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            }
+            throw ex;
+        }
         if (isHtmx(request)) {
-            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListingAfterMutation(
+                model,
+                globalDateFilter,
+                accountId,
+                categoryId,
+                description,
+                pendingSuggestions,
+                page,
+                size
+            );
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -388,7 +430,16 @@ public class EntryController {
     ) {
         entryService.bulkConfirmCategorySuggestions(ids);
         if (isHtmx(request)) {
-            listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+            listingModelAssembler.fillListingAfterMutation(
+                model,
+                globalDateFilter,
+                accountId,
+                categoryId,
+                description,
+                pendingSuggestions,
+                page,
+                size
+            );
             return "entries/list :: listing";
         }
         return "redirect:/entries";
@@ -408,6 +459,62 @@ public class EntryController {
             ex
         );
         return "errors/404";
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @org.springframework.web.bind.annotation.ExceptionHandler(EntryInUseException.class)
+    public String handleInUse(
+        EntryInUseException ex,
+        @ModelAttribute("globalDateFilter") DateFilterState globalDateFilter,
+        HttpServletRequest request,
+        Model model
+    ) {
+        logBusinessError(ex, request);
+        listingModelAssembler.fillListing(model, globalDateFilter, null, null, null, false, null, null);
+        addToast(model, "entries.list.toast.delete.inUse", "error");
+        if (isHtmx(request)) {
+            return "entries/list :: listing";
+        }
+        return "entries/list";
+    }
+
+    private String handleHtmxInUse(
+        EntryInUseException ex,
+        HttpServletRequest request,
+        Model model,
+        DateFilterState globalDateFilter,
+        Long accountId,
+        Long categoryId,
+        String description,
+        boolean pendingSuggestions,
+        Integer page,
+        Integer size
+    ) {
+        logBusinessError(ex, request);
+        listingModelAssembler.fillListing(model, globalDateFilter, accountId, categoryId, description, pendingSuggestions, page, size);
+        addToast(model, "entries.list.toast.delete.inUse", "error");
+        return "entries/list :: listing";
+    }
+
+    private void logBusinessError(RuntimeException ex, HttpServletRequest request) {
+        String correlationId = String.valueOf(request.getAttribute(CorrelationIdFilter.CORRELATION_ID_KEY));
+        log.warn(
+            "Business error returned to user. correlationId={}, type={}, method={}, path={}, message={}",
+            correlationId,
+            ex.getClass().getSimpleName(),
+            request.getMethod(),
+            request.getRequestURI(),
+            ex.getMessage(),
+            ex
+        );
+    }
+
+    private void addToast(Model model, String messageKey, String level) {
+        model.addAttribute(
+            "toastMessage",
+            messageSource.getMessage(messageKey, null, org.springframework.context.i18n.LocaleContextHolder.getLocale())
+        );
+        model.addAttribute("toastLevel", level);
     }
 
     private boolean isHtmx(HttpServletRequest request) {
