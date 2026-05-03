@@ -4,11 +4,11 @@ import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
 import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import java.text.Normalizer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.text.Normalizer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
@@ -38,11 +38,11 @@ public class AssetRepositoryAdapter implements AssetRepository {
 
     @Override
     public PagedResult<Asset> findPageOrdered(AssetType type, String descriptionFilter, int page, int pageSize) {
-        Page<Asset> result = jpaAssetRepository.searchByFilters(
-            type,
-            normalizeTextFilter(descriptionFilter),
-            PageRequest.of(page, pageSize)
-        );
+        PageRequest pageRequest = PageRequest.of(page, pageSize);
+        String normalizedDescriptionFilter = normalizeTextFilter(descriptionFilter);
+        Page<Asset> result = normalizedDescriptionFilter == null
+            ? jpaAssetRepository.searchByFiltersWithoutDescription(type, pageRequest)
+            : jpaAssetRepository.searchByFilters(type, normalizedDescriptionFilter, pageRequest);
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
