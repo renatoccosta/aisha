@@ -78,7 +78,7 @@ public class DashboardService {
             }
 
             if (isInsideRange(settlementDate, startDate, endDate)) {
-                if (entry.isTransfer()) {
+                if (!entry.isResultEffect()) {
                     continue;
                 }
                 if (amount.signum() < 0) {
@@ -90,7 +90,7 @@ public class DashboardService {
             }
 
             if (isInsideRange(settlementDate, previousStartDate, previousEndDate)) {
-                if (entry.isTransfer()) {
+                if (!entry.isResultEffect()) {
                     continue;
                 }
                 if (amount.signum() < 0) {
@@ -283,7 +283,7 @@ public class DashboardService {
             if (!isInsideRange(settlementDate, startDate, endDate)) {
                 continue;
             }
-            if (entry.isTransfer()) {
+            if (!entry.isResultEffect()) {
                 continue;
             }
 
@@ -357,7 +357,7 @@ public class DashboardService {
             if (!isInsideRange(settlementDate, startDate, endDate)) {
                 continue;
             }
-            if (entry.isTransfer()) {
+            if (!entry.isResultEffect()) {
                 continue;
             }
             if (entry.getCategory() == null) {
@@ -427,7 +427,7 @@ public class DashboardService {
             if (!isInsideRange(settlementDate, startDate, endDate)) {
                 continue;
             }
-            if (entry.isTransfer()) {
+            if (!entry.isResultEffect()) {
                 continue;
             }
             if (entry.getCategory() == null) {

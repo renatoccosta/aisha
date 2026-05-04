@@ -97,7 +97,7 @@ public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
         )
         from Entry e
         where e.category is not null
-          and e.entryType = dev.ccosta.aisha.domain.entry.EntryType.REGULAR
+          and e.entryEffect = dev.ccosta.aisha.domain.entry.EntryEffect.RESULT
           and e.categorySuggestionStatus <> dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus.PENDING
         order by e.id asc
         """

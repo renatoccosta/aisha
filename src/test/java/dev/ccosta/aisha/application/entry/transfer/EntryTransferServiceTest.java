@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransfer;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransferRepository;
@@ -72,6 +73,7 @@ class EntryTransferServiceTest {
         assertThat(entryCaptor.getAllValues())
             .allSatisfy(entry -> {
                 assertThat(entry.getEntryType()).isEqualTo(EntryType.TRANSFER);
+                assertThat(entry.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
                 assertThat(entry.getCategory()).isNull();
             });
     }
@@ -97,6 +99,8 @@ class EntryTransferServiceTest {
         assertThat(transfer.getDestinationEntry()).isEqualTo(creditEntry);
         assertThat(debitEntry.getEntryType()).isEqualTo(EntryType.TRANSFER);
         assertThat(creditEntry.getEntryType()).isEqualTo(EntryType.TRANSFER);
+        assertThat(debitEntry.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
+        assertThat(creditEntry.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
     }
 
     @Test
@@ -122,6 +126,7 @@ class EntryTransferServiceTest {
         ));
 
         assertThat(sourceEntry.getEntryType()).isEqualTo(EntryType.TRANSFER);
+        assertThat(sourceEntry.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
         assertThat(sourceEntry.getSettlementDate()).isEqualTo(LocalDate.of(2026, 4, 11));
         assertThat(transfer.getDestinationEntry().getAccount().getId()).isEqualTo(2L);
         assertThat(transfer.getDestinationEntry().getAmount()).isEqualByComparingTo("80.00");
@@ -145,6 +150,8 @@ class EntryTransferServiceTest {
         verify(entryTransferRepository).delete(transfer);
         assertThat(originEntry.getEntryType()).isEqualTo(EntryType.REGULAR);
         assertThat(destinationEntry.getEntryType()).isEqualTo(EntryType.REGULAR);
+        assertThat(originEntry.getEntryEffect()).isEqualTo(EntryEffect.RESULT);
+        assertThat(destinationEntry.getEntryEffect()).isEqualTo(EntryEffect.RESULT);
     }
 
     @Test

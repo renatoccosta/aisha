@@ -4,6 +4,7 @@ import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
@@ -322,6 +323,7 @@ public class EntryTransferService {
         entry.setEntrySource(EntrySource.MANUAL);
         entry.setRegistrationDate(LocalDate.now());
         entry.setEntryType(EntryType.TRANSFER);
+        entry.setEntryEffect(EntryEffect.EQUITY);
         clearCategoryState(entry);
         return entry;
     }
@@ -342,6 +344,7 @@ public class EntryTransferService {
         entry.setNotes(notes);
         entry.setAmount(amount);
         entry.setEntryType(EntryType.TRANSFER);
+        entry.setEntryEffect(EntryEffect.EQUITY);
         clearCategoryState(entry);
     }
 
@@ -356,11 +359,13 @@ public class EntryTransferService {
 
     private void convertExistingEntryToTransfer(Entry entry) {
         entry.setEntryType(EntryType.TRANSFER);
+        entry.setEntryEffect(EntryEffect.EQUITY);
         clearCategoryState(entry);
     }
 
     private void convertTransferEntryToRegular(Entry entry) {
         entry.setEntryType(EntryType.REGULAR);
+        entry.setEntryEffect(EntryEffect.RESULT);
         clearCategoryState(entry);
     }
 

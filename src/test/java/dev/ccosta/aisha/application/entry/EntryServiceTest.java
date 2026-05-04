@@ -14,6 +14,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
@@ -72,6 +73,7 @@ class EntryServiceTest {
         assertThat(updated.getDescription()).isEqualTo("Descricao nova");
         assertThat(updated.getAmount()).isEqualByComparingTo("99.90");
         assertThat(updated.getCategory().getTitle()).isEqualTo("Alimentação");
+        assertThat(updated.getEntryEffect()).isEqualTo(EntryEffect.RESULT);
         verify(entryRepository).save(existing);
     }
 
@@ -246,6 +248,7 @@ class EntryServiceTest {
 
         assertThat(created.getAccount().getTitle()).isEqualTo("Conta Corrente");
         assertThat(created.getCategory().getTitle()).isEqualTo("Categoria existente");
+        assertThat(created.getEntryEffect()).isEqualTo(EntryEffect.RESULT);
         assertThat(created.getEntrySource()).isEqualTo(EntrySource.MANUAL);
         assertThat(created.getRegistrationDate()).isNotNull();
         verify(accountService).validateEntrySettlementDateAgainstAccountDeactivation(2L, LocalDate.of(2026, 2, 11));
@@ -435,6 +438,30 @@ class EntryServiceTest {
         assertThatThrownBy(() -> entryService.update(1L, updatedData, 6L, selection(7L, null, null, null)))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("transfer-specific flows");
+    }
+
+    @Test
+    void shouldUpdateEquityEntryWithoutCategorySelection() {
+        Entry existing = newEntry("Nota de corretagem", new BigDecimal("-100.00"));
+        existing.setEntryEffect(EntryEffect.EQUITY);
+        existing.setSuggestedCategory(newCategory("Investimentos"));
+        existing.setCategorySuggestionConfidence(0.8d);
+        existing.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
+        Entry updatedData = newEntry("Nota de corretagem editada", new BigDecimal("-120.00"));
+        Account account = newAccount("Conta investimentos");
+
+        when(entryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(accountService.findById(6L)).thenReturn(account);
+        when(entryRepository.save(existing)).thenReturn(existing);
+
+        Entry updated = entryService.update(1L, updatedData, 6L, null);
+
+        assertThat(updated.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
+        assertThat(updated.getCategory()).isNull();
+        assertThat(updated.getSuggestedCategory()).isNull();
+        assertThat(updated.getCategorySuggestionConfidence()).isNull();
+        assertThat(updated.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.NONE);
+        verify(categoryService, never()).findById(org.mockito.ArgumentMatchers.anyLong());
     }
 
     private Entry newEntry(String description, BigDecimal amount) {

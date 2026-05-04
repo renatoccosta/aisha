@@ -137,6 +137,8 @@ public class EntryController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        form.setTransferEntry(false);
+        form.setEquityEntry(false);
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
             prepareFormForRendering(form);
@@ -232,6 +234,9 @@ public class EntryController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        Entry persistedEntry = entryService.findById(id);
+        form.setTransferEntry(persistedEntry.isTransfer());
+        form.setEquityEntry(persistedEntry.isEquityEffect());
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
             prepareFormForRendering(form);
@@ -239,7 +244,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -256,7 +260,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -269,7 +272,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -287,7 +289,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -301,7 +302,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -556,6 +556,7 @@ public class EntryController {
         form.setNotes(entry.getNotes());
         form.setAmount(entry.getAmount());
         form.setTransferEntry(entry.isTransfer());
+        form.setEquityEntry(entry.isEquityEffect());
         return form;
     }
 
@@ -586,7 +587,7 @@ public class EntryController {
     }
 
     private void fillCategorySuggestionState(Model model, EntryForm form) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             model.addAttribute("suggestedCategory", null);
             model.addAttribute("pendingCategorySuggestion", false);
             model.addAttribute("showNewCategoryField", false);
@@ -609,7 +610,7 @@ public class EntryController {
     }
 
     private void validateCategoryChoice(EntryForm form, BindingResult bindingResult) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             return;
         }
         boolean hasCategoryId = effectiveCategoryId(form) != null;
@@ -668,7 +669,7 @@ public class EntryController {
     }
 
     private boolean shouldSuggestCategory(EntryForm form) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             return false;
         }
         return effectiveCategoryId(form) == null
@@ -696,6 +697,7 @@ public class EntryController {
     private boolean shouldShowNewCategoryField(EntryForm form) {
         return form != null
             && !form.isTransferEntry()
+            && !form.isEquityEntry()
             && (isNewCategoryOptionSelected(form) || StringUtils.hasText(form.getNewCategoryTitle()));
     }
 
@@ -704,7 +706,7 @@ public class EntryController {
     }
 
     private Long effectiveCategoryId(EntryForm form) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             return null;
         }
         if (isNewCategoryOptionSelected(form)) {

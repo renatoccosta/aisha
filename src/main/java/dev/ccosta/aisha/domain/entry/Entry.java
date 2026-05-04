@@ -74,6 +74,10 @@ public class Entry {
     @Column(name = "entry_type", nullable = false, length = 20)
     private EntryType entryType = EntryType.REGULAR;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entry_effect", nullable = false, length = 20)
+    private EntryEffect entryEffect = EntryEffect.RESULT;
+
     public Long getId() {
         return id;
     }
@@ -190,11 +194,27 @@ public class Entry {
         this.entryType = entryType == null ? EntryType.REGULAR : entryType;
     }
 
+    public EntryEffect getEntryEffect() {
+        return entryEffect;
+    }
+
+    public void setEntryEffect(EntryEffect entryEffect) {
+        this.entryEffect = entryEffect == null ? EntryEffect.RESULT : entryEffect;
+    }
+
     public boolean hasPendingCategorySuggestion() {
         return categorySuggestionStatus == EntryCategorySuggestionStatus.PENDING;
     }
 
     public boolean isTransfer() {
         return entryType == EntryType.TRANSFER;
+    }
+
+    public boolean isResultEffect() {
+        return !isTransfer() && entryEffect == EntryEffect.RESULT;
+    }
+
+    public boolean isEquityEffect() {
+        return isTransfer() || entryEffect == EntryEffect.EQUITY;
     }
 }
