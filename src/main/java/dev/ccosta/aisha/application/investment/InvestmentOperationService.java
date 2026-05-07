@@ -253,6 +253,17 @@ public class InvestmentOperationService {
     }
 
     /**
+     * Finds the investment operation link for a financial entry, when one exists.
+     *
+     * @param entryId financial entry identifier
+     * @return the matching link, or empty when the entry is not linked to an operation
+     */
+    @Transactional(readOnly = true)
+    public Optional<InvestmentOperationEntryLink> findLinkByEntryId(Long entryId) {
+        return linkRepository.findByEntryId(entryId);
+    }
+
+    /**
      * Deletes an operation and its financial entry associations.
      *
      * @param id operation identifier

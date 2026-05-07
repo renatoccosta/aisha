@@ -4,6 +4,7 @@ import dev.ccosta.aisha.domain.investment.BrokerageNote;
 import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,5 +75,16 @@ public class BrokerageNoteService {
     public BrokerageNote findById(Long id) {
         return brokerageNoteRepository.findById(id)
             .orElseThrow(() -> new BrokerageNoteNotFoundException(id));
+    }
+
+    /**
+     * Finds the brokerage note that generated the given net financial entry.
+     *
+     * @param entryId net entry identifier
+     * @return the matching brokerage note, when present
+     */
+    @Transactional(readOnly = true)
+    public Optional<BrokerageNote> findByNetEntryId(Long entryId) {
+        return brokerageNoteRepository.findByNetEntryId(entryId);
     }
 }

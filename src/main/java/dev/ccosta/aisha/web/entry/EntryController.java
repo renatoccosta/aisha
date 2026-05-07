@@ -14,19 +14,27 @@ import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
+import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
+import dev.ccosta.aisha.application.investment.BrokerageNoteService;
+import dev.ccosta.aisha.application.investment.InvestmentOperationService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.investment.BrokerageNote;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -54,6 +62,8 @@ public class EntryController {
     private final CategoryService categoryService;
     private final EntryCategorySuggestionService entryCategorySuggestionService;
     private final EntryTransferService entryTransferService;
+    private final BrokerageNoteService brokerageNoteService;
+    private final InvestmentOperationService investmentOperationService;
     private final EntryListingModelAssembler listingModelAssembler;
     private final MessageSource messageSource;
 
@@ -63,6 +73,8 @@ public class EntryController {
         CategoryService categoryService,
         EntryCategorySuggestionService entryCategorySuggestionService,
         EntryTransferService entryTransferService,
+        BrokerageNoteService brokerageNoteService,
+        InvestmentOperationService investmentOperationService,
         EntryListingModelAssembler listingModelAssembler,
         MessageSource messageSource
     ) {
@@ -71,6 +83,8 @@ public class EntryController {
         this.categoryService = categoryService;
         this.entryCategorySuggestionService = entryCategorySuggestionService;
         this.entryTransferService = entryTransferService;
+        this.brokerageNoteService = brokerageNoteService;
+        this.investmentOperationService = investmentOperationService;
         this.listingModelAssembler = listingModelAssembler;
         this.messageSource = messageSource;
     }
@@ -128,6 +142,20 @@ public class EntryController {
         prepareFormForRendering(form);
         fillCategorySuggestionState(model, form);
         return "entries/form :: categorySelectionSection";
+    }
+
+    @GetMapping("/{id}")
+    public String details(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        Entry entry = entryService.findById(id);
+        model.addAttribute("entry", entry);
+        fillTransferEntryState(model, entry);
+        fillEntryDetailsState(model, entry);
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+        return "entries/details";
     }
 
     @PostMapping
@@ -566,6 +594,58 @@ public class EntryController {
         model.addAttribute("entryRegistrationDate", entry.getRegistrationDate());
     }
 
+    private void fillEntryDetailsState(Model model, Entry entry) {
+        Locale locale = LocaleContextHolder.getLocale();
+        String detailReturnPath = "/entries/" + entry.getId();
+
+        model.addAttribute("entryDetailsReturnPath", detailReturnPath);
+        model.addAttribute(
+            "entryDetailsHeading",
+            messageSource.getMessage("entries.details.heading", new Object[] {entry.getId()}, locale)
+        );
+        model.addAttribute("entryTransfer", entry.isTransfer());
+        model.addAttribute("entryRegular", !entry.isTransfer());
+        model.addAttribute("entryAccountTitle", entry.getAccount().getTitle());
+        model.addAttribute("entryCategoryTitle", displayText(entry.getCategory() == null ? null : entry.getCategory().getTitle()));
+        model.addAttribute(
+            "entrySuggestedCategoryTitle",
+            displayText(entry.getSuggestedCategory() == null ? null : entry.getSuggestedCategory().getTitle())
+        );
+        model.addAttribute("entryTypeLabel", enumMessage("entry.type.", entry.getEntryType().name(), locale));
+        model.addAttribute("entryEffectLabel", enumMessage("entry.effect.", entry.getEntryEffect().name(), locale));
+        model.addAttribute("entrySourceLabel", entry.getEntrySource() == null ? "-" : enumMessage("entry.source.", entry.getEntrySource().name(), locale));
+        model.addAttribute(
+            "entryRegistrationDateLabel",
+            entry.getRegistrationDate() == null ? "-" : entry.getRegistrationDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        );
+        model.addAttribute(
+            "entryCategorySuggestionStatusLabel",
+            enumMessage("entry.categorySuggestionStatus.", entry.getCategorySuggestionStatus().name(), locale)
+        );
+        model.addAttribute("entryCategorySuggestionConfidenceLabel", confidenceLabel(entry.getCategorySuggestionConfidence(), locale));
+        model.addAttribute("entryExternalIdLabel", displayText(entry.getExternalId()));
+        model.addAttribute("entryNotesLabel", displayText(entry.getNotes()));
+
+        var transferView = model.getAttribute("transferView");
+        if (transferView instanceof EntryTransferView view) {
+            model.addAttribute("transferCounterpartEntryId", view.counterpartEntryId());
+        } else {
+            model.addAttribute("transferCounterpartEntryId", null);
+        }
+
+        var investmentOperationLink = investmentOperationService.findLinkByEntryId(entry.getId()).orElse(null);
+        var netEntryBrokerageNote = brokerageNoteService.findByNetEntryId(entry.getId()).orElse(null);
+        model.addAttribute("investmentOperationLink", investmentOperationLink);
+        model.addAttribute(
+            "linkedInvestmentOperationId",
+            investmentOperationLink == null ? null : investmentOperationLink.getOperation().getId()
+        );
+        model.addAttribute(
+            "linkedBrokerageNoteId",
+            resolveLinkedBrokerageNoteId(investmentOperationLink, netEntryBrokerageNote)
+        );
+    }
+
     private void fillTransferEntryState(Model model, Entry entry) {
         if (entry == null || !entry.isTransfer()) {
             model.addAttribute("transferEntry", false);
@@ -574,6 +654,34 @@ public class EntryController {
         }
         model.addAttribute("transferEntry", true);
         model.addAttribute("transferView", entryTransferService.findTransferViewByEntryId(entry.getId()).orElse(null));
+    }
+
+    private String displayText(String value) {
+        return StringUtils.hasText(value) ? value : "-";
+    }
+
+    private String enumMessage(String prefix, String enumName, Locale locale) {
+        return messageSource.getMessage(prefix + enumName.toLowerCase(Locale.ROOT), null, locale);
+    }
+
+    private String confidenceLabel(Double confidence, Locale locale) {
+        if (confidence == null) {
+            return "-";
+        }
+        NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
+        percentFormat.setMaximumFractionDigits(0);
+        percentFormat.setMinimumFractionDigits(0);
+        return percentFormat.format(confidence);
+    }
+
+    private Long resolveLinkedBrokerageNoteId(InvestmentOperationEntryLink investmentOperationLink, BrokerageNote netEntryBrokerageNote) {
+        if (netEntryBrokerageNote != null) {
+            return netEntryBrokerageNote.getId();
+        }
+        if (investmentOperationLink != null && investmentOperationLink.getOperation().getBrokerageNote() != null) {
+            return investmentOperationLink.getOperation().getBrokerageNote().getId();
+        }
+        return null;
     }
 
     private void fillEntryFormAccountOptions(Model model, Long selectedAccountId) {

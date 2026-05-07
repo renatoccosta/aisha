@@ -63,6 +63,11 @@ public class BrokerageNoteRepositoryAdapter implements BrokerageNoteRepository {
     }
 
     @Override
+    public Optional<BrokerageNote> findByNetEntryId(Long entryId) {
+        return jpaBrokerageNoteRepository.findByNetEntryId(entryId);
+    }
+
+    @Override
     public Optional<BrokerageNote> findByBrokerCnpjAndNoteNumberAndTradeDate(
         String brokerCnpj,
         String noteNumber,

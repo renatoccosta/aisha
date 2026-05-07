@@ -31,6 +31,13 @@
                 <i data-lucide="file-text" aria-hidden="true"></i>
                 <span th:text="#{investments.operations.details.action.brokerageNote}"></span>
             </a>
+            <a
+                class="btn btn-secondary"
+                th:if="${linkedEntryId != null}"
+                th:href="@{/entries/{id}(id=${linkedEntryId},returnTo=${operationDetailsReturnPath})}">
+                <i data-lucide="wallet-cards" aria-hidden="true"></i>
+                <span th:text="#{investments.operations.details.action.entry}"></span>
+            </a>
             <a class="btn btn-secondary" th:href="@{/investments/assets/{id}(id=${operation.asset.id},returnTo=${'/investments/operations/' + operation.id})}">
                 <i data-lucide="landmark" aria-hidden="true"></i>
                 <span th:text="#{investments.operations.details.action.asset}"></span>

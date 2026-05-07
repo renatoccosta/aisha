@@ -328,6 +328,12 @@
                                     </span>
                                 </summary>
                                 <div class="action-menu-panel">
+                                    <a
+                                        class="action-menu-item"
+                                        th:href="@{/entries/{id}(id=${entry.id},returnTo=${returnTo})}">
+                                        <i data-lucide="eye" aria-hidden="true"></i>
+                                        <span th:text="#{entries.list.action.details}"></span>
+                                    </a>
                                     <button
                                         class="action-menu-item"
                                         type="button"

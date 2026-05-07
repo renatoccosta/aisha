@@ -19,6 +19,9 @@ public interface JpaBrokerageNoteRepository extends JpaRepository<BrokerageNote,
     @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
     Optional<BrokerageNote> findById(Long id);
 
+    @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
+    Optional<BrokerageNote> findByNetEntryId(Long entryId);
+
     /**
      * Searches brokerage notes for the listing screen.
      *

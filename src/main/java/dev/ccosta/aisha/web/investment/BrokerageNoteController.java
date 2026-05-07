@@ -115,6 +115,8 @@ public class BrokerageNoteController {
     ) {
         BrokerageNote brokerageNote = brokerageNoteService.findById(id);
         model.addAttribute("brokerageNote", brokerageNote);
+        model.addAttribute("netEntryId", brokerageNote.getNetEntry().getId());
+        model.addAttribute("brokerageNoteDetailsReturnPath", "/investments/brokerage-notes/" + brokerageNote.getId());
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/investments/brokerage-notes"));
         return "investments/brokerage-notes/details";
     }

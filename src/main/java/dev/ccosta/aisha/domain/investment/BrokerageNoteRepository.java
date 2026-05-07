@@ -42,6 +42,14 @@ public interface BrokerageNoteRepository {
     Optional<BrokerageNote> findById(Long id);
 
     /**
+     * Finds the brokerage note whose net financial entry matches the given entry.
+     *
+     * @param entryId net entry identifier
+     * @return the matching brokerage note, when present
+     */
+    Optional<BrokerageNote> findByNetEntryId(Long entryId);
+
+    /**
      * Finds a brokerage note by the broker-issued identity.
      *
      * @param brokerCnpj broker CNPJ as captured from the note

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.investment.BrokerageNoteService;
 import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.investment.BrokerageNote;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ConcurrentModel;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,7 +82,7 @@ class BrokerageNoteControllerTest {
 
     @Test
     void shouldShowDetails() {
-        BrokerageNote note = new BrokerageNote();
+        BrokerageNote note = brokerageNoteWithNetEntry(50L, 60L);
         when(brokerageNoteService.findById(50L)).thenReturn(note);
 
         ConcurrentModel model = new ConcurrentModel();
@@ -88,6 +90,8 @@ class BrokerageNoteControllerTest {
 
         assertThat(view).isEqualTo("investments/brokerage-notes/details");
         assertThat(model.getAttribute("brokerageNote")).isSameAs(note);
+        assertThat(model.getAttribute("netEntryId")).isEqualTo(60L);
+        assertThat(model.getAttribute("brokerageNoteDetailsReturnPath")).isEqualTo("/investments/brokerage-notes/50");
         assertThat(model.getAttribute("returnTo")).isEqualTo("/investments/brokerage-notes?page=1");
     }
 
@@ -95,5 +99,14 @@ class BrokerageNoteControllerTest {
         DateFilterState state = new DateFilterState();
         state.applyCustom(LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30));
         return state;
+    }
+
+    private BrokerageNote brokerageNoteWithNetEntry(Long noteId, Long entryId) {
+        Entry entry = new Entry();
+        ReflectionTestUtils.setField(entry, "id", entryId);
+        BrokerageNote note = new BrokerageNote();
+        ReflectionTestUtils.setField(note, "id", noteId);
+        note.setNetEntry(entry);
+        return note;
     }
 }
