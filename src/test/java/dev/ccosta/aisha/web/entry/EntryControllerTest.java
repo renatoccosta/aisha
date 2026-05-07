@@ -2,6 +2,7 @@ package dev.ccosta.aisha.web.entry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,14 +12,21 @@ import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
 import dev.ccosta.aisha.application.entry.EntryInUseException;
+import dev.ccosta.aisha.application.entry.EntryRelationSummary;
+import dev.ccosta.aisha.application.entry.EntryRelationSummaryService;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
+import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
+import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryType;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.validation.BeanPropertyBindingResult;
 
@@ -49,6 +58,9 @@ class EntryControllerTest {
     private EntryTransferService entryTransferService;
 
     @Mock
+    private EntryRelationSummaryService entryRelationSummaryService;
+
+    @Mock
     private EntryListingModelAssembler listingModelAssembler;
 
     @Mock
@@ -56,6 +68,56 @@ class EntryControllerTest {
 
     @InjectMocks
     private EntryController entryController;
+
+    @Test
+    void shouldRenderEntryDetailsWithExistingRelationships() {
+        Entry entry = baseEntry(10L);
+        EntryTransferView transferView = new EntryTransferView(40L, 11L, 2L, "Reserva", true);
+        EntryRelationSummary relationSummary = EntryRelationSummary.empty(10L)
+            .withTransferView(transferView)
+            .withInvestmentOperationId(20L)
+            .withBrokerageNoteId(30L);
+        ConcurrentModel model = new ConcurrentModel();
+        when(entryService.findById(10L)).thenReturn(entry);
+        when(entryRelationSummaryService.summarize(entry)).thenReturn(relationSummary);
+        when(messageSource.getMessage(eq("entries.details.heading"), any(Object[].class), any(Locale.class))).thenReturn("Lançamento #10");
+        when(messageSource.getMessage(eq("entry.type.transfer"), any(), any(Locale.class))).thenReturn("Transferência");
+        when(messageSource.getMessage(eq("entry.effect.result"), any(), any(Locale.class))).thenReturn("Resultado");
+        when(messageSource.getMessage(eq("entry.categorySuggestionStatus.none"), any(), any(Locale.class))).thenReturn("Sem sugestão");
+
+        String view = entryController.details(10L, "/entries?page=1", model);
+
+        assertThat(view).isEqualTo("entries/details");
+        assertThat(model.getAttribute("entry")).isSameAs(entry);
+        assertThat(model.getAttribute("transferEntry")).isEqualTo(true);
+        assertThat(model.getAttribute("transferView")).isSameAs(transferView);
+        assertThat(model.getAttribute("entryRelationSummary")).isSameAs(relationSummary);
+        assertThat(model.getAttribute("entryDetailsReturnPath")).isEqualTo("/entries/10");
+        assertThat(model.getAttribute("entryDetailsHeading")).isEqualTo("Lançamento #10");
+        assertThat(model.getAttribute("transferCounterpartEntryId")).isEqualTo(11L);
+        assertThat(model.getAttribute("linkedInvestmentOperationId")).isEqualTo(20L);
+        assertThat(model.getAttribute("linkedBrokerageNoteId")).isEqualTo(30L);
+        assertThat(model.getAttribute("returnTo")).isEqualTo("/entries?page=1");
+    }
+
+    @Test
+    void shouldRenderEntryDetailsWithBrokerageNoteNetEntryRelationship() {
+        Entry entry = baseEntry(10L);
+        EntryRelationSummary relationSummary = EntryRelationSummary.empty(10L).withBrokerageNoteId(30L);
+        ConcurrentModel model = new ConcurrentModel();
+        when(entryService.findById(10L)).thenReturn(entry);
+        when(entryRelationSummaryService.summarize(entry)).thenReturn(relationSummary);
+        when(messageSource.getMessage(eq("entries.details.heading"), any(Object[].class), any(Locale.class))).thenReturn("Lançamento #10");
+        when(messageSource.getMessage(eq("entry.type.transfer"), any(), any(Locale.class))).thenReturn("Transferência");
+        when(messageSource.getMessage(eq("entry.effect.result"), any(), any(Locale.class))).thenReturn("Resultado");
+        when(messageSource.getMessage(eq("entry.categorySuggestionStatus.none"), any(), any(Locale.class))).thenReturn("Sem sugestão");
+
+        String view = entryController.details(10L, "/entries?page=1", model);
+
+        assertThat(view).isEqualTo("entries/details");
+        assertThat(model.getAttribute("linkedInvestmentOperationId")).isNull();
+        assertThat(model.getAttribute("linkedBrokerageNoteId")).isEqualTo(30L);
+    }
 
     @Test
     void shouldShowNewCategoryFieldWhenSpecialOptionIsSelected() {
@@ -204,4 +266,20 @@ class EntryControllerTest {
         form.setAmount(new BigDecimal("120.00"));
         return form;
     }
+
+    private Entry baseEntry(Long id) {
+        Account account = new Account();
+        ReflectionTestUtils.setField(account, "id", 1L);
+        account.setTitle("Carteira");
+        Entry entry = new Entry();
+        ReflectionTestUtils.setField(entry, "id", id);
+        entry.setAccount(account);
+        entry.setMovementDate(LocalDate.of(2026, 3, 10));
+        entry.setSettlementDate(LocalDate.of(2026, 3, 10));
+        entry.setDescription("Compra PETR4");
+        entry.setAmount(new BigDecimal("-120.00"));
+        entry.setEntryType(EntryType.TRANSFER);
+        return entry;
+    }
+
 }

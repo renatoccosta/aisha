@@ -43,6 +43,8 @@ public class EntryForm {
 
     private boolean transferEntry;
 
+    private boolean equityEntry;
+
     public static EntryForm newWithCurrentDates() {
         EntryForm form = new EntryForm();
         LocalDate today = LocalDate.now();
@@ -137,5 +139,13 @@ public class EntryForm {
 
     public void setTransferEntry(boolean transferEntry) {
         this.transferEntry = transferEntry;
+    }
+
+    public boolean isEquityEntry() {
+        return equityEntry;
+    }
+
+    public void setEquityEntry(boolean equityEntry) {
+        this.equityEntry = equityEntry;
     }
 }

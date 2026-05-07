@@ -7,6 +7,8 @@ import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
 import dev.ccosta.aisha.application.entry.EntryInUseException;
+import dev.ccosta.aisha.application.entry.EntryRelationSummary;
+import dev.ccosta.aisha.application.entry.EntryRelationSummaryService;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
@@ -14,6 +16,7 @@ import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
+import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
@@ -23,10 +26,13 @@ import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -54,6 +60,7 @@ public class EntryController {
     private final CategoryService categoryService;
     private final EntryCategorySuggestionService entryCategorySuggestionService;
     private final EntryTransferService entryTransferService;
+    private final EntryRelationSummaryService entryRelationSummaryService;
     private final EntryListingModelAssembler listingModelAssembler;
     private final MessageSource messageSource;
 
@@ -63,6 +70,7 @@ public class EntryController {
         CategoryService categoryService,
         EntryCategorySuggestionService entryCategorySuggestionService,
         EntryTransferService entryTransferService,
+        EntryRelationSummaryService entryRelationSummaryService,
         EntryListingModelAssembler listingModelAssembler,
         MessageSource messageSource
     ) {
@@ -71,6 +79,7 @@ public class EntryController {
         this.categoryService = categoryService;
         this.entryCategorySuggestionService = entryCategorySuggestionService;
         this.entryTransferService = entryTransferService;
+        this.entryRelationSummaryService = entryRelationSummaryService;
         this.listingModelAssembler = listingModelAssembler;
         this.messageSource = messageSource;
     }
@@ -130,6 +139,20 @@ public class EntryController {
         return "entries/form :: categorySelectionSection";
     }
 
+    @GetMapping("/{id}")
+    public String details(
+        @PathVariable Long id,
+        @RequestParam(name = "returnTo", required = false) String returnTo,
+        Model model
+    ) {
+        Entry entry = entryService.findById(id);
+        EntryRelationSummary relationSummary = entryRelationSummaryService.summarize(entry);
+        model.addAttribute("entry", entry);
+        fillEntryDetailsState(model, entry, relationSummary);
+        model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
+        return "entries/details";
+    }
+
     @PostMapping
     public String create(
         @Valid @ModelAttribute("form") EntryForm form,
@@ -137,6 +160,8 @@ public class EntryController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        form.setTransferEntry(false);
+        form.setEquityEntry(false);
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
             prepareFormForRendering(form);
@@ -232,6 +257,9 @@ public class EntryController {
         @RequestParam(name = "returnTo", required = false) String returnTo,
         Model model
     ) {
+        Entry persistedEntry = entryService.findById(id);
+        form.setTransferEntry(persistedEntry.isTransfer());
+        form.setEquityEntry(persistedEntry.isEquityEffect());
         validateCategoryChoice(form, bindingResult);
         if (bindingResult.hasErrors()) {
             prepareFormForRendering(form);
@@ -239,7 +267,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -256,7 +283,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -269,7 +295,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -287,7 +312,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -301,7 +325,6 @@ public class EntryController {
             fillCategoryOptions(model);
             fillCategorySuggestionState(model, form);
             model.addAttribute("entryId", id);
-            Entry persistedEntry = entryService.findById(id);
             fillEntryRegistrationInfo(model, persistedEntry);
             fillTransferEntryState(model, persistedEntry);
             model.addAttribute("mode", "edit");
@@ -556,6 +579,7 @@ public class EntryController {
         form.setNotes(entry.getNotes());
         form.setAmount(entry.getAmount());
         form.setTransferEntry(entry.isTransfer());
+        form.setEquityEntry(entry.isEquityEffect());
         return form;
     }
 
@@ -563,6 +587,51 @@ public class EntryController {
     private void fillEntryRegistrationInfo(Model model, Entry entry) {
         model.addAttribute("entrySource", entry.getEntrySource());
         model.addAttribute("entryRegistrationDate", entry.getRegistrationDate());
+    }
+
+    private void fillEntryDetailsState(Model model, Entry entry, EntryRelationSummary relationSummary) {
+        Locale locale = LocaleContextHolder.getLocale();
+        String detailReturnPath = "/entries/" + entry.getId();
+
+        model.addAttribute("entryDetailsReturnPath", detailReturnPath);
+        model.addAttribute(
+            "entryDetailsHeading",
+            messageSource.getMessage("entries.details.heading", new Object[] {entry.getId()}, locale)
+        );
+        EntryActionState actionState = EntryActionState.from(entry, relationSummary);
+        model.addAttribute("entryActionState", actionState);
+        model.addAttribute("entryTransfer", entry.isTransfer());
+        model.addAttribute("entryRegular", !entry.isTransfer());
+        model.addAttribute("entryRelationSummary", relationSummary);
+        model.addAttribute("transferView", relationSummary.transferView());
+        model.addAttribute("transferEntry", relationSummary.hasTransfer());
+        model.addAttribute("entryAccountTitle", entry.getAccount().getTitle());
+        model.addAttribute("entryCategoryTitle", displayText(entry.getCategory() == null ? null : entry.getCategory().getTitle()));
+        model.addAttribute(
+            "entrySuggestedCategoryTitle",
+            displayText(entry.getSuggestedCategory() == null ? null : entry.getSuggestedCategory().getTitle())
+        );
+        model.addAttribute("entryTypeLabel", enumMessage("entry.type.", entry.getEntryType().name(), locale));
+        model.addAttribute("entryEffectLabel", enumMessage("entry.effect.", entry.getEntryEffect().name(), locale));
+        model.addAttribute("entrySourceLabel", entry.getEntrySource() == null ? "-" : enumMessage("entry.source.", entry.getEntrySource().name(), locale));
+        model.addAttribute(
+            "entryRegistrationDateLabel",
+            entry.getRegistrationDate() == null ? "-" : entry.getRegistrationDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        );
+        model.addAttribute(
+            "entryCategorySuggestionStatusLabel",
+            enumMessage("entry.categorySuggestionStatus.", entry.getCategorySuggestionStatus().name(), locale)
+        );
+        model.addAttribute("entryCategorySuggestionConfidenceLabel", confidenceLabel(entry.getCategorySuggestionConfidence(), locale));
+        model.addAttribute("entryExternalIdLabel", displayText(entry.getExternalId()));
+        model.addAttribute("entryNotesLabel", displayText(entry.getNotes()));
+
+        model.addAttribute(
+            "transferCounterpartEntryId",
+            relationSummary.transferView() == null ? null : relationSummary.transferView().counterpartEntryId()
+        );
+        model.addAttribute("linkedInvestmentOperationId", relationSummary.investmentOperationId());
+        model.addAttribute("linkedBrokerageNoteId", relationSummary.brokerageNoteId());
     }
 
     private void fillTransferEntryState(Model model, Entry entry) {
@@ -573,6 +642,24 @@ public class EntryController {
         }
         model.addAttribute("transferEntry", true);
         model.addAttribute("transferView", entryTransferService.findTransferViewByEntryId(entry.getId()).orElse(null));
+    }
+
+    private String displayText(String value) {
+        return StringUtils.hasText(value) ? value : "-";
+    }
+
+    private String enumMessage(String prefix, String enumName, Locale locale) {
+        return messageSource.getMessage(prefix + enumName.toLowerCase(Locale.ROOT), null, locale);
+    }
+
+    private String confidenceLabel(Double confidence, Locale locale) {
+        if (confidence == null) {
+            return "-";
+        }
+        NumberFormat percentFormat = NumberFormat.getPercentInstance(locale);
+        percentFormat.setMaximumFractionDigits(0);
+        percentFormat.setMinimumFractionDigits(0);
+        return percentFormat.format(confidence);
     }
 
     private void fillEntryFormAccountOptions(Model model, Long selectedAccountId) {
@@ -586,7 +673,7 @@ public class EntryController {
     }
 
     private void fillCategorySuggestionState(Model model, EntryForm form) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             model.addAttribute("suggestedCategory", null);
             model.addAttribute("pendingCategorySuggestion", false);
             model.addAttribute("showNewCategoryField", false);
@@ -609,7 +696,7 @@ public class EntryController {
     }
 
     private void validateCategoryChoice(EntryForm form, BindingResult bindingResult) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             return;
         }
         boolean hasCategoryId = effectiveCategoryId(form) != null;
@@ -668,7 +755,7 @@ public class EntryController {
     }
 
     private boolean shouldSuggestCategory(EntryForm form) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             return false;
         }
         return effectiveCategoryId(form) == null
@@ -696,6 +783,7 @@ public class EntryController {
     private boolean shouldShowNewCategoryField(EntryForm form) {
         return form != null
             && !form.isTransferEntry()
+            && !form.isEquityEntry()
             && (isNewCategoryOptionSelected(form) || StringUtils.hasText(form.getNewCategoryTitle()));
     }
 
@@ -704,7 +792,7 @@ public class EntryController {
     }
 
     private Long effectiveCategoryId(EntryForm form) {
-        if (form != null && form.isTransferEntry()) {
+        if (form != null && form.isEquityEntry()) {
             return null;
         }
         if (isNewCategoryOptionSelected(form)) {

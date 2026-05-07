@@ -5,6 +5,7 @@ import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
@@ -86,6 +87,7 @@ public class EntryService {
     public Entry create(Entry entry, Long accountId, EntryCategorySelection categorySelection) {
         accountService.validateEntrySettlementDateAgainstAccountDeactivation(accountId, entry.getSettlementDate());
         entry.setAccount(resolveAccount(accountId));
+        entry.setEntryEffect(EntryEffect.RESULT);
         Category category = resolveCategory(categorySelection);
         entry.setCategory(category);
         applyCategorySuggestionFeedback(entry, category, categorySelection);
@@ -106,9 +108,14 @@ public class EntryService {
         existing.setMovementDate(updatedData.getMovementDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
         existing.setDescription(updatedData.getDescription());
-        Category category = resolveCategory(categorySelection);
-        existing.setCategory(category);
-        applyCategorySuggestionFeedback(existing, category, categorySelection);
+        if (existing.isEquityEffect()) {
+            clearCategoryState(existing);
+        } else {
+            existing.setEntryEffect(EntryEffect.RESULT);
+            Category category = resolveCategory(categorySelection);
+            existing.setCategory(category);
+            applyCategorySuggestionFeedback(existing, category, categorySelection);
+        }
         existing.setNotes(updatedData.getNotes());
         existing.setAmount(updatedData.getAmount());
         applyManualMetadataForLegacyUpdate(existing);
@@ -223,6 +230,7 @@ public class EntryService {
         if (entry.getEntryType() == null) {
             entry.setEntryType(EntryType.REGULAR);
         }
+        entry.setEntryEffect(EntryEffect.RESULT);
     }
 
     private void applyManualMetadataForLegacyUpdate(Entry entry) {
@@ -254,5 +262,12 @@ public class EntryService {
                 ? EntryCategorySuggestionStatus.ACCEPTED
                 : EntryCategorySuggestionStatus.REJECTED
         );
+    }
+
+    private void clearCategoryState(Entry entry) {
+        entry.setCategory(null);
+        entry.setSuggestedCategory(null);
+        entry.setCategorySuggestionConfidence(null);
+        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE);
     }
 }

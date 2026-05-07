@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{entries.details.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{entries.details.header.subtitle})}"></header>
+
+<main class="wrap asset-details-main">
+    <section class="card header-actions">
+        <div>
+            <h2 th:text="${entryDetailsHeading}"></h2>
+            <p th:text="${entry.description}"></p>
+        </div>
+        <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="${returnTo}">
+                <i data-lucide="arrow-left" aria-hidden="true"></i>
+                <span th:text="#{entries.details.action.back}"></span>
+            </a>
+            <a
+                class="btn btn-secondary"
+                th:if="${transferCounterpartEntryId != null}"
+                th:href="@{/entries/{id}(id=${transferCounterpartEntryId},returnTo=${entryDetailsReturnPath})}">
+                <i data-lucide="repeat" aria-hidden="true"></i>
+                <span th:text="#{entries.details.action.transferCounterpart}"></span>
+            </a>
+            <a
+                class="btn btn-secondary"
+                th:if="${linkedInvestmentOperationId != null}"
+                th:href="@{/investments/operations/{id}(id=${linkedInvestmentOperationId},returnTo=${entryDetailsReturnPath})}">
+                <i data-lucide="workflow" aria-hidden="true"></i>
+                <span th:text="#{entries.details.action.investmentOperation}"></span>
+            </a>
+            <a
+                class="btn btn-secondary"
+                th:if="${linkedBrokerageNoteId != null}"
+                th:href="@{/investments/brokerage-notes/{id}(id=${linkedBrokerageNoteId},returnTo=${entryDetailsReturnPath})}">
+                <i data-lucide="file-text" aria-hidden="true"></i>
+                <span th:text="#{entries.details.action.brokerageNote}"></span>
+            </a>
+            <a
+                class="btn btn-primary"
+                th:if="${entryActionState.transferEditAllowed}"
+                th:href="@{/entries/{id}/transfer/edit(id=${entry.id},returnTo=${returnTo})}">
+                <i data-lucide="edit-3" aria-hidden="true"></i>
+                <span th:text="#{entries.details.action.edit}"></span>
+            </a>
+            <a
+                class="btn btn-primary"
+                th:if="${entryActionState.regularEditAllowed}"
+                th:href="@{/entries/{id}/edit(id=${entry.id},returnTo=${returnTo})}">
+                <i data-lucide="edit-3" aria-hidden="true"></i>
+                <span th:text="#{entries.details.action.edit}"></span>
+            </a>
+        </div>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{entries.details.section.basicData}"></h3>
+                <p th:text="#{entries.details.section.basicData.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid entry-details-grid">
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="hash" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.id}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entry.id}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="briefcase" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.account}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entryAccountTitle}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="file-text" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.description}"></span>
+                    </span>
+                </dt>
+                <dd class="breakable-value" th:text="${entry.description}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="tag" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.category}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entryCategoryTitle}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="repeat-2" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.entryType}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entryTypeLabel}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="activity" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.entryEffect}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entryEffectLabel}"></dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{entries.details.section.values}"></h3>
+                <p th:text="#{entries.details.section.values.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid entry-details-grid">
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="calendar-days" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.movementDate}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#temporals.format(entry.movementDate, 'dd/MM/yyyy')}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="calendar-check" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.settlementDate}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#temporals.format(entry.settlementDate, 'dd/MM/yyyy')}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.amount}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${#numbers.formatDecimal(entry.amount, 1, 'POINT', 2, 'COMMA')}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="waypoints" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.source}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entrySourceLabel}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="clock" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.registrationDate}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entryRegistrationDateLabel}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="fingerprint" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.externalId}"></span>
+                    </span>
+                </dt>
+                <dd class="breakable-value" th:text="${entryExternalIdLabel}"></dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{entries.details.section.aiData}"></h3>
+                <p th:text="#{entries.details.section.aiData.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid entry-details-grid">
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="sparkles" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.suggestedCategory}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entrySuggestedCategoryTitle}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="badge-check" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.categorySuggestionStatus}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entryCategorySuggestionStatusLabel}"></dd>
+            </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="gauge" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.categorySuggestionConfidence}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${entryCategorySuggestionConfidenceLabel}"></dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="card stack-sm">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{entries.details.section.notes}"></h3>
+                <p th:text="#{entries.details.section.notes.subtitle}"></p>
+            </div>
+        </div>
+        <dl class="import-summary-grid entry-details-grid">
+            <div class="import-summary-grid-wide">
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="message-square-text" aria-hidden="true"></i>
+                        <span th:text="#{entries.details.field.notes}"></span>
+                    </span>
+                </dt>
+                <dd class="breakable-value" th:text="${entryNotesLabel}"></dd>
+            </div>
+        </dl>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

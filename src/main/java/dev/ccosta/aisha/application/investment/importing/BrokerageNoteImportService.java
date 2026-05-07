@@ -3,6 +3,7 @@ package dev.ccosta.aisha.application.investment.importing;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.EntryType;
@@ -186,6 +187,11 @@ public class BrokerageNoteImportService {
         if (entry.getEntryType() == null) {
             entry.setEntryType(EntryType.REGULAR);
         }
+        entry.setEntryEffect(EntryEffect.EQUITY);
+        entry.setCategory(null);
+        entry.setSuggestedCategory(null);
+        entry.setCategorySuggestionConfidence(null);
+        entry.setCategorySuggestionStatus(dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus.NONE);
         return entryRepository.save(entry);
     }
 

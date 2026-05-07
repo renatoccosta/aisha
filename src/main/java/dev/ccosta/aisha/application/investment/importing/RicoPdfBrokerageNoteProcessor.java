@@ -1,6 +1,7 @@
 package dev.ccosta.aisha.application.investment.importing;
 
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.EntryType;
 import dev.ccosta.aisha.domain.investment.Asset;
@@ -223,6 +224,7 @@ public class RicoPdfBrokerageNoteProcessor implements BrokerageNoteProcessor {
         entry.setAmount(note.getNetAmount());
         entry.setEntrySource(EntrySource.IMPORT);
         entry.setEntryType(EntryType.REGULAR);
+        entry.setEntryEffect(EntryEffect.EQUITY);
         entry.setRegistrationDate(LocalDate.now());
         entry.setExternalId("BROKERAGE_NOTE:RICO:" + note.getBrokerCnpj() + ":" + note.getNoteNumber() + ":" + note.getTradeDate());
         return entry;

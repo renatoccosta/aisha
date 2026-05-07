@@ -1,6 +1,8 @@
 package dev.ccosta.aisha.infrastructure.persistence.investment;
 
 import dev.ccosta.aisha.domain.investment.BrokerageNote;
+import java.util.Collection;
+import java.util.List;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -18,6 +20,12 @@ public interface JpaBrokerageNoteRepository extends JpaRepository<BrokerageNote,
     @Override
     @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
     Optional<BrokerageNote> findById(Long id);
+
+    @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
+    Optional<BrokerageNote> findByNetEntryId(Long entryId);
+
+    @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
+    List<BrokerageNote> findAllByNetEntryIdInOrderByIdAsc(Collection<Long> entryIds);
 
     /**
      * Searches brokerage notes for the listing screen.

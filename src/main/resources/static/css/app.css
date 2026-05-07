@@ -1288,6 +1288,10 @@ body.import-drag-active .import-drop-overlay {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.entry-details-grid {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
 .import-summary-grid > div {
   min-width: 0;
 }
@@ -1309,6 +1313,18 @@ body.import-drag-active .import-drop-overlay {
 
 .breakable-value {
   word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .entry-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .entry-details-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .dashboard-main {

@@ -17,6 +17,7 @@ import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
@@ -56,6 +57,23 @@ class InvestmentOperationControllerTest {
 
     @InjectMocks
     private InvestmentOperationController operationController;
+
+    @Test
+    void shouldShowDetailsWithLinkedEntryNavigationState() {
+        InvestmentOperation operation = operationWithId(10L);
+        InvestmentOperationEntryLink link = operationEntryLink(entryWithId(30L, accountWithId(20L)));
+        when(operationService.findById(10L)).thenReturn(operation);
+        when(operationService.listLinksByOperationId(10L)).thenReturn(List.of(link));
+
+        ConcurrentModel model = new ConcurrentModel();
+        String view = operationController.details(10L, "/investments/operations?page=1", model);
+
+        assertThat(view).isEqualTo("investments/operations/details");
+        assertThat(model.getAttribute("operation")).isSameAs(operation);
+        assertThat(model.getAttribute("linkedEntryId")).isEqualTo(30L);
+        assertThat(model.getAttribute("operationDetailsReturnPath")).isEqualTo("/investments/operations/10");
+        assertThat(model.getAttribute("returnTo")).isEqualTo("/investments/operations?page=1");
+    }
 
     @Test
     void shouldCreateOperationFromFormWithLinkedEntry() {
@@ -355,7 +373,26 @@ class InvestmentOperationControllerTest {
     private Asset assetWithId(Long id) {
         Asset asset = new Asset();
         ReflectionTestUtils.setField(asset, "id", id);
+        asset.setName("PETR4");
         return asset;
+    }
+
+    private InvestmentOperation operationWithId(Long id) {
+        InvestmentOperation operation = new InvestmentOperation();
+        ReflectionTestUtils.setField(operation, "id", id);
+        operation.setAsset(assetWithId(10L));
+        operation.setAccount(accountWithId(20L));
+        operation.setOperationType(InvestmentOperationType.BUY);
+        operation.setTradeDate(LocalDate.of(2026, 4, 20));
+        operation.setNetAmount(new BigDecimal("125.50"));
+        operation.setCurrency("BRL");
+        return operation;
+    }
+
+    private InvestmentOperationEntryLink operationEntryLink(Entry entry) {
+        InvestmentOperationEntryLink link = new InvestmentOperationEntryLink();
+        link.setEntry(entry);
+        return link;
     }
 
     private Entry entryWithId(Long id, Account account) {

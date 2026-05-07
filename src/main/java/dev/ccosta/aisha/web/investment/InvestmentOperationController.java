@@ -139,7 +139,10 @@ public class InvestmentOperationController {
         Model model
     ) {
         InvestmentOperation operation = operationService.findById(id);
+        List<InvestmentOperationEntryLink> links = operationService.listLinksByOperationId(id);
         model.addAttribute("operation", operation);
+        model.addAttribute("linkedEntryId", links.isEmpty() ? null : links.getFirst().getEntry().getId());
+        model.addAttribute("operationDetailsReturnPath", "/investments/operations/" + operation.getId());
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/investments/operations"));
         return "investments/operations/details";
     }

@@ -82,7 +82,7 @@ public class EntryRepositoryAdapter implements EntryRepository {
 
     @Override
     public Optional<Entry> findById(Long id) {
-        return jpaEntryRepository.findById(id);
+        return jpaEntryRepository.findWithDetailsById(id);
     }
 
     @Override

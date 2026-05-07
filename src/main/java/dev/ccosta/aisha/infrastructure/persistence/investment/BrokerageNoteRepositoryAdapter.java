@@ -4,6 +4,8 @@ import dev.ccosta.aisha.domain.investment.BrokerageNote;
 import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -60,6 +62,16 @@ public class BrokerageNoteRepositoryAdapter implements BrokerageNoteRepository {
     @Override
     public Optional<BrokerageNote> findById(Long id) {
         return jpaBrokerageNoteRepository.findById(id);
+    }
+
+    @Override
+    public Optional<BrokerageNote> findByNetEntryId(Long entryId) {
+        return jpaBrokerageNoteRepository.findByNetEntryId(entryId);
+    }
+
+    @Override
+    public List<BrokerageNote> findAllByNetEntryIds(Collection<Long> entryIds) {
+        return jpaBrokerageNoteRepository.findAllByNetEntryIdInOrderByIdAsc(entryIds);
     }
 
     @Override

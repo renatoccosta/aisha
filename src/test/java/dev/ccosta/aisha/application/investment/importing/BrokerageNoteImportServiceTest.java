@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -104,6 +105,8 @@ class BrokerageNoteImportServiceTest {
 
         assertThat(summary.importedNotes()).isEqualTo(1);
         assertThat(summary.importedOperations()).isEqualTo(1);
+        assertThat(entry.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
+        assertThat(entry.getCategory()).isNull();
         ArgumentCaptor<InvestmentOperation> operationCaptor = ArgumentCaptor.forClass(InvestmentOperation.class);
         verify(investmentOperationRepository).save(operationCaptor.capture());
         assertThat(operationCaptor.getValue().getAsset()).isSameAs(existingByIsin);
