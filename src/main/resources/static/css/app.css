@@ -796,10 +796,20 @@ th {
 
   .responsive-list tbody tr {
     display: block;
+    position: relative;
     border: 1px solid var(--line);
     border-radius: 12px;
     background: var(--color-bg-subtle);
     overflow: hidden;
+  }
+
+  .table-wrap:has(.responsive-list) {
+    overflow: visible;
+  }
+
+  .responsive-list tbody tr:has(.action-menu[open]) {
+    overflow: visible;
+    z-index: 30;
   }
 
   .responsive-list tbody tr.is-selectable:hover {
@@ -825,6 +835,10 @@ th {
     align-items: center;
     padding: 0.7rem;
     border-bottom: 1px solid var(--line);
+  }
+
+  .responsive-list tbody td.cell-actions {
+    overflow: visible;
   }
 
   .responsive-list tbody tr td:last-child {
