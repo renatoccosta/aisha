@@ -12,18 +12,15 @@ import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
 import dev.ccosta.aisha.application.entry.EntryInUseException;
+import dev.ccosta.aisha.application.entry.EntryRelationSummary;
+import dev.ccosta.aisha.application.entry.EntryRelationSummaryService;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
 import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
-import dev.ccosta.aisha.application.investment.BrokerageNoteService;
-import dev.ccosta.aisha.application.investment.InvestmentOperationService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryType;
-import dev.ccosta.aisha.domain.investment.BrokerageNote;
-import dev.ccosta.aisha.domain.investment.InvestmentOperation;
-import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -61,10 +58,7 @@ class EntryControllerTest {
     private EntryTransferService entryTransferService;
 
     @Mock
-    private BrokerageNoteService brokerageNoteService;
-
-    @Mock
-    private InvestmentOperationService investmentOperationService;
+    private EntryRelationSummaryService entryRelationSummaryService;
 
     @Mock
     private EntryListingModelAssembler listingModelAssembler;
@@ -78,13 +72,14 @@ class EntryControllerTest {
     @Test
     void shouldRenderEntryDetailsWithExistingRelationships() {
         Entry entry = baseEntry(10L);
-        InvestmentOperationEntryLink link = investmentOperationLink(20L, 30L);
         EntryTransferView transferView = new EntryTransferView(40L, 11L, 2L, "Reserva", true);
+        EntryRelationSummary relationSummary = EntryRelationSummary.empty(10L)
+            .withTransferView(transferView)
+            .withInvestmentOperationId(20L)
+            .withBrokerageNoteId(30L);
         ConcurrentModel model = new ConcurrentModel();
         when(entryService.findById(10L)).thenReturn(entry);
-        when(entryTransferService.findTransferViewByEntryId(10L)).thenReturn(Optional.of(transferView));
-        when(investmentOperationService.findLinkByEntryId(10L)).thenReturn(Optional.of(link));
-        when(brokerageNoteService.findByNetEntryId(10L)).thenReturn(Optional.empty());
+        when(entryRelationSummaryService.summarize(entry)).thenReturn(relationSummary);
         when(messageSource.getMessage(eq("entries.details.heading"), any(Object[].class), any(Locale.class))).thenReturn("Lançamento #10");
         when(messageSource.getMessage(eq("entry.type.transfer"), any(), any(Locale.class))).thenReturn("Transferência");
         when(messageSource.getMessage(eq("entry.effect.result"), any(), any(Locale.class))).thenReturn("Resultado");
@@ -96,7 +91,7 @@ class EntryControllerTest {
         assertThat(model.getAttribute("entry")).isSameAs(entry);
         assertThat(model.getAttribute("transferEntry")).isEqualTo(true);
         assertThat(model.getAttribute("transferView")).isSameAs(transferView);
-        assertThat(model.getAttribute("investmentOperationLink")).isSameAs(link);
+        assertThat(model.getAttribute("entryRelationSummary")).isSameAs(relationSummary);
         assertThat(model.getAttribute("entryDetailsReturnPath")).isEqualTo("/entries/10");
         assertThat(model.getAttribute("entryDetailsHeading")).isEqualTo("Lançamento #10");
         assertThat(model.getAttribute("transferCounterpartEntryId")).isEqualTo(11L);
@@ -108,12 +103,10 @@ class EntryControllerTest {
     @Test
     void shouldRenderEntryDetailsWithBrokerageNoteNetEntryRelationship() {
         Entry entry = baseEntry(10L);
-        BrokerageNote brokerageNote = brokerageNote(30L);
+        EntryRelationSummary relationSummary = EntryRelationSummary.empty(10L).withBrokerageNoteId(30L);
         ConcurrentModel model = new ConcurrentModel();
         when(entryService.findById(10L)).thenReturn(entry);
-        when(entryTransferService.findTransferViewByEntryId(10L)).thenReturn(Optional.empty());
-        when(investmentOperationService.findLinkByEntryId(10L)).thenReturn(Optional.empty());
-        when(brokerageNoteService.findByNetEntryId(10L)).thenReturn(Optional.of(brokerageNote));
+        when(entryRelationSummaryService.summarize(entry)).thenReturn(relationSummary);
         when(messageSource.getMessage(eq("entries.details.heading"), any(Object[].class), any(Locale.class))).thenReturn("Lançamento #10");
         when(messageSource.getMessage(eq("entry.type.transfer"), any(), any(Locale.class))).thenReturn("Transferência");
         when(messageSource.getMessage(eq("entry.effect.result"), any(), any(Locale.class))).thenReturn("Resultado");
@@ -289,18 +282,4 @@ class EntryControllerTest {
         return entry;
     }
 
-    private InvestmentOperationEntryLink investmentOperationLink(Long operationId, Long brokerageNoteId) {
-        InvestmentOperation operation = new InvestmentOperation();
-        ReflectionTestUtils.setField(operation, "id", operationId);
-        operation.setBrokerageNote(brokerageNote(brokerageNoteId));
-        InvestmentOperationEntryLink link = new InvestmentOperationEntryLink();
-        link.setOperation(operation);
-        return link;
-    }
-
-    private BrokerageNote brokerageNote(Long id) {
-        BrokerageNote brokerageNote = new BrokerageNote();
-        ReflectionTestUtils.setField(brokerageNote, "id", id);
-        return brokerageNote;
-    }
 }

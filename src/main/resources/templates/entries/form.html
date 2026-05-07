@@ -170,13 +170,6 @@
                     <i data-lucide="save" aria-hidden="true"></i>
                     <span th:text="${mode == 'create'} ? #{entries.form.action.save} : #{entries.form.action.update}"></span>
                 </button>
-                <a
-                    class="btn btn-secondary"
-                    th:if="${mode == 'edit' and !form.transferEntry}"
-                    th:href="@{/entries/{id}/transfer-counterpart(id=${entryId},returnTo=${returnTo})}">
-                    <i data-lucide="repeat" aria-hidden="true"></i>
-                    <span th:text="#{entries.form.action.createCounterpart}"></span>
-                </a>
                 <a class="btn btn-secondary" th:href="${returnTo}">
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
                     <span th:text="#{entries.form.action.cancel}"></span>

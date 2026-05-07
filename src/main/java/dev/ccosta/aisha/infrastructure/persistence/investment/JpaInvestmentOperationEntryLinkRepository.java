@@ -16,6 +16,9 @@ public interface JpaInvestmentOperationEntryLinkRepository extends JpaRepository
     List<InvestmentOperationEntryLink> findAllByEntryIdOrderByIdAsc(Long entryId);
 
     @EntityGraph(attributePaths = {"operation", "operation.brokerageNote", "entry"})
+    List<InvestmentOperationEntryLink> findAllByEntryIdInOrderByIdAsc(Collection<Long> entryIds);
+
+    @EntityGraph(attributePaths = {"operation", "operation.brokerageNote", "entry"})
     Optional<InvestmentOperationEntryLink> findByEntryId(Long entryId);
 
     boolean existsByEntryId(Long entryId);

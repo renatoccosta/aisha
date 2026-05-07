@@ -44,14 +44,14 @@
             </a>
             <a
                 class="btn btn-primary"
-                th:if="${entryTransfer}"
+                th:if="${entryActionState.transferEditAllowed}"
                 th:href="@{/entries/{id}/transfer/edit(id=${entry.id},returnTo=${returnTo})}">
                 <i data-lucide="edit-3" aria-hidden="true"></i>
                 <span th:text="#{entries.details.action.edit}"></span>
             </a>
             <a
                 class="btn btn-primary"
-                th:if="${entryRegular}"
+                th:if="${entryActionState.regularEditAllowed}"
                 th:href="@{/entries/{id}/edit(id=${entry.id},returnTo=${returnTo})}">
                 <i data-lucide="edit-3" aria-hidden="true"></i>
                 <span th:text="#{entries.details.action.edit}"></span>

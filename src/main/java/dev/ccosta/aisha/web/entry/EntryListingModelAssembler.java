@@ -1,11 +1,11 @@
 package dev.ccosta.aisha.web.entry;
 
+import dev.ccosta.aisha.application.entry.EntryRelationSummary;
+import dev.ccosta.aisha.application.entry.EntryRelationSummaryService;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.category.CategoryOption;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryService;
-import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
-import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.shared.PagedResult;
@@ -35,18 +35,18 @@ class EntryListingModelAssembler {
     private final EntryService entryService;
     private final AccountService accountService;
     private final CategoryService categoryService;
-    private final EntryTransferService entryTransferService;
+    private final EntryRelationSummaryService entryRelationSummaryService;
 
     EntryListingModelAssembler(
         EntryService entryService,
         AccountService accountService,
         CategoryService categoryService,
-        EntryTransferService entryTransferService
+        EntryRelationSummaryService entryRelationSummaryService
     ) {
         this.entryService = entryService;
         this.accountService = accountService;
         this.categoryService = categoryService;
-        this.entryTransferService = entryTransferService;
+        this.entryRelationSummaryService = entryRelationSummaryService;
     }
 
     /**
@@ -109,7 +109,9 @@ class EntryListingModelAssembler {
         }
 
         PaginationView pagination = PaginationSupport.toView(pageResult);
-        model.addAttribute("transferViewsByEntryId", buildTransferViewsByEntryId(pageResult.items()));
+        Map<Long, EntryRelationSummary> relationSummariesByEntryId = entryRelationSummaryService.summarize(pageResult.items());
+        model.addAttribute("entryRelationSummariesByEntryId", relationSummariesByEntryId);
+        model.addAttribute("entryActionsByEntryId", buildEntryActionsByEntryId(pageResult.items(), relationSummariesByEntryId));
         model.addAttribute("entries", pageResult.items());
         model.addAttribute("selectedAccountId", effectiveAccountId);
         model.addAttribute("selectedCategoryId", categoryId);
@@ -212,12 +214,18 @@ class EntryListingModelAssembler {
         model.addAttribute("categoryOptions", categoryOptions);
     }
 
-    private Map<Long, EntryTransferView> buildTransferViewsByEntryId(List<Entry> entries) {
-        Map<Long, EntryTransferView> transferViewsByEntryId = new LinkedHashMap<>();
+    private Map<Long, EntryActionState> buildEntryActionsByEntryId(
+        List<Entry> entries,
+        Map<Long, EntryRelationSummary> relationSummariesByEntryId
+    ) {
+        Map<Long, EntryActionState> actionsByEntryId = new LinkedHashMap<>();
         for (Entry entry : entries) {
-            entryTransferService.findTransferViewByEntryId(entry.getId())
-                .ifPresent(transferView -> transferViewsByEntryId.put(entry.getId(), transferView));
+            EntryRelationSummary relationSummary = relationSummariesByEntryId.getOrDefault(
+                entry.getId(),
+                EntryRelationSummary.empty(entry.getId())
+            );
+            actionsByEntryId.put(entry.getId(), EntryActionState.from(entry, relationSummary));
         }
-        return transferViewsByEntryId;
+        return actionsByEntryId;
     }
 }

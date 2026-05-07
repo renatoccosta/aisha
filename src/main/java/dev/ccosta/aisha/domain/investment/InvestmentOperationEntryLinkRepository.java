@@ -10,6 +10,8 @@ public interface InvestmentOperationEntryLinkRepository {
 
     List<InvestmentOperationEntryLink> findAllByEntryId(Long entryId);
 
+    List<InvestmentOperationEntryLink> findAllByEntryIds(Collection<Long> entryIds);
+
     Optional<InvestmentOperationEntryLink> findByEntryId(Long entryId);
 
     boolean existsByEntryId(Long entryId);

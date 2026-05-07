@@ -1,6 +1,8 @@
 package dev.ccosta.aisha.domain.investment;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 
@@ -48,6 +50,14 @@ public interface BrokerageNoteRepository {
      * @return the matching brokerage note, when present
      */
     Optional<BrokerageNote> findByNetEntryId(Long entryId);
+
+    /**
+     * Finds brokerage notes whose net entries are included in the given identifiers.
+     *
+     * @param entryIds net entry identifiers
+     * @return matching brokerage notes
+     */
+    List<BrokerageNote> findAllByNetEntryIds(Collection<Long> entryIds);
 
     /**
      * Finds a brokerage note by the broker-issued identity.

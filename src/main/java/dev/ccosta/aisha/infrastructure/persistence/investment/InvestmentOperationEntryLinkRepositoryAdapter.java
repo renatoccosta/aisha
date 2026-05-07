@@ -27,6 +27,11 @@ public class InvestmentOperationEntryLinkRepositoryAdapter implements Investment
     }
 
     @Override
+    public List<InvestmentOperationEntryLink> findAllByEntryIds(Collection<Long> entryIds) {
+        return jpaLinkRepository.findAllByEntryIdInOrderByIdAsc(entryIds);
+    }
+
+    @Override
     public Optional<InvestmentOperationEntryLink> findByEntryId(Long entryId) {
         return jpaLinkRepository.findByEntryId(entryId);
     }

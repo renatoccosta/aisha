@@ -5,14 +5,15 @@ import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.category.CategoryService;
+import dev.ccosta.aisha.application.entry.EntryRelationSummary;
+import dev.ccosta.aisha.application.entry.EntryRelationSummaryService;
 import dev.ccosta.aisha.application.entry.EntryService;
-import dev.ccosta.aisha.application.entry.transfer.EntryTransferService;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -33,7 +34,7 @@ class EntryListingModelAssemblerTest {
     private CategoryService categoryService;
 
     @Mock
-    private EntryTransferService entryTransferService;
+    private EntryRelationSummaryService entryRelationSummaryService;
 
     @Test
     void shouldShowUnfilteredEntriesAfterMutationEmptiesCurrentFilter() {
@@ -43,11 +44,10 @@ class EntryListingModelAssemblerTest {
             entryService,
             accountService,
             categoryService,
-            entryTransferService
+            entryRelationSummaryService
         );
         when(accountService.listVisibleForEntryFilter(dateFilter.getStartDate())).thenReturn(List.of());
         when(categoryService.listHierarchyOptions()).thenReturn(List.of());
-        when(entryTransferService.findTransferViewByEntryId(10L)).thenReturn(Optional.empty());
         when(entryService.listMostRecentBySettlementDateBetweenAndFilters(
             dateFilter.getStartDate(),
             dateFilter.getEndDate(),
@@ -70,6 +70,8 @@ class EntryListingModelAssemblerTest {
             0,
             25
         )).thenReturn(new PagedResult<>(List.of(fallbackEntry), 0, 25, 1, 1));
+        when(entryRelationSummaryService.summarize(List.of())).thenReturn(Map.of());
+        when(entryRelationSummaryService.summarize(List.of(fallbackEntry))).thenReturn(Map.of(10L, EntryRelationSummary.empty(10L)));
 
         ConcurrentModel model = new ConcurrentModel();
         assembler.fillListingAfterMutation(model, dateFilter, null, null, "mercado", false, 0, 25);

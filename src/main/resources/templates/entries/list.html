@@ -277,7 +277,9 @@
                     <tr th:if="${#lists.isEmpty(entries)}" class="empty-row">
                         <td colspan="8" class="empty" th:text="#{entries.list.empty}"></td>
                     </tr>
-                    <tr th:each="entry : ${entries}">
+                    <tr
+                        th:each="entry : ${entries}"
+                        th:with="relation=${entryRelationSummariesByEntryId[entry.id]},actions=${entryActionsByEntryId[entry.id]}">
                         <td class="cell-select" th:attr="data-label=#{entries.list.table.select}">
                             <input
                                 type="checkbox"
@@ -301,11 +303,11 @@
                                     th:if="${entry.entryType.name() != 'TRANSFER' and entry.category == null}"
                                     th:text="#{entries.list.table.category.empty}"></span>
                                 <span class="helper"
-                                      th:if="${transferViewsByEntryId[entry.id] != null and transferViewsByEntryId[entry.id].originSide()}"
-                                      th:text="#{entries.list.table.transfer.destination(${transferViewsByEntryId[entry.id].counterpartAccountTitle})}"></span>
+                                      th:if="${relation.transferView != null and relation.transferView.originSide()}"
+                                      th:text="#{entries.list.table.transfer.destination(${relation.transferView.counterpartAccountTitle})}"></span>
                                 <span class="helper"
-                                      th:if="${transferViewsByEntryId[entry.id] != null and !transferViewsByEntryId[entry.id].originSide()}"
-                                      th:text="#{entries.list.table.transfer.origin(${transferViewsByEntryId[entry.id].counterpartAccountTitle})}"></span>
+                                      th:if="${relation.transferView != null and !relation.transferView.originSide()}"
+                                      th:text="#{entries.list.table.transfer.origin(${relation.transferView.counterpartAccountTitle})}"></span>
                                 <span class="status-chip"
                                       th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
                                       th:text="#{entries.list.table.category.status.pending}"></span>
@@ -334,48 +336,37 @@
                                         <i data-lucide="eye" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.details}"></span>
                                     </a>
-                                    <button
-                                        class="action-menu-item"
-                                        type="button"
-                                        th:if="${entry.categorySuggestionStatus.name() == 'PENDING'}"
-                                        th:attr="hx-post=@{/entries/{id}/confirm-category-suggestion(id=${entry.id})},hx-confirm='unset'"
-                                        hx-target="#entries-listing"
-                                        hx-swap="outerHTML"
-                                        hx-include="#entries-listing-state input">
-                                        <i data-lucide="check-check" aria-hidden="true"></i>
-                                        <span th:text="#{entries.list.action.confirmSuggestion}"></span>
-                                    </button>
                                     <a
                                         class="action-menu-item"
-                                        th:if="${entry.entryType.name() == 'TRANSFER'}"
+                                        th:if="${actions.transferEditAllowed}"
                                         th:href="@{/entries/{id}/transfer/edit(id=${entry.id},returnTo=${returnTo})}">
                                         <i data-lucide="edit-3" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.edit}"></span>
                                     </a>
                                     <a
                                         class="action-menu-item"
-                                        th:if="${entry.entryType.name() != 'TRANSFER'}"
+                                        th:if="${actions.regularEditAllowed}"
                                         th:href="@{/entries/{id}/edit(id=${entry.id},returnTo=${returnTo})}">
                                         <i data-lucide="edit-3" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.edit}"></span>
                                     </a>
                                     <a
                                         class="action-menu-item"
-                                        th:if="${entry.entryType.name() != 'TRANSFER'}"
+                                        th:if="${actions.createLinkedOperationAllowed}"
                                         th:href="@{/investments/operations/new/from-entry/{entryId}(entryId=${entry.id},returnTo=${returnTo})}">
                                         <i data-lucide="workflow" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.createLinkedOperation}"></span>
                                     </a>
                                     <a
                                         class="action-menu-item"
-                                        th:if="${transferViewsByEntryId[entry.id] == null}"
+                                        th:if="${actions.createCounterpartAllowed}"
                                         th:href="@{/entries/{id}/transfer-counterpart(id=${entry.id},returnTo=${returnTo})}">
                                         <i data-lucide="repeat" aria-hidden="true"></i>
                                         <span th:text="#{entries.list.action.createCounterpart}"></span>
                                     </a>
                                     <button
                                         class="action-menu-item"
-                                        th:if="${transferViewsByEntryId[entry.id] == null}"
+                                        th:if="${actions.linkTransferAllowed}"
                                         type="button"
                                         th:attr="hx-post=@{/entries/{id}/transfer-link(id=${entry.id})}"
                                         data-preserve-scroll="true"
@@ -386,7 +377,7 @@
                                         <span th:text="#{entries.list.action.linkTransfer}"></span>
                                     </button>
                                     <form
-                                        th:if="${transferViewsByEntryId[entry.id] != null}"
+                                        th:if="${actions.unlinkTransferAllowed}"
                                         th:action="@{/entries/{id}/transfer-unlink(id=${entry.id})}"
                                         method="post">
                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -401,7 +392,7 @@
                                     </form>
                                     <button
                                         class="action-menu-item action-menu-item-danger"
-                                        th:if="${transferViewsByEntryId[entry.id] == null}"
+                                        th:if="${actions.deleteAllowed}"
                                         type="button"
                                         th:attr="hx-post=@{/entries/{id}/delete(id=${entry.id})},hx-confirm=#{entries.list.confirm.delete}"
                                         hx-target="#entries-listing"

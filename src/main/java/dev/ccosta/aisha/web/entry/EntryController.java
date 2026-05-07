@@ -7,6 +7,8 @@ import dev.ccosta.aisha.application.category.CategoryNotFoundException;
 import dev.ccosta.aisha.application.category.CategoryService;
 import dev.ccosta.aisha.application.entry.EntryCategorySelection;
 import dev.ccosta.aisha.application.entry.EntryInUseException;
+import dev.ccosta.aisha.application.entry.EntryRelationSummary;
+import dev.ccosta.aisha.application.entry.EntryRelationSummaryService;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
 import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
@@ -15,13 +17,9 @@ import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivatio
 import dev.ccosta.aisha.application.entry.EntryNotFoundException;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.application.entry.transfer.EntryTransferView;
-import dev.ccosta.aisha.application.investment.BrokerageNoteService;
-import dev.ccosta.aisha.application.investment.InvestmentOperationService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.investment.BrokerageNote;
-import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.infrastructure.logging.CorrelationIdFilter;
 import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
@@ -62,8 +60,7 @@ public class EntryController {
     private final CategoryService categoryService;
     private final EntryCategorySuggestionService entryCategorySuggestionService;
     private final EntryTransferService entryTransferService;
-    private final BrokerageNoteService brokerageNoteService;
-    private final InvestmentOperationService investmentOperationService;
+    private final EntryRelationSummaryService entryRelationSummaryService;
     private final EntryListingModelAssembler listingModelAssembler;
     private final MessageSource messageSource;
 
@@ -73,8 +70,7 @@ public class EntryController {
         CategoryService categoryService,
         EntryCategorySuggestionService entryCategorySuggestionService,
         EntryTransferService entryTransferService,
-        BrokerageNoteService brokerageNoteService,
-        InvestmentOperationService investmentOperationService,
+        EntryRelationSummaryService entryRelationSummaryService,
         EntryListingModelAssembler listingModelAssembler,
         MessageSource messageSource
     ) {
@@ -83,8 +79,7 @@ public class EntryController {
         this.categoryService = categoryService;
         this.entryCategorySuggestionService = entryCategorySuggestionService;
         this.entryTransferService = entryTransferService;
-        this.brokerageNoteService = brokerageNoteService;
-        this.investmentOperationService = investmentOperationService;
+        this.entryRelationSummaryService = entryRelationSummaryService;
         this.listingModelAssembler = listingModelAssembler;
         this.messageSource = messageSource;
     }
@@ -151,9 +146,9 @@ public class EntryController {
         Model model
     ) {
         Entry entry = entryService.findById(id);
+        EntryRelationSummary relationSummary = entryRelationSummaryService.summarize(entry);
         model.addAttribute("entry", entry);
-        fillTransferEntryState(model, entry);
-        fillEntryDetailsState(model, entry);
+        fillEntryDetailsState(model, entry, relationSummary);
         model.addAttribute("returnTo", ReturnPathSupport.resolveReturnPath(returnTo, "/entries"));
         return "entries/details";
     }
@@ -594,7 +589,7 @@ public class EntryController {
         model.addAttribute("entryRegistrationDate", entry.getRegistrationDate());
     }
 
-    private void fillEntryDetailsState(Model model, Entry entry) {
+    private void fillEntryDetailsState(Model model, Entry entry, EntryRelationSummary relationSummary) {
         Locale locale = LocaleContextHolder.getLocale();
         String detailReturnPath = "/entries/" + entry.getId();
 
@@ -603,8 +598,13 @@ public class EntryController {
             "entryDetailsHeading",
             messageSource.getMessage("entries.details.heading", new Object[] {entry.getId()}, locale)
         );
+        EntryActionState actionState = EntryActionState.from(entry, relationSummary);
+        model.addAttribute("entryActionState", actionState);
         model.addAttribute("entryTransfer", entry.isTransfer());
         model.addAttribute("entryRegular", !entry.isTransfer());
+        model.addAttribute("entryRelationSummary", relationSummary);
+        model.addAttribute("transferView", relationSummary.transferView());
+        model.addAttribute("transferEntry", relationSummary.hasTransfer());
         model.addAttribute("entryAccountTitle", entry.getAccount().getTitle());
         model.addAttribute("entryCategoryTitle", displayText(entry.getCategory() == null ? null : entry.getCategory().getTitle()));
         model.addAttribute(
@@ -626,24 +626,12 @@ public class EntryController {
         model.addAttribute("entryExternalIdLabel", displayText(entry.getExternalId()));
         model.addAttribute("entryNotesLabel", displayText(entry.getNotes()));
 
-        var transferView = model.getAttribute("transferView");
-        if (transferView instanceof EntryTransferView view) {
-            model.addAttribute("transferCounterpartEntryId", view.counterpartEntryId());
-        } else {
-            model.addAttribute("transferCounterpartEntryId", null);
-        }
-
-        var investmentOperationLink = investmentOperationService.findLinkByEntryId(entry.getId()).orElse(null);
-        var netEntryBrokerageNote = brokerageNoteService.findByNetEntryId(entry.getId()).orElse(null);
-        model.addAttribute("investmentOperationLink", investmentOperationLink);
         model.addAttribute(
-            "linkedInvestmentOperationId",
-            investmentOperationLink == null ? null : investmentOperationLink.getOperation().getId()
+            "transferCounterpartEntryId",
+            relationSummary.transferView() == null ? null : relationSummary.transferView().counterpartEntryId()
         );
-        model.addAttribute(
-            "linkedBrokerageNoteId",
-            resolveLinkedBrokerageNoteId(investmentOperationLink, netEntryBrokerageNote)
-        );
+        model.addAttribute("linkedInvestmentOperationId", relationSummary.investmentOperationId());
+        model.addAttribute("linkedBrokerageNoteId", relationSummary.brokerageNoteId());
     }
 
     private void fillTransferEntryState(Model model, Entry entry) {
@@ -672,16 +660,6 @@ public class EntryController {
         percentFormat.setMaximumFractionDigits(0);
         percentFormat.setMinimumFractionDigits(0);
         return percentFormat.format(confidence);
-    }
-
-    private Long resolveLinkedBrokerageNoteId(InvestmentOperationEntryLink investmentOperationLink, BrokerageNote netEntryBrokerageNote) {
-        if (netEntryBrokerageNote != null) {
-            return netEntryBrokerageNote.getId();
-        }
-        if (investmentOperationLink != null && investmentOperationLink.getOperation().getBrokerageNote() != null) {
-            return investmentOperationLink.getOperation().getBrokerageNote().getId();
-        }
-        return null;
     }
 
     private void fillEntryFormAccountOptions(Model model, Long selectedAccountId) {
