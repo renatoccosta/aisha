@@ -37,6 +37,16 @@
                 <p th:text="#{admin.models.subtitle}"></p>
             </div>
         </a>
+
+        <a class="card admin-nav-card" th:href="@{/admin/system-backup}">
+            <div class="admin-nav-card-icon">
+                <i data-lucide="archive" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 th:text="#{admin.backup.heading}"></h3>
+                <p th:text="#{admin.backup.subtitle}"></p>
+            </div>
+        </a>
     </section>
 </main>
 <footer th:replace="~{fragments/footer :: appFooter}"></footer>

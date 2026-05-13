@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{admin.backup.pageTitle}"></title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/aisha-logo-simple.svg}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<header th:replace="~{fragments/header :: topbar(subtitle=#{admin.header.subtitle})}"></header>
+
+<main class="wrap">
+    <section class="card form-card">
+        <h2 th:text="#{admin.backup.heading}"></h2>
+        <p th:text="#{admin.backup.subtitle}"></p>
+    </section>
+
+    <section
+        id="system-backup-status"
+        th:fragment="systemBackupStatus"
+        class="card import-result-card"
+        hx-get="/admin/system-backup/fragments/status"
+        hx-trigger="every 3s"
+        hx-target="#system-backup-status"
+        hx-swap="outerHTML">
+        <div class="section-heading">
+            <div>
+                <h3 th:text="#{admin.backup.status.heading}"></h3>
+                <p th:text="#{admin.backup.status.subtitle}"></p>
+            </div>
+            <div class="actions-inline">
+                <form method="post" th:action="@{/admin/system-backup/jobs}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button class="btn btn-primary" type="submit" th:disabled="${backupSnapshot.running()}">
+                        <i data-lucide="database-backup" aria-hidden="true"></i>
+                        <span th:text="#{admin.backup.action.run}"></span>
+                    </button>
+                </form>
+                <a class="btn btn-secondary"
+                   th:if="${backupSnapshot.downloadable()}"
+                   th:href="@{/admin/system-backup/download}">
+                    <i data-lucide="download" aria-hidden="true"></i>
+                    <span th:text="#{admin.backup.action.download}"></span>
+                </a>
+            </div>
+        </div>
+
+        <p class="helper" th:if="${backupRequested}" th:text="#{admin.backup.requested}"></p>
+
+        <div class="cell-stack">
+            <span class="status-chip" th:if="${backupSnapshot.status.name() == 'IDLE'}" th:text="#{admin.backup.status.idle}"></span>
+            <span class="status-chip" th:if="${backupSnapshot.status.name() == 'RUNNING'}" th:text="#{admin.backup.status.running}"></span>
+            <span class="status-chip" th:if="${backupSnapshot.status.name() == 'SUCCESS'}" th:text="#{admin.backup.status.success}"></span>
+            <span class="status-chip" th:if="${backupSnapshot.status.name() == 'FAILED'}" th:text="#{admin.backup.status.failed}"></span>
+        </div>
+
+        <dl class="import-summary-grid">
+            <div>
+                <dt th:text="#{admin.backup.summary.startedAt}"></dt>
+                <dd th:text="${backupSnapshot.startedAt() != null ? #temporals.format(backupSnapshot.startedAt(), 'dd/MM/yyyy HH:mm:ss') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.backup.summary.completedAt}"></dt>
+                <dd th:text="${backupSnapshot.completedAt() != null ? #temporals.format(backupSnapshot.completedAt(), 'dd/MM/yyyy HH:mm:ss') : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.backup.summary.requestedBy}"></dt>
+                <dd th:text="${backupSnapshot.requestedBy() != null ? backupSnapshot.requestedBy() : '-'}"></dd>
+            </div>
+            <div>
+                <dt th:text="#{admin.backup.summary.file}"></dt>
+                <dd th:text="${backupSnapshot.backupFilename() != null ? backupSnapshot.backupFilename() : '-'}"></dd>
+            </div>
+        </dl>
+
+        <p class="helper" th:if="${backupSnapshot.running()}" th:text="#{admin.backup.runningWarning}"></p>
+        <p class="helper"
+           th:if="${backupSnapshot.failureMessage() != null and !#strings.isEmpty(backupSnapshot.failureMessage())}"
+           th:text="#{admin.backup.failure(${backupSnapshot.failureMessage()})}"></p>
+    </section>
+</main>
+<footer th:replace="~{fragments/footer :: appFooter}"></footer>
+</body>
+</html>

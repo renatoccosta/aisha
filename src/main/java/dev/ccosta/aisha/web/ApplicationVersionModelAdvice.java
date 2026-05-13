@@ -1,9 +1,10 @@
 package dev.ccosta.aisha.web;
 
+import dev.ccosta.aisha.application.ApplicationVersionProvider;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -16,15 +17,18 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @ControllerAdvice
 public class ApplicationVersionModelAdvice {
 
-    private final Optional<BuildProperties> buildProperties;
-    private final String fallbackVersionLabel;
+    private final ApplicationVersionProvider applicationVersionProvider;
 
     public ApplicationVersionModelAdvice(
         Optional<BuildProperties> buildProperties,
         @Value("${aisha.app.version-fallback:desenvolvimento}") String fallbackVersionLabel
     ) {
-        this.buildProperties = buildProperties;
-        this.fallbackVersionLabel = fallbackVersionLabel;
+        this(new ApplicationVersionProvider(buildProperties, fallbackVersionLabel));
+    }
+
+    @Autowired
+    public ApplicationVersionModelAdvice(ApplicationVersionProvider applicationVersionProvider) {
+        this.applicationVersionProvider = applicationVersionProvider;
     }
 
     /**
@@ -34,9 +38,6 @@ public class ApplicationVersionModelAdvice {
      */
     @ModelAttribute("applicationVersion")
     public String applicationVersion() {
-        return buildProperties
-            .map(BuildProperties::getVersion)
-            .filter(StringUtils::hasText)
-            .orElse(fallbackVersionLabel);
+        return applicationVersionProvider.currentVersion();
     }
 }
