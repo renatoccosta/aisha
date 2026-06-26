@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.Map;
@@ -23,9 +22,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SystemBackupArchiveService {
 
-    private static final DateTimeFormatter FILENAME_TIMESTAMP = DateTimeFormatter
-        .ofPattern("yyyyMMdd-HHmmss")
-        .withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter FILENAME_TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     private final DatabaseDumpService databaseDumpService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -62,7 +59,7 @@ public class SystemBackupArchiveService {
             workDirectory = Files.createTempDirectory(backupDirectory, "work-");
             DatabaseBackupDump dump = databaseDumpService.dump(workDirectory);
             Instant completedAt = clock.instant();
-            String backupFilename = "aisha-backup-" + FILENAME_TIMESTAMP.format(startedAt) + ".zip";
+            String backupFilename = "aisha-backup-" + FILENAME_TIMESTAMP.withZone(clock.getZone()).format(startedAt) + ".zip";
             Path backupFile = backupDirectory.resolve(backupFilename);
             SystemBackupManifest manifest = new SystemBackupManifest(
                 startedAt.toString(),
