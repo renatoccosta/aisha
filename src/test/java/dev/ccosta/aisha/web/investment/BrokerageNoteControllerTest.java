@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ConcurrentModel;
 
@@ -53,6 +55,9 @@ class BrokerageNoteControllerTest {
         when(accountService.listVisibleForEntryFilter(globalDateFilter.getStartDate())).thenReturn(List.of(account));
 
         ConcurrentModel model = new ConcurrentModel();
+        MockHttpServletRequest request = htmxRequest();
+        request.setQueryString("accountId=10&tradeStartDate=2026-04-05&tradeEndDate=2026-04-20&noteNumber=123");
+        MockHttpServletResponse response = new MockHttpServletResponse();
         String view = brokerageNoteController.table(
             globalDateFilter,
             10L,
@@ -61,10 +66,14 @@ class BrokerageNoteControllerTest {
             " 123 ",
             null,
             null,
+            request,
+            response,
             model
         );
 
         assertThat(view).isEqualTo("investments/brokerage-notes/list :: table");
+        assertThat(response.getHeader("HX-Push-Url"))
+            .isEqualTo("/investments/brokerage-notes?accountId=10&tradeStartDate=2026-04-05&tradeEndDate=2026-04-20&noteNumber=123");
         assertThat(model.getAttribute("brokerageNotes")).isEqualTo(List.of(note));
         assertThat(model.getAttribute("selectedAccountId")).isEqualTo(10L);
         assertThat(model.getAttribute("selectedNoteNumber")).isEqualTo("123");
@@ -108,5 +117,11 @@ class BrokerageNoteControllerTest {
         ReflectionTestUtils.setField(note, "id", noteId);
         note.setNetEntry(entry);
         return note;
+    }
+
+    private MockHttpServletRequest htmxRequest() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("HX-Request", "true");
+        return request;
     }
 }

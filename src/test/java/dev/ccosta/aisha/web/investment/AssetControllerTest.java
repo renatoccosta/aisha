@@ -26,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.validation.BeanPropertyBindingResult;
 
@@ -174,9 +175,14 @@ class AssetControllerTest {
             .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
 
         ConcurrentModel model = new ConcurrentModel();
-        String view = assetController.table(AssetType.STOCK, " Petróleo ", null, null, model);
+        MockHttpServletRequest request = htmxRequest();
+        request.setQueryString("type=STOCK&description=Petr%C3%B3leo&page=0&size=25");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String view = assetController.table(AssetType.STOCK, " Petróleo ", null, null, request, response, model);
 
         assertThat(view).isEqualTo("investments/assets/list :: table");
+        assertThat(response.getHeader("HX-Push-Url"))
+            .isEqualTo("/investments/assets?type=STOCK&description=Petr%C3%B3leo&page=0&size=25");
         assertThat(model.getAttribute("selectedAssetType")).isEqualTo(AssetType.STOCK);
         assertThat(model.getAttribute("selectedDescription")).isEqualTo("Petróleo");
         verify(assetService).listPageOrdered(AssetType.STOCK, "Petróleo", 0, 25);

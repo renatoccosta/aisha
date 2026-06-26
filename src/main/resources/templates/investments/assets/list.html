@@ -80,7 +80,8 @@
                     th:action="@{/investments/assets}"
                     hx-get="/investments/assets/fragments/table"
                     hx-target="#assets-listing"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="type" th:value="${selectedAssetType}">
                     <input type="hidden" name="description" th:value="${selectedDescription}">
                     <input type="hidden" name="page" value="0">
@@ -101,7 +102,8 @@
                     th:action="@{/investments/assets}"
                     hx-get="/investments/assets/fragments/table"
                     hx-target="#assets-listing"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="type" th:value="${selectedAssetType}">
                     <input type="hidden" name="description" th:value="${selectedDescription}">
                     <input type="hidden" name="size" th:value="${pagination.pageSize}">

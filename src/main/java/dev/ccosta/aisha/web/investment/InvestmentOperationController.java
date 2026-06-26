@@ -24,6 +24,7 @@ import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -118,9 +120,12 @@ public class InvestmentOperationController {
         @RequestParam(name = "brokerageNoteId", required = false) Long brokerageNoteId,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        HttpServletResponse response,
         Model model
     ) {
         fillListing(model, globalDateFilter, asset, accountId, operationType, brokerageNoteId, page, size);
+        setCanonicalPushUrl(request, response);
         return "investments/operations/list :: table";
     }
 
@@ -538,6 +543,19 @@ public class InvestmentOperationController {
 
     private boolean isHtmx(HttpServletRequest request) {
         return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
+    }
+
+    private void setCanonicalPushUrl(HttpServletRequest request, HttpServletResponse response) {
+        if (!isHtmx(request)) {
+            return;
+        }
+
+        String canonicalPath = "/investments/operations";
+        String queryString = request.getQueryString();
+        if (StringUtils.hasText(queryString)) {
+            canonicalPath += "?" + queryString;
+        }
+        response.setHeader("HX-Push-Url", canonicalPath);
     }
 
     private InvestmentOperation toDomain(InvestmentOperationForm form) {

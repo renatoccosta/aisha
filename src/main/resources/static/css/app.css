@@ -652,6 +652,10 @@ p {
   overflow-x: auto;
 }
 
+.table-wrap:has(.action-menu[open]) {
+  overflow: visible;
+}
+
 .table-select-all-toggle {
   border: 0;
   padding: 0;
@@ -796,10 +800,16 @@ th {
 
   .responsive-list tbody tr {
     display: block;
+    position: relative;
     border: 1px solid var(--line);
     border-radius: 12px;
     background: var(--color-bg-subtle);
     overflow: hidden;
+  }
+
+  .responsive-list tbody tr:has(.action-menu[open]) {
+    overflow: visible;
+    z-index: 30;
   }
 
   .responsive-list tbody tr.is-selectable:hover {
@@ -825,6 +835,22 @@ th {
     align-items: center;
     padding: 0.7rem;
     border-bottom: 1px solid var(--line);
+  }
+
+  .responsive-list tbody td.cell-actions {
+    overflow: visible;
+  }
+
+  .responsive-list tbody td.cell-actions .action-menu-row {
+    justify-self: start;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .responsive-list tbody td.cell-actions .action-menu-panel {
+    right: auto;
+    left: 0;
+    max-width: min(76vw, 22rem);
   }
 
   .responsive-list tbody tr td:last-child {

@@ -39,6 +39,7 @@ Adjust at least:
 - `AISHA_SECURITY_SEED_PASSWORD`
 - `TZ` (default in Dockerfile: `UTC`)
 - `JAVA_OPTS` (default in Dockerfile includes container runtime flags)
+- backup volume mapping for `/var/lib/aisha/backups`
 
 Start services:
 
@@ -59,7 +60,38 @@ The image starts with support for the profiles below:
 
 Schema is applied automatically at startup by Flyway (`db/migration`).
 
-## 4) Version upgrade
+## 4) Backup persistence
+
+In the `prod` profile, server-side backup archives are written to:
+
+```text
+/var/lib/aisha/backups
+```
+
+This path must be backed by a Docker volume or a host bind mount. Otherwise, generated backup files are stored only in the container filesystem and are lost when the container is removed.
+
+The example Compose file maps a named volume:
+
+```yaml
+services:
+  aisha:
+    volumes:
+      - backup_data:/var/lib/aisha/backups
+
+volumes:
+  backup_data:
+```
+
+For host-managed backups, replace the named volume with a bind mount, for example:
+
+```yaml
+services:
+  aisha:
+    volumes:
+      - ./data/backups:/var/lib/aisha/backups
+```
+
+## 5) Version upgrade
 
 To upgrade:
 
@@ -71,7 +103,7 @@ docker compose pull
 docker compose up -d
 ```
 
-## 5) Automated release flow (CI/CD)
+## 6) Automated release flow (CI/CD)
 
 A release is triggered when a PR is merged into `main` with one of these labels:
 
@@ -88,7 +120,7 @@ Pipeline steps:
    - `ghcr.io/<owner>/<repo>:X.Y.Z`
    - `ghcr.io/<owner>/<repo>:latest`
 
-## 6) Snapshot release flow (manual)
+## 7) Snapshot release flow (manual)
 
 To generate a manual snapshot release, run workflow:
 
@@ -119,7 +151,7 @@ GitHub Release publication:
   - final release: `aisha-X.Y.Z.jar`
   - snapshot: `aisha-<nextVersion>-snapshot.<branch>.<shortsha>.jar`
 
-## 7) Manual final release flow
+## 8) Manual final release flow
 
 To generate a manual final release from the current `main` state, run:
 
