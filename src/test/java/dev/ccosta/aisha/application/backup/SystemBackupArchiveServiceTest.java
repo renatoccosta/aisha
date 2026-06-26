@@ -43,7 +43,7 @@ class SystemBackupArchiveServiceTest {
             "HSQLDB SCRIPT"
         ));
         ObjectMapper objectMapper = new ObjectMapper();
-        Clock clock = Clock.fixed(Instant.parse("2026-05-10T13:45:30Z"), ZoneId.of("UTC"));
+        Clock clock = Clock.fixed(Instant.parse("2026-05-10T13:45:30Z"), ZoneId.of("America/Sao_Paulo"));
         SystemBackupArchiveService service = new SystemBackupArchiveService(
             databaseDumpService,
             clock,
