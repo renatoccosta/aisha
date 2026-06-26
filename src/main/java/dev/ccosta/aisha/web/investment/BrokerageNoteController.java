@@ -11,6 +11,7 @@ import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import dev.ccosta.aisha.web.timefilter.DateFilterState;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -93,9 +95,12 @@ public class BrokerageNoteController {
         @RequestParam(name = "noteNumber", required = false) String noteNumber,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        HttpServletResponse response,
         Model model
     ) {
         fillListing(model, globalDateFilter, accountId, tradeStartDate, tradeEndDate, noteNumber, page, size);
+        setCanonicalPushUrl(request, response);
         return "investments/brokerage-notes/list :: table";
     }
 
@@ -202,5 +207,22 @@ public class BrokerageNoteController {
             return null;
         }
         return value.trim();
+    }
+
+    private boolean isHtmx(HttpServletRequest request) {
+        return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
+    }
+
+    private void setCanonicalPushUrl(HttpServletRequest request, HttpServletResponse response) {
+        if (!isHtmx(request)) {
+            return;
+        }
+
+        String canonicalPath = "/investments/brokerage-notes";
+        String queryString = request.getQueryString();
+        if (StringUtils.hasText(queryString)) {
+            canonicalPath += "?" + queryString;
+        }
+        response.setHeader("HX-Push-Url", canonicalPath);
     }
 }

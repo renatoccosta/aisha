@@ -33,6 +33,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -313,9 +314,25 @@ class InvestmentOperationControllerTest {
             .thenReturn(new PagedResult<>(List.of(), 0, 25, 0, 0));
 
         ConcurrentModel model = new ConcurrentModel();
-        String view = operationController.table(globalDateFilter, " Petróleo ", 20L, InvestmentOperationType.BUY, null, null, null, model);
+        MockHttpServletRequest request = htmxRequest();
+        request.setQueryString("asset=Petr%C3%B3leo&accountId=20&operationType=BUY&page=0&size=25");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String view = operationController.table(
+            globalDateFilter,
+            " Petróleo ",
+            20L,
+            InvestmentOperationType.BUY,
+            null,
+            null,
+            null,
+            request,
+            response,
+            model
+        );
 
         assertThat(view).isEqualTo("investments/operations/list :: table");
+        assertThat(response.getHeader("HX-Push-Url"))
+            .isEqualTo("/investments/operations?asset=Petr%C3%B3leo&accountId=20&operationType=BUY&page=0&size=25");
         assertThat(model.getAttribute("selectedAsset")).isEqualTo("Petróleo");
         assertThat(model.getAttribute("selectedAccountId")).isEqualTo(20L);
         assertThat(model.getAttribute("selectedOperationType")).isEqualTo(InvestmentOperationType.BUY);

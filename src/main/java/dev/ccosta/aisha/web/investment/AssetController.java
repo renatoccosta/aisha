@@ -13,6 +13,7 @@ import dev.ccosta.aisha.web.navigation.ReturnPathSupport;
 import dev.ccosta.aisha.web.pagination.PaginationSupport;
 import dev.ccosta.aisha.web.pagination.PaginationView;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -81,9 +83,12 @@ public class AssetController {
         @RequestParam(name = "description", required = false) String description,
         @RequestParam(name = "page", required = false) Integer page,
         @RequestParam(name = "size", required = false) Integer size,
+        HttpServletRequest request,
+        HttpServletResponse response,
         Model model
     ) {
         fillListing(model, type, description, page, size);
+        setCanonicalPushUrl(request, response);
         return "investments/assets/list :: table";
     }
 
@@ -375,6 +380,19 @@ public class AssetController {
 
     private boolean isHtmx(HttpServletRequest request) {
         return "true".equalsIgnoreCase(request.getHeader("HX-Request"));
+    }
+
+    private void setCanonicalPushUrl(HttpServletRequest request, HttpServletResponse response) {
+        if (!isHtmx(request)) {
+            return;
+        }
+
+        String canonicalPath = "/investments/assets";
+        String queryString = request.getQueryString();
+        if (StringUtils.hasText(queryString)) {
+            canonicalPath += "?" + queryString;
+        }
+        response.setHeader("HX-Push-Url", canonicalPath);
     }
 
     private Asset toDomain(AssetForm form) {

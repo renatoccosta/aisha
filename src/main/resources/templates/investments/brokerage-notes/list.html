@@ -86,7 +86,8 @@
                         th:action="@{/investments/brokerage-notes}"
                         hx-get="/investments/brokerage-notes/fragments/table"
                         hx-target="#brokerage-notes-listing"
-                        hx-swap="outerHTML">
+                        hx-swap="outerHTML"
+                        hx-push-url="true">
                         <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                         <input type="hidden" name="tradeStartDate" th:value="${selectedTradeStartDate}">
                         <input type="hidden" name="tradeEndDate" th:value="${selectedTradeEndDate}">
@@ -109,7 +110,8 @@
                         th:action="@{/investments/brokerage-notes}"
                         hx-get="/investments/brokerage-notes/fragments/table"
                         hx-target="#brokerage-notes-listing"
-                        hx-swap="outerHTML">
+                        hx-swap="outerHTML"
+                        hx-push-url="true">
                         <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                         <input type="hidden" name="tradeStartDate" th:value="${selectedTradeStartDate}">
                         <input type="hidden" name="tradeEndDate" th:value="${selectedTradeEndDate}">

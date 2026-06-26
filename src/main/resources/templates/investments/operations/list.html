@@ -95,7 +95,8 @@
                     th:action="@{/investments/operations}"
                     hx-get="/investments/operations/fragments/table"
                     hx-target="#operations-listing"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="asset" th:value="${selectedAsset}">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="operationType" th:value="${selectedOperationType}">
@@ -118,7 +119,8 @@
                     th:action="@{/investments/operations}"
                     hx-get="/investments/operations/fragments/table"
                     hx-target="#operations-listing"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-push-url="true">
                     <input type="hidden" name="asset" th:value="${selectedAsset}">
                     <input type="hidden" name="accountId" th:value="${selectedAccountId}">
                     <input type="hidden" name="operationType" th:value="${selectedOperationType}">
