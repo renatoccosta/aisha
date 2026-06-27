@@ -71,6 +71,9 @@ public class InvestmentOperation {
     @Column(name = "notes", length = 1000)
     private String notes;
 
+    @Column(name = "indexer_spread", precision = 9, scale = 6)
+    private BigDecimal indexerSpread;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "source_type", nullable = false, length = 30)
     private InvestmentOperationSourceType sourceType = InvestmentOperationSourceType.MANUAL;
@@ -189,6 +192,14 @@ public class InvestmentOperation {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public BigDecimal getIndexerSpread() {
+        return indexerSpread;
+    }
+
+    public void setIndexerSpread(BigDecimal indexerSpread) {
+        this.indexerSpread = indexerSpread;
     }
 
     public InvestmentOperationSourceType getSourceType() {

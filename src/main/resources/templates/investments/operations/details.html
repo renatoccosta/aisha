@@ -132,6 +132,15 @@
                 </dt>
                 <dd th:text="${operation.settlementDate != null ? #temporals.format(operation.settlementDate, 'dd/MM/yyyy') : '-'}"></dd>
             </div>
+            <div>
+                <dt>
+                    <span class="table-heading-label">
+                        <i data-lucide="percent" aria-hidden="true"></i>
+                        <span th:text="#{investments.operations.details.field.indexerSpread}"></span>
+                    </span>
+                </dt>
+                <dd th:text="${operation.indexerSpread != null ? #numbers.formatDecimal(operation.indexerSpread, 1, 'POINT', 6, 'COMMA') + '%' : '-'}"></dd>
+            </div>
         </dl>
     </section>
 

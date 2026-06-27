@@ -571,6 +571,7 @@ public class InvestmentOperationController {
         operation.setTaxes(form.getTaxes());
         operation.setCurrency(form.getCurrency());
         operation.setNotes(form.getNotes());
+        operation.setIndexerSpread(form.getIndexerSpread());
         operation.setSourceType(form.getSourceType());
         return operation;
     }
@@ -614,6 +615,7 @@ public class InvestmentOperationController {
         form.setTaxes(operation.getTaxes());
         form.setCurrency(operation.getCurrency());
         form.setNotes(operation.getNotes());
+        form.setIndexerSpread(operation.getIndexerSpread());
         form.setSourceType(operation.getSourceType());
         if (operation.getBrokerageNote() != null) {
             form.setBrokerageNoteId(operation.getBrokerageNote().getId());

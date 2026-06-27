@@ -91,6 +91,28 @@ services:
       - ./data/backups:/var/lib/aisha/backups
 ```
 
+When using a host bind mount, ensure the host path is writable by the container user. The image runs as the non-root `aisha` user, and the container path `/var/lib/aisha/backups` is owned by that user inside the image.
+
+Useful checks:
+
+```bash
+docker compose exec aisha id
+docker compose exec aisha ls -ld /var/lib/aisha /var/lib/aisha/backups
+docker compose exec aisha sh -c 'touch /var/lib/aisha/backups/test-write && rm /var/lib/aisha/backups/test-write'
+```
+
+If the bind-mounted host directory is not writable by the reported UID/GID, adjust ownership or ACLs on the host/NAS path. For example:
+
+```bash
+sudo chown -R <uid>:<gid> ./data/backups
+```
+
+After adding or changing a volume mapping, recreate the application container so Docker applies the mount:
+
+```bash
+docker compose up -d --force-recreate aisha
+```
+
 ## 5) Version upgrade
 
 To upgrade:

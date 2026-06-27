@@ -95,6 +95,7 @@ class InvestmentOperationControllerTest {
         assertThat(operationCaptor.getValue().getOperationType()).isEqualTo(InvestmentOperationType.BUY);
         assertThat(operationCaptor.getValue().getTradeDate()).isEqualTo(LocalDate.of(2026, 4, 20));
         assertThat(operationCaptor.getValue().getNetAmount()).isEqualByComparingTo("125.50");
+        assertThat(operationCaptor.getValue().getIndexerSpread()).isEqualByComparingTo("0.120000");
         assertThat(linksCaptor.getValue()).extracting(InvestmentOperationEntryLinkRequest::entryId).containsExactly(30L);
     }
 
@@ -371,6 +372,7 @@ class InvestmentOperationControllerTest {
         form.setUnitPrice(new BigDecimal("12.55000000"));
         form.setNetAmount(new BigDecimal("125.50"));
         form.setCurrency("BRL");
+        form.setIndexerSpread(new BigDecimal("0.120000"));
         form.setSourceType(InvestmentOperationSourceType.MANUAL);
         return form;
     }

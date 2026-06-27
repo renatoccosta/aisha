@@ -206,6 +206,33 @@ class InvestmentOperationServiceTest {
     }
 
     @Test
+    void shouldUpdateOperationIndexerSpread() {
+        Asset asset = new Asset();
+        Account account = new Account();
+        InvestmentOperation existing = new InvestmentOperation();
+        existing.setOperationType(InvestmentOperationType.BUY);
+        existing.setTradeDate(LocalDate.of(2026, 4, 20));
+        existing.setCurrency("BRL");
+        setId(existing, 30L);
+
+        InvestmentOperation updatedData = new InvestmentOperation();
+        updatedData.setOperationType(InvestmentOperationType.BUY);
+        updatedData.setTradeDate(LocalDate.of(2026, 4, 21));
+        updatedData.setCurrency("BRL");
+        updatedData.setIndexerSpread(new BigDecimal("0.120000"));
+
+        when(investmentOperationRepository.findById(30L)).thenReturn(Optional.of(existing));
+        when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
+        when(accountService.findById(20L)).thenReturn(account);
+        when(investmentOperationRepository.save(existing)).thenReturn(existing);
+
+        InvestmentOperation updated = investmentOperationService.update(30L, updatedData, 10L, 20L, List.of());
+
+        assertThat(updated.getIndexerSpread()).isEqualByComparingTo("0.120000");
+        verify(linkRepository).deleteByOperationId(30L);
+    }
+
+    @Test
     void shouldRejectBrokerNoteOperationWithoutBrokerageNote() {
         Asset asset = new Asset();
         Account account = new Account();

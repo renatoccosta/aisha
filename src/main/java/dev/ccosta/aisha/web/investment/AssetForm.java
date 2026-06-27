@@ -42,8 +42,8 @@ public class AssetForm {
     @NotNull(message = "{assetForm.indexerType.notNull}")
     private AssetIndexerType indexerType = AssetIndexerType.NONE;
 
-    @Size(max = 80, message = "{assetForm.indexerSpread.size}")
-    private String indexerSpread;
+    @Digits(integer = 3, fraction = 6, message = "{assetForm.indexerSpread.digits}")
+    private BigDecimal indexerSpread;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate openingPositionDate;
@@ -121,11 +121,11 @@ public class AssetForm {
         this.indexerType = indexerType;
     }
 
-    public String getIndexerSpread() {
+    public BigDecimal getIndexerSpread() {
         return indexerSpread;
     }
 
-    public void setIndexerSpread(String indexerSpread) {
+    public void setIndexerSpread(BigDecimal indexerSpread) {
         this.indexerSpread = indexerSpread;
     }
 

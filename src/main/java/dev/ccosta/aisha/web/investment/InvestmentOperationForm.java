@@ -62,6 +62,9 @@ public class InvestmentOperationForm {
     @Size(max = 1000, message = "{investmentOperationForm.notes.size}")
     private String notes;
 
+    @Digits(integer = 3, fraction = 6, message = "{investmentOperationForm.indexerSpread.digits}")
+    private BigDecimal indexerSpread;
+
     @NotNull(message = "{investmentOperationForm.sourceType.notNull}")
     private InvestmentOperationSourceType sourceType = InvestmentOperationSourceType.MANUAL;
 
@@ -179,6 +182,14 @@ public class InvestmentOperationForm {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public BigDecimal getIndexerSpread() {
+        return indexerSpread;
+    }
+
+    public void setIndexerSpread(BigDecimal indexerSpread) {
+        this.indexerSpread = indexerSpread;
     }
 
     public InvestmentOperationSourceType getSourceType() {

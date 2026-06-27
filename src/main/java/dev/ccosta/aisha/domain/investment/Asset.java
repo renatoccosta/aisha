@@ -51,8 +51,8 @@ public class Asset {
     @Column(name = "indexer_type", nullable = false, length = 20)
     private AssetIndexerType indexerType = AssetIndexerType.NONE;
 
-    @Column(name = "indexer_spread", length = 80)
-    private String indexerSpread;
+    @Column(name = "indexer_spread", precision = 9, scale = 6)
+    private BigDecimal indexerSpread;
 
     @OneToOne(mappedBy = "asset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private OpeningPosition openingPosition;
@@ -125,11 +125,11 @@ public class Asset {
         this.indexerType = indexerType == null ? AssetIndexerType.NONE : indexerType;
     }
 
-    public String getIndexerSpread() {
+    public BigDecimal getIndexerSpread() {
         return indexerSpread;
     }
 
-    public void setIndexerSpread(String indexerSpread) {
+    public void setIndexerSpread(BigDecimal indexerSpread) {
         this.indexerSpread = indexerSpread;
     }
 

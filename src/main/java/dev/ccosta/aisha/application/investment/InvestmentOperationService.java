@@ -233,6 +233,7 @@ public class InvestmentOperationService {
         existing.setTaxes(updatedData.getTaxes());
         existing.setCurrency(updatedData.getCurrency());
         existing.setNotes(updatedData.getNotes());
+        existing.setIndexerSpread(updatedData.getIndexerSpread());
         existing.setSourceType(updatedData.getSourceType());
         applyDefaults(existing);
         validate(existing);
