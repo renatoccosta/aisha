@@ -87,6 +87,11 @@ public class InvestmentOperationRepositoryAdapter implements InvestmentOperation
     }
 
     @Override
+    public boolean existsByExternalId(String externalId) {
+        return jpaInvestmentOperationRepository.existsByExternalId(externalId);
+    }
+
+    @Override
     public boolean existsByAssetId(Long assetId) {
         return jpaInvestmentOperationRepository.existsByAssetId(assetId);
     }

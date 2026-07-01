@@ -83,5 +83,7 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
 
     boolean existsByAssetId(Long assetId);
 
+    boolean existsByExternalId(String externalId);
+
     boolean existsByAccountId(Long accountId);
 }

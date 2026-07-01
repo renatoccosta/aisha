@@ -1,19 +1,25 @@
 package dev.ccosta.aisha.application.investment;
+
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
 import dev.ccosta.aisha.domain.investment.BrokerageNote;
 import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
+import dev.ccosta.aisha.domain.investment.InvestmentEntryEffectPolicy;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -32,10 +38,13 @@ import org.springframework.util.StringUtils;
 @Service
 public class InvestmentOperationService {
 
+    private static final int MONEY_SCALE = 2;
+
     private final InvestmentOperationRepository investmentOperationRepository;
     private final InvestmentOperationEntryLinkRepository linkRepository;
     private final AssetRepository assetRepository;
     private final BrokerageNoteRepository brokerageNoteRepository;
+    private final EntryRepository entryRepository;
     private final AccountService accountService;
     private final EntryService entryService;
 
@@ -44,6 +53,7 @@ public class InvestmentOperationService {
         InvestmentOperationEntryLinkRepository linkRepository,
         AssetRepository assetRepository,
         BrokerageNoteRepository brokerageNoteRepository,
+        EntryRepository entryRepository,
         AccountService accountService,
         EntryService entryService
     ) {
@@ -51,6 +61,7 @@ public class InvestmentOperationService {
         this.linkRepository = linkRepository;
         this.assetRepository = assetRepository;
         this.brokerageNoteRepository = brokerageNoteRepository;
+        this.entryRepository = entryRepository;
         this.accountService = accountService;
         this.entryService = entryService;
     }
@@ -238,7 +249,8 @@ public class InvestmentOperationService {
         applyDefaults(existing);
         validate(existing);
         InvestmentOperation updated = investmentOperationRepository.save(existing);
-        replaceLinks(updated, links);
+        Optional<InvestmentOperationEntryLink> linkedEntry = replaceLinks(updated, links);
+        synchronizeEquivalentEntry(updated, linkedEntry);
         return updated;
     }
 
@@ -346,11 +358,11 @@ public class InvestmentOperationService {
         }
     }
 
-    private void replaceLinks(InvestmentOperation operation, Collection<InvestmentOperationEntryLinkRequest> links) {
+    private Optional<InvestmentOperationEntryLink> replaceLinks(InvestmentOperation operation, Collection<InvestmentOperationEntryLinkRequest> links) {
         Optional<InvestmentOperationEntryLinkRequest> linkRequest = singleLinkRequest(links);
         linkRepository.deleteByOperationId(operation.getId());
         if (linkRequest.isEmpty()) {
-            return;
+            return Optional.empty();
         }
 
         InvestmentOperationEntryLinkRequest request = linkRequest.get();
@@ -365,7 +377,62 @@ public class InvestmentOperationService {
         link.setOperation(operation);
         link.setEntry(entry);
         link.setAllocatedAmount(request.allocatedAmount());
-        linkRepository.save(link);
+        InvestmentOperationEntryLink savedLink = linkRepository.save(link);
+        return Optional.of(savedLink == null ? link : savedLink);
+    }
+
+    private void synchronizeEquivalentEntry(InvestmentOperation operation, Optional<InvestmentOperationEntryLink> linkedEntry) {
+        if (linkedEntry.isEmpty()) {
+            return;
+        }
+
+        Entry entry = linkedEntry.get().getEntry();
+        entry.setAccount(operation.getAccount());
+        entry.setMovementDate(operation.getTradeDate());
+        entry.setSettlementDate(operation.getSettlementDate() == null ? operation.getTradeDate() : operation.getSettlementDate());
+        entry.setDescription(equivalentEntryDescription(operation));
+        entry.setAmount(signedEntryAmount(operation));
+        entry.setEntrySource(EntrySource.IMPORT);
+        entry.setEntryEffect(InvestmentEntryEffectPolicy.resolve(operation.getOperationType()));
+        entry.setExternalId(operation.getExternalId());
+        entry.setCategory(null);
+        entry.setSuggestedCategory(null);
+        entry.setCategorySuggestionConfidence(null);
+        entry.setCategorySuggestionStatus(dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus.NONE);
+        entryRepository.save(entry);
+    }
+
+    private BigDecimal signedEntryAmount(InvestmentOperation operation) {
+        BigDecimal amount = operation.getNetAmount() != null
+            ? operation.getNetAmount().abs()
+            : operation.getGrossAmount() == null ? BigDecimal.ZERO : operation.getGrossAmount().abs();
+        amount = amount.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
+        return switch (operation.getOperationType()) {
+            case BUY, SUBSCRIPTION, TAX, FEE, TRANSFER_OUT -> amount.negate();
+            case SELL, DIVIDEND, INTEREST, AMORTIZATION, COUPON, REDEMPTION, TRANSFER_IN -> amount;
+            default -> amount;
+        };
+    }
+
+    private String equivalentEntryDescription(InvestmentOperation operation) {
+        String prefix = operation.getSourceType() == InvestmentOperationSourceType.TREASURY_DIRECT
+            ? "Tesouro Direto"
+            : "Investimento";
+        String assetName = operation.getAsset() == null ? "" : operation.getAsset().getName();
+        return switch (operation.getOperationType()) {
+            case BUY -> prefix + " - Compra - " + assetName;
+            case SELL -> prefix + " - Venda - " + assetName;
+            case REDEMPTION -> prefix + " - Resgate - " + assetName;
+            case DIVIDEND -> prefix + " - Dividendo - " + assetName;
+            case INTEREST -> prefix + " - Juros - " + assetName;
+            case AMORTIZATION -> prefix + " - Amortização - " + assetName;
+            case COUPON -> prefix + " - Cupom - " + assetName;
+            case TAX -> prefix + " - Imposto - " + assetName;
+            case FEE -> prefix + " - Taxa - " + assetName;
+            case TRANSFER_IN -> prefix + " - Transferência de entrada - " + assetName;
+            case TRANSFER_OUT -> prefix + " - Transferência de saída - " + assetName;
+            default -> prefix + " - " + assetName;
+        };
     }
 
     private Optional<InvestmentOperationEntryLinkRequest> singleLinkRequest(Collection<InvestmentOperationEntryLinkRequest> links) {

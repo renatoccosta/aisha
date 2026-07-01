@@ -3,7 +3,6 @@ package dev.ccosta.aisha.application.investment.importing;
 import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.EntryType;
@@ -13,6 +12,7 @@ import dev.ccosta.aisha.domain.investment.AssetRepository;
 import dev.ccosta.aisha.domain.investment.AssetType;
 import dev.ccosta.aisha.domain.investment.BrokerageNote;
 import dev.ccosta.aisha.domain.investment.BrokerageNoteRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentEntryEffectPolicy;
 import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationSourceType;
@@ -187,7 +187,7 @@ public class BrokerageNoteImportService {
         if (entry.getEntryType() == null) {
             entry.setEntryType(EntryType.REGULAR);
         }
-        entry.setEntryEffect(EntryEffect.EQUITY);
+        entry.setEntryEffect(InvestmentEntryEffectPolicy.resolveBrokerageNoteNetEntry());
         entry.setCategory(null);
         entry.setSuggestedCategory(null);
         entry.setCategorySuggestionConfidence(null);

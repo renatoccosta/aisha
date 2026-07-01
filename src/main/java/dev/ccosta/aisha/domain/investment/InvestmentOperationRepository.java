@@ -29,6 +29,8 @@ public interface InvestmentOperationRepository {
 
     InvestmentOperation save(InvestmentOperation operation);
 
+    boolean existsByExternalId(String externalId);
+
     boolean existsByAssetId(Long assetId);
 
     boolean existsByAccountId(Long accountId);

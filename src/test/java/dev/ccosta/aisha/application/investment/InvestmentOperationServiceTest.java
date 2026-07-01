@@ -11,6 +11,9 @@ import dev.ccosta.aisha.application.account.AccountService;
 import dev.ccosta.aisha.application.entry.EntryService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
+import dev.ccosta.aisha.domain.entry.EntryEffect;
+import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
 import dev.ccosta.aisha.domain.investment.BrokerageNote;
@@ -47,6 +50,9 @@ class InvestmentOperationServiceTest {
 
     @Mock
     private BrokerageNoteRepository brokerageNoteRepository;
+
+    @Mock
+    private EntryRepository entryRepository;
 
     @Mock
     private AccountService accountService;
@@ -230,6 +236,116 @@ class InvestmentOperationServiceTest {
 
         assertThat(updated.getIndexerSpread()).isEqualByComparingTo("0.120000");
         verify(linkRepository).deleteByOperationId(30L);
+    }
+
+    @Test
+    void shouldSynchronizeLinkedEntryWhenUpdatingOperation() {
+        Asset asset = new Asset();
+        asset.setName("Petróleo Brasileiro S.A. PN");
+        Account account = new Account();
+        Entry linkedEntry = new Entry();
+        InvestmentOperation existing = new InvestmentOperation();
+        existing.setAsset(asset);
+        existing.setAccount(account);
+        existing.setOperationType(InvestmentOperationType.SELL);
+        existing.setTradeDate(LocalDate.of(2015, 2, 4));
+        existing.setSettlementDate(LocalDate.of(2015, 2, 4));
+        existing.setNetAmount(new BigDecimal("10007.30"));
+        existing.setCurrency("BRL");
+        existing.setSourceType(InvestmentOperationSourceType.MANUAL);
+        setId(existing, 30L);
+
+        InvestmentOperation updatedData = new InvestmentOperation();
+        updatedData.setOperationType(InvestmentOperationType.SELL);
+        updatedData.setTradeDate(LocalDate.of(2015, 2, 4));
+        updatedData.setSettlementDate(LocalDate.of(2015, 2, 6));
+        updatedData.setNetAmount(new BigDecimal("10009.50"));
+        updatedData.setCurrency("BRL");
+        updatedData.setSourceType(InvestmentOperationSourceType.MANUAL);
+
+        InvestmentOperationEntryLink savedLink = new InvestmentOperationEntryLink();
+        savedLink.setOperation(existing);
+        savedLink.setEntry(linkedEntry);
+
+        when(investmentOperationRepository.findById(30L)).thenReturn(Optional.of(existing));
+        when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
+        when(accountService.findById(20L)).thenReturn(account);
+        when(investmentOperationRepository.save(existing)).thenReturn(existing);
+        when(entryService.findById(40L)).thenReturn(linkedEntry);
+        when(linkRepository.save(any(InvestmentOperationEntryLink.class))).thenReturn(savedLink);
+
+        investmentOperationService.update(
+            30L,
+            updatedData,
+            10L,
+            20L,
+            null,
+            List.of(new InvestmentOperationEntryLinkRequest(40L, null))
+        );
+
+        ArgumentCaptor<Entry> entryCaptor = ArgumentCaptor.forClass(Entry.class);
+        verify(entryRepository).save(entryCaptor.capture());
+        Entry synchronizedEntry = entryCaptor.getValue();
+        assertThat(synchronizedEntry.getAccount()).isSameAs(account);
+        assertThat(synchronizedEntry.getMovementDate()).isEqualTo(LocalDate.of(2015, 2, 4));
+        assertThat(synchronizedEntry.getSettlementDate()).isEqualTo(LocalDate.of(2015, 2, 6));
+        assertThat(synchronizedEntry.getDescription()).isEqualTo("Investimento - Venda - Petróleo Brasileiro S.A. PN");
+        assertThat(synchronizedEntry.getAmount()).isEqualByComparingTo("10009.50");
+        assertThat(synchronizedEntry.getEntrySource()).isEqualTo(EntrySource.IMPORT);
+        assertThat(synchronizedEntry.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
+    }
+
+    @Test
+    void shouldSynchronizeLinkedIncomeEntryAsResultWhenUpdatingOperation() {
+        Asset asset = new Asset();
+        asset.setName("Tesouro IPCA+ com Juros Semestrais 2020");
+        Account account = new Account();
+        Entry linkedEntry = new Entry();
+        InvestmentOperation existing = new InvestmentOperation();
+        existing.setAsset(asset);
+        existing.setAccount(account);
+        existing.setOperationType(InvestmentOperationType.INTEREST);
+        existing.setTradeDate(LocalDate.of(2015, 2, 18));
+        existing.setSettlementDate(LocalDate.of(2015, 2, 18));
+        existing.setNetAmount(new BigDecimal("285.97"));
+        existing.setCurrency("BRL");
+        existing.setSourceType(InvestmentOperationSourceType.TREASURY_DIRECT);
+        setId(existing, 30L);
+
+        InvestmentOperation updatedData = new InvestmentOperation();
+        updatedData.setOperationType(InvestmentOperationType.INTEREST);
+        updatedData.setTradeDate(LocalDate.of(2015, 2, 18));
+        updatedData.setSettlementDate(LocalDate.of(2015, 2, 20));
+        updatedData.setNetAmount(new BigDecimal("286.10"));
+        updatedData.setCurrency("BRL");
+        updatedData.setSourceType(InvestmentOperationSourceType.TREASURY_DIRECT);
+
+        InvestmentOperationEntryLink savedLink = new InvestmentOperationEntryLink();
+        savedLink.setOperation(existing);
+        savedLink.setEntry(linkedEntry);
+
+        when(investmentOperationRepository.findById(30L)).thenReturn(Optional.of(existing));
+        when(assetRepository.findById(10L)).thenReturn(Optional.of(asset));
+        when(accountService.findById(20L)).thenReturn(account);
+        when(investmentOperationRepository.save(existing)).thenReturn(existing);
+        when(entryService.findById(40L)).thenReturn(linkedEntry);
+        when(linkRepository.save(any(InvestmentOperationEntryLink.class))).thenReturn(savedLink);
+
+        investmentOperationService.update(
+            30L,
+            updatedData,
+            10L,
+            20L,
+            null,
+            List.of(new InvestmentOperationEntryLinkRequest(40L, null))
+        );
+
+        ArgumentCaptor<Entry> entryCaptor = ArgumentCaptor.forClass(Entry.class);
+        verify(entryRepository).save(entryCaptor.capture());
+        Entry synchronizedEntry = entryCaptor.getValue();
+        assertThat(synchronizedEntry.getDescription()).isEqualTo("Tesouro Direto - Juros - Tesouro IPCA+ com Juros Semestrais 2020");
+        assertThat(synchronizedEntry.getAmount()).isEqualByComparingTo("286.10");
+        assertThat(synchronizedEntry.getEntryEffect()).isEqualTo(EntryEffect.RESULT);
     }
 
     @Test

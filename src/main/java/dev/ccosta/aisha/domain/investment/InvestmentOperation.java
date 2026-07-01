@@ -71,6 +71,9 @@ public class InvestmentOperation {
     @Column(name = "notes", length = 1000)
     private String notes;
 
+    @Column(name = "external_id", length = 255)
+    private String externalId;
+
     @Column(name = "indexer_spread", precision = 9, scale = 6)
     private BigDecimal indexerSpread;
 
@@ -192,6 +195,14 @@ public class InvestmentOperation {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public BigDecimal getIndexerSpread() {

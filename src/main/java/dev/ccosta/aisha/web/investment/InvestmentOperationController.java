@@ -631,6 +631,9 @@ public class InvestmentOperationController {
         if (form.getSourceType() == InvestmentOperationSourceType.BROKER_NOTE) {
             return List.of(InvestmentOperationSourceType.BROKER_NOTE);
         }
+        if (form.getSourceType() == InvestmentOperationSourceType.TREASURY_DIRECT) {
+            return List.of(InvestmentOperationSourceType.TREASURY_DIRECT);
+        }
         return List.of(InvestmentOperationSourceType.MANUAL);
     }
 
