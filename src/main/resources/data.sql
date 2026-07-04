@@ -594,8 +594,8 @@ INSERT INTO investment_assets (asset_type, name, ticker, isin, issuer, currency,
 ('STOCK', 'Petróleo Brasileiro S.A. PN', 'PETR4', 'BRPETRACNPR6', 'Petrobras', 'BRL', NULL, 'NONE', NULL),
 ('FII', 'CSHG Logística FII', 'HGLG11', 'BRHGLGCTF004', 'CSHG', 'BRL', NULL, 'NONE', NULL),
 ('ETF', 'iShares Ibovespa Fundo de Índice', 'BOVA11', 'BRBOVACTF003', 'BlackRock Brasil', 'BRL', NULL, 'NONE', NULL),
-('BOND_GOV', 'Tesouro Selic 2029', NULL, NULL, 'Tesouro Nacional', 'BRL', DATE '2029-03-01', 'SELIC', '100% SELIC'),
-('BOND_BANK', 'CDB Banco Inter 110% CDI', NULL, NULL, 'Banco Inter', 'BRL', DATE '2027-08-15', 'CDI', '110% CDI'),
+('BOND_GOV', 'Tesouro Selic 2029', NULL, NULL, 'Tesouro Nacional', 'BRL', DATE '2029-03-01', 'SELIC', NULL),
+('BOND_BANK', 'CDB Banco Inter 110% CDI', NULL, NULL, 'Banco Inter', 'BRL', DATE '2027-08-15', 'CDI', NULL),
 ('MUTUAL_FUND', 'Fundo XPTO Multimercado', NULL, NULL, 'Gestora XPTO', 'BRL', NULL, 'NONE', NULL),
 ('CRYPTO', 'Bitcoin', 'BTC', NULL, 'Bitcoin Network', 'BRL', NULL, 'NONE', NULL);
 

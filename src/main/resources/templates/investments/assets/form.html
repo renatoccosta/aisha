@@ -63,24 +63,24 @@
 
             <div class="grid-2">
                 <div class="field">
-                    <label for="maturityDate" th:text="#{investments.assets.form.field.maturityDate}"></label>
-                    <input id="maturityDate" type="date" th:field="*{maturityDate}">
-                    <p class="error" th:if="${#fields.hasErrors('maturityDate')}" th:errors="*{maturityDate}"></p>
-                </div>
-
-                <div class="field">
                     <label for="indexerType" th:text="#{investments.assets.form.field.indexerType.required}"></label>
                     <select id="indexerType" th:field="*{indexerType}" required>
                         <option th:each="indexerType : ${indexerTypes}" th:value="${indexerType}" th:text="#{${'asset.indexerType.' + indexerType.name().toLowerCase()}}"></option>
                     </select>
                     <p class="error" th:if="${#fields.hasErrors('indexerType')}" th:errors="*{indexerType}"></p>
                 </div>
+
+                <div class="field">
+                    <label for="indexerSpread" th:text="#{investments.assets.form.field.indexerSpread}"></label>
+                    <input id="indexerSpread" type="number" th:field="*{indexerSpread}" step="0.000001">
+                    <p class="error" th:if="${#fields.hasErrors('indexerSpread')}" th:errors="*{indexerSpread}"></p>
+                </div>
             </div>
 
             <div class="field field-half">
-                <label for="indexerSpread" th:text="#{investments.assets.form.field.indexerSpread}"></label>
-                <input id="indexerSpread" type="text" th:field="*{indexerSpread}" maxlength="80">
-                <p class="error" th:if="${#fields.hasErrors('indexerSpread')}" th:errors="*{indexerSpread}"></p>
+                <label for="maturityDate" th:text="#{investments.assets.form.field.maturityDate}"></label>
+                <input id="maturityDate" type="date" th:field="*{maturityDate}">
+                <p class="error" th:if="${#fields.hasErrors('maturityDate')}" th:errors="*{maturityDate}"></p>
             </div>
 
             <section class="card stack-sm">

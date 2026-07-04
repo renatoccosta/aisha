@@ -73,7 +73,7 @@
                 <dt th:text="#{investments.assets.details.field.indexer}"></dt>
                 <dd>
                     <span th:text="#{${'asset.indexerType.' + asset.indexerType.name().toLowerCase()}}"></span>
-                    <span th:if="${asset.indexerSpread != null && !asset.indexerSpread.isBlank()}" th:text="${' - ' + asset.indexerSpread}"></span>
+                    <span th:if="${asset.indexerSpread != null}" th:text="${' - ' + #numbers.formatDecimal(asset.indexerSpread, 1, 'POINT', 6, 'COMMA') + '%'}"></span>
                 </dd>
             </div>
         </dl>

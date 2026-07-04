@@ -40,14 +40,14 @@ class EntryActionStateTest {
     }
 
     @Test
-    void shouldAllowOnlyDetailsForInvestmentLinkedEntry() {
+    void shouldAllowRegularEditForInvestmentLinkedEntry() {
         EntryActionState state = EntryActionState.from(
             entryWithType(10L, EntryType.REGULAR),
             EntryRelationSummary.empty(10L).withInvestmentOperationId(20L)
         );
 
         assertThat(state.detailsAllowed()).isTrue();
-        assertThat(state.regularEditAllowed()).isFalse();
+        assertThat(state.regularEditAllowed()).isTrue();
         assertThat(state.transferEditAllowed()).isFalse();
         assertThat(state.createLinkedOperationAllowed()).isFalse();
         assertThat(state.deleteAllowed()).isFalse();

@@ -27,10 +27,11 @@ public record EntryActionState(
     static EntryActionState from(Entry entry, EntryRelationSummary relationSummary) {
         boolean transfer = entry.isTransfer() || relationSummary.hasTransfer();
         boolean lockedByInvestment = relationSummary.hasInvestmentOperation() || relationSummary.hasBrokerageNote();
+        boolean investmentOperationLinked = relationSummary.hasInvestmentOperation();
         boolean commonWithoutRelationships = !transfer && !lockedByInvestment && !relationSummary.hasAnyRelationship();
         return new EntryActionState(
             true,
-            commonWithoutRelationships,
+            commonWithoutRelationships || (!transfer && investmentOperationLinked),
             transfer && !lockedByInvestment,
             commonWithoutRelationships,
             commonWithoutRelationships,

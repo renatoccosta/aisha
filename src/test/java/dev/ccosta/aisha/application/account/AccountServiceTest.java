@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
-import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
+import dev.ccosta.aisha.domain.operation.InvestmentOperationRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;

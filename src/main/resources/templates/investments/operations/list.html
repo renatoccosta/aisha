@@ -18,6 +18,10 @@
             <p th:text="#{investments.operations.list.subtitle}"></p>
         </div>
         <div class="actions-inline">
+            <a class="btn btn-secondary" th:href="@{/investments/treasury-direct-import}">
+                <i data-lucide="landmark" aria-hidden="true"></i>
+                <span th:text="#{investments.operations.list.action.importTreasuryDirect}"></span>
+            </a>
             <a class="btn btn-secondary" th:href="@{/investments/brokerage-note-import}">
                 <i data-lucide="file-up" aria-hidden="true"></i>
                 <span th:text="#{investments.operations.list.action.importBrokerageNote}"></span>
@@ -251,6 +255,12 @@
                         </th>
                         <th>
                             <span class="table-heading-label">
+                                <i data-lucide="percent" aria-hidden="true"></i>
+                                <span th:text="#{investments.operations.list.table.indexerSpread}"></span>
+                            </span>
+                        </th>
+                        <th>
+                            <span class="table-heading-label">
                                 <i data-lucide="settings" aria-hidden="true"></i>
                                 <span th:text="#{investments.operations.list.table.actions}"></span>
                             </span>
@@ -259,7 +269,7 @@
                     </thead>
                     <tbody>
                     <tr th:if="${#lists.isEmpty(operations)}" class="empty-row">
-                        <td colspan="9" class="empty" th:text="#{investments.operations.list.empty}"></td>
+                        <td colspan="10" class="empty" th:text="#{investments.operations.list.empty}"></td>
                     </tr>
                     <tr th:each="operation : ${operations}">
                         <td class="cell-select" th:attr="data-label=#{investments.operations.list.table.select}">
@@ -286,6 +296,10 @@
                             th:text="${operation.netAmount != null ? #numbers.formatDecimal(operation.netAmount, 1, 'POINT', 2, 'COMMA') : '-'}">
                         </td>
                         <td th:attr="data-label=#{investments.operations.list.table.currency}" th:text="${operation.currency}"></td>
+                        <td
+                            th:attr="data-label=#{investments.operations.list.table.indexerSpread}"
+                            th:text="${operation.indexerSpread != null ? #numbers.formatDecimal(operation.indexerSpread, 1, 'POINT', 6, 'COMMA') + '%' : '-'}">
+                        </td>
                         <td class="cell-actions" th:attr="data-label=#{investments.operations.list.table.actions}">
                             <details class="action-menu action-menu-row">
                                 <summary class="btn btn-secondary">

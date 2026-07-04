@@ -1,0 +1,24 @@
+package dev.ccosta.aisha.domain.operation;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+public interface InvestmentOperationEntryLinkRepository {
+
+    List<InvestmentOperationEntryLink> findAllByOperationId(Long operationId);
+
+    List<InvestmentOperationEntryLink> findAllByEntryId(Long entryId);
+
+    List<InvestmentOperationEntryLink> findAllByEntryIds(Collection<Long> entryIds);
+
+    Optional<InvestmentOperationEntryLink> findByEntryId(Long entryId);
+
+    boolean existsByEntryId(Long entryId);
+
+    InvestmentOperationEntryLink save(InvestmentOperationEntryLink link);
+
+    void deleteByOperationId(Long operationId);
+
+    void deleteByOperationIds(Collection<Long> operationIds);
+}

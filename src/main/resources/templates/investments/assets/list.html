@@ -254,7 +254,7 @@
                         </td>
                         <td th:attr="data-label=#{investments.assets.list.table.indexer}">
                             <span th:text="#{${'asset.indexerType.' + (asset.indexerType != null ? asset.indexerType.name().toLowerCase() : 'none')}}"></span>
-                            <span th:if="${asset.indexerSpread != null && !asset.indexerSpread.isBlank()}" th:text="${' - ' + asset.indexerSpread}"></span>
+                            <span th:if="${asset.indexerSpread != null}" th:text="${' - ' + #numbers.formatDecimal(asset.indexerSpread, 1, 'POINT', 6, 'COMMA') + '%'}"></span>
                         </td>
                         <td th:attr="data-label=#{investments.assets.list.table.currency}" th:text="${asset.currency}"></td>
                         <td class="cell-actions" th:attr="data-label=#{investments.assets.list.table.actions}">

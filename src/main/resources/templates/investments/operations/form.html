@@ -157,10 +157,18 @@
                 </div>
             </div>
 
-            <div class="field field-half">
-                <label for="currency" th:text="#{investments.operations.form.field.currency.required}"></label>
-                <input id="currency" type="text" th:field="*{currency}" maxlength="3" required>
-                <p class="error" th:if="${#fields.hasErrors('currency')}" th:errors="*{currency}"></p>
+            <div class="grid-2">
+                <div class="field">
+                    <label for="currency" th:text="#{investments.operations.form.field.currency.required}"></label>
+                    <input id="currency" type="text" th:field="*{currency}" maxlength="3" required>
+                    <p class="error" th:if="${#fields.hasErrors('currency')}" th:errors="*{currency}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="indexerSpread" th:text="#{investments.operations.form.field.indexerSpread}"></label>
+                    <input id="indexerSpread" type="number" th:field="*{indexerSpread}" step="0.000001">
+                    <p class="error" th:if="${#fields.hasErrors('indexerSpread')}" th:errors="*{indexerSpread}"></p>
+                </div>
             </div>
 
             <div id="entry-link-selection" th:fragment="entryLinkSelection" th:object="${form}" class="field">

@@ -23,7 +23,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl tzdata \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system aisha \
-    && useradd --system --gid aisha --create-home aisha
+    && useradd --system --gid aisha --create-home aisha \
+    && mkdir -p /var/lib/aisha/backups \
+    && chown -R aisha:aisha /var/lib/aisha
 
 ENV TZ=UTC
 ENV JAVA_OPTS="-XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom -Dfile.encoding=UTF-8"
