@@ -4,7 +4,7 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.account.AccountRepository;
 import dev.ccosta.aisha.domain.account.AccountType;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
-import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
+import dev.ccosta.aisha.domain.operation.InvestmentOperationRepository;
 import dev.ccosta.aisha.application.entry.EntrySettlementAfterAccountDeactivationException;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
