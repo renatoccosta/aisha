@@ -8,10 +8,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
 import dev.ccosta.aisha.domain.account.Account;
+import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -51,6 +56,9 @@ class TreasuryDirectImportServiceTest {
     @Mock
     private EntryRepository entryRepository;
 
+    @Mock
+    private EntryCategorySuggestionService entryCategorySuggestionService;
+
     private TreasuryDirectImportService importService;
 
     @BeforeEach
@@ -60,7 +68,8 @@ class TreasuryDirectImportServiceTest {
             assetRepository,
             operationRepository,
             linkRepository,
-            entryRepository
+            entryRepository,
+            entryCategorySuggestionService
         );
     }
 
@@ -134,6 +143,46 @@ class TreasuryDirectImportServiceTest {
         verify(linkRepository, never()).save(any(InvestmentOperationEntryLink.class));
     }
 
+    @Test
+    void shouldApplySuggestedCategoryToImportedTreasuryDirectEntries() {
+        Account account = new Account();
+        setId(account, 10L);
+        Asset asset = new Asset();
+        asset.setName("Tesouro IPCA+ com Juros Semestrais 2020");
+        Category category = new Category();
+        category.setTitle("Investimentos");
+        when(accountService.findById(10L)).thenReturn(account);
+        when(assetRepository.findByNameIgnoreCase("Tesouro IPCA+ com Juros Semestrais 2020")).thenReturn(Optional.of(asset));
+        when(operationRepository.existsByExternalId(anyString())).thenReturn(false);
+        when(operationRepository.save(any(InvestmentOperation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(entryCategorySuggestionService.suggest(any(EntryCategorySuggestionRequest.class)))
+            .thenReturn(Optional.of(new EntryCategorySuggestion(category, 0.91d, "model-v1")));
+        when(entryRepository.save(any(Entry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        importService.importFile(
+            10L,
+            "tesouro.json",
+            "file-hash",
+            sampleJson().getBytes(StandardCharsets.UTF_8)
+        );
+
+        ArgumentCaptor<EntryCategorySuggestionRequest> requestCaptor = ArgumentCaptor.forClass(EntryCategorySuggestionRequest.class);
+        verify(entryCategorySuggestionService, org.mockito.Mockito.times(3)).suggest(requestCaptor.capture());
+        assertThat(requestCaptor.getAllValues().getFirst().accountId()).isEqualTo(10L);
+        assertThat(requestCaptor.getAllValues().getFirst().description())
+            .isEqualTo("Tesouro Direto - Compra - Tesouro IPCA+ com Juros Semestrais 2020");
+        assertThat(requestCaptor.getAllValues().getFirst().amount()).isEqualByComparingTo("-10007.30");
+
+        ArgumentCaptor<Entry> entryCaptor = ArgumentCaptor.forClass(Entry.class);
+        verify(entryRepository, org.mockito.Mockito.times(3)).save(entryCaptor.capture());
+        assertThat(entryCaptor.getAllValues()).allSatisfy(entry -> {
+            assertThat(entry.getCategory()).isSameAs(category);
+            assertThat(entry.getSuggestedCategory()).isSameAs(category);
+            assertThat(entry.getCategorySuggestionConfidence()).isEqualTo(0.91d);
+            assertThat(entry.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.PENDING);
+        });
+    }
+
     private String sampleJson() {
         return """
             {
@@ -186,5 +235,15 @@ class TreasuryDirectImportServiceTest {
               ]
             }
             """;
+    }
+
+    private void setId(Account account, Long id) {
+        try {
+            var idField = Account.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(account, id);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

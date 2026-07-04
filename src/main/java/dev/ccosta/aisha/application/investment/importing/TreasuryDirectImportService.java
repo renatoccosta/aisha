@@ -3,9 +3,11 @@ package dev.ccosta.aisha.application.investment.importing;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.entry.EntryEffect;
 import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.EntryType;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
@@ -55,19 +57,22 @@ public class TreasuryDirectImportService {
     private final InvestmentOperationRepository operationRepository;
     private final InvestmentOperationEntryLinkRepository linkRepository;
     private final EntryRepository entryRepository;
+    private final EntryCategorySuggestionService entryCategorySuggestionService;
 
     public TreasuryDirectImportService(
         AccountService accountService,
         AssetRepository assetRepository,
         InvestmentOperationRepository operationRepository,
         InvestmentOperationEntryLinkRepository linkRepository,
-        EntryRepository entryRepository
+        EntryRepository entryRepository,
+        EntryCategorySuggestionService entryCategorySuggestionService
     ) {
         this.accountService = accountService;
         this.assetRepository = assetRepository;
         this.operationRepository = operationRepository;
         this.linkRepository = linkRepository;
         this.entryRepository = entryRepository;
+        this.entryCategorySuggestionService = entryCategorySuggestionService;
     }
 
     /**
@@ -229,18 +234,35 @@ public class TreasuryDirectImportService {
         entry.setMovementDate(operation.getTradeDate());
         entry.setSettlementDate(operation.getSettlementDate());
         entry.setDescription(entryDescription(operation.getOperationType(), assetName));
-        entry.setCategory(null);
-        entry.setSuggestedCategory(null);
         entry.setNotes(entryNotes(operationNode));
         entry.setExternalId(operation.getExternalId());
-        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE);
-        entry.setCategorySuggestionConfidence(null);
         entry.setAmount(signedEntryAmount(operation));
         entry.setEntrySource(EntrySource.IMPORT);
         entry.setRegistrationDate(LocalDate.now());
         entry.setEntryType(EntryType.REGULAR);
         entry.setEntryEffect(InvestmentEntryEffectPolicy.resolve(operation.getOperationType()));
+        applyCategorySuggestion(entry, account);
         return entryRepository.save(entry);
+    }
+
+    private void applyCategorySuggestion(Entry entry, Account account) {
+        entryCategorySuggestionService.suggest(new EntryCategorySuggestionRequest(account.getId(), entry.getDescription(), entry.getAmount()))
+            .ifPresentOrElse(
+                suggestion -> applySuggestedCategory(entry, suggestion),
+                () -> {
+                    entry.setCategory(null);
+                    entry.setSuggestedCategory(null);
+                    entry.setCategorySuggestionConfidence(null);
+                    entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE);
+                }
+            );
+    }
+
+    private void applySuggestedCategory(Entry entry, EntryCategorySuggestion suggestion) {
+        entry.setCategory(suggestion.category());
+        entry.setSuggestedCategory(suggestion.category());
+        entry.setCategorySuggestionConfidence(suggestion.confidence());
+        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
     }
 
     private void saveLink(InvestmentOperation operation, Entry entry) {

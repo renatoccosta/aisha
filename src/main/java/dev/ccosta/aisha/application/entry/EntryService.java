@@ -12,8 +12,11 @@ import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransfer;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransferRepository;
 import dev.ccosta.aisha.domain.entry.EntryType;
+import dev.ccosta.aisha.domain.investment.InvestmentOperation;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -25,9 +28,12 @@ import org.springframework.util.StringUtils;
 @Service
 public class EntryService {
 
+    private static final int MONEY_SCALE = 2;
+
     private final EntryRepository entryRepository;
     private final EntryTransferRepository entryTransferRepository;
     private final InvestmentOperationEntryLinkRepository investmentOperationEntryLinkRepository;
+    private final InvestmentOperationRepository investmentOperationRepository;
     private final AccountService accountService;
     private final CategoryService categoryService;
 
@@ -35,12 +41,14 @@ public class EntryService {
         EntryRepository entryRepository,
         EntryTransferRepository entryTransferRepository,
         InvestmentOperationEntryLinkRepository investmentOperationEntryLinkRepository,
+        InvestmentOperationRepository investmentOperationRepository,
         AccountService accountService,
         CategoryService categoryService
     ) {
         this.entryRepository = entryRepository;
         this.entryTransferRepository = entryTransferRepository;
         this.investmentOperationEntryLinkRepository = investmentOperationEntryLinkRepository;
+        this.investmentOperationRepository = investmentOperationRepository;
         this.accountService = accountService;
         this.categoryService = categoryService;
     }
@@ -119,7 +127,9 @@ public class EntryService {
         existing.setNotes(updatedData.getNotes());
         existing.setAmount(updatedData.getAmount());
         applyManualMetadataForLegacyUpdate(existing);
-        return entryRepository.save(existing);
+        Entry updated = entryRepository.save(existing);
+        synchronizeLinkedInvestmentOperation(updated);
+        return updated;
     }
 
     @Transactional
@@ -269,5 +279,21 @@ public class EntryService {
         entry.setSuggestedCategory(null);
         entry.setCategorySuggestionConfidence(null);
         entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE);
+    }
+
+    private void synchronizeLinkedInvestmentOperation(Entry entry) {
+        if (entry.getId() == null) {
+            return;
+        }
+        investmentOperationEntryLinkRepository.findByEntryId(entry.getId())
+            .ifPresent(link -> {
+                InvestmentOperation operation = link.getOperation();
+                operation.setAccount(entry.getAccount());
+                operation.setTradeDate(entry.getMovementDate());
+                operation.setSettlementDate(entry.getSettlementDate());
+                operation.setNetAmount(entry.getAmount().abs().setScale(MONEY_SCALE, RoundingMode.HALF_UP));
+                operation.setExternalId(entry.getExternalId());
+                investmentOperationRepository.save(operation);
+            });
     }
 }

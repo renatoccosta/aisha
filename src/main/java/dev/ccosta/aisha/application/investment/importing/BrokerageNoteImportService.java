@@ -1,11 +1,15 @@
 package dev.ccosta.aisha.application.investment.importing;
 
 import dev.ccosta.aisha.application.account.AccountService;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestion;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionRequest;
+import dev.ccosta.aisha.application.entry.categorization.EntryCategorySuggestionService;
 import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.EntryType;
+import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.investment.Asset;
 import dev.ccosta.aisha.domain.investment.AssetIndexerType;
 import dev.ccosta.aisha.domain.investment.AssetRepository;
@@ -46,6 +50,7 @@ public class BrokerageNoteImportService {
     private final InvestmentOperationRepository investmentOperationRepository;
     private final EntryRepository entryRepository;
     private final AccountService accountService;
+    private final EntryCategorySuggestionService entryCategorySuggestionService;
 
     public BrokerageNoteImportService(
         List<BrokerageNoteProcessor> processors,
@@ -53,7 +58,8 @@ public class BrokerageNoteImportService {
         AssetRepository assetRepository,
         InvestmentOperationRepository investmentOperationRepository,
         EntryRepository entryRepository,
-        AccountService accountService
+        AccountService accountService,
+        EntryCategorySuggestionService entryCategorySuggestionService
     ) {
         this.processors = processors.stream()
             .sorted(Comparator.comparing(processor -> processor.getClass().getName()))
@@ -63,6 +69,7 @@ public class BrokerageNoteImportService {
         this.investmentOperationRepository = investmentOperationRepository;
         this.entryRepository = entryRepository;
         this.accountService = accountService;
+        this.entryCategorySuggestionService = entryCategorySuggestionService;
     }
 
     /**
@@ -188,11 +195,28 @@ public class BrokerageNoteImportService {
             entry.setEntryType(EntryType.REGULAR);
         }
         entry.setEntryEffect(InvestmentEntryEffectPolicy.resolveBrokerageNoteNetEntry());
-        entry.setCategory(null);
-        entry.setSuggestedCategory(null);
-        entry.setCategorySuggestionConfidence(null);
-        entry.setCategorySuggestionStatus(dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus.NONE);
+        applyCategorySuggestion(entry, account);
         return entryRepository.save(entry);
+    }
+
+    private void applyCategorySuggestion(Entry entry, Account account) {
+        entryCategorySuggestionService.suggest(new EntryCategorySuggestionRequest(account.getId(), entry.getDescription(), entry.getAmount()))
+            .ifPresentOrElse(
+                suggestion -> applySuggestedCategory(entry, suggestion),
+                () -> {
+                    entry.setCategory(null);
+                    entry.setSuggestedCategory(null);
+                    entry.setCategorySuggestionConfidence(null);
+                    entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE);
+                }
+            );
+    }
+
+    private void applySuggestedCategory(Entry entry, EntryCategorySuggestion suggestion) {
+        entry.setCategory(suggestion.category());
+        entry.setSuggestedCategory(suggestion.category());
+        entry.setCategorySuggestionConfidence(suggestion.confidence());
+        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
     }
 
     private void persistOperation(InvestmentOperation operation, BrokerageNote brokerageNote, Account account) {

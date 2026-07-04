@@ -20,7 +20,10 @@ import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.entry.EntrySource;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransfer;
 import dev.ccosta.aisha.domain.entry.transfer.EntryTransferRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperation;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLink;
 import dev.ccosta.aisha.domain.investment.InvestmentOperationEntryLinkRepository;
+import dev.ccosta.aisha.domain.investment.InvestmentOperationRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,6 +36,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class EntryServiceTest {
@@ -45,6 +49,9 @@ class EntryServiceTest {
 
     @Mock
     private InvestmentOperationEntryLinkRepository investmentOperationEntryLinkRepository;
+
+    @Mock
+    private InvestmentOperationRepository investmentOperationRepository;
 
     @Mock
     private AccountService accountService;
@@ -462,6 +469,35 @@ class EntryServiceTest {
         assertThat(updated.getCategorySuggestionConfidence()).isNull();
         assertThat(updated.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.NONE);
         verify(categoryService, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    void shouldSynchronizeLinkedInvestmentOperationWhenUpdatingEntry() {
+        Entry existing = newEntry("Compra antiga", new BigDecimal("-100.00"));
+        ReflectionTestUtils.setField(existing, "id", 1L);
+        Entry updatedData = newEntry("Compra editada", new BigDecimal("-125.55"));
+        updatedData.setMovementDate(LocalDate.of(2026, 3, 10));
+        updatedData.setSettlementDate(LocalDate.of(2026, 3, 12));
+        Account account = newAccount("Conta investimentos");
+        InvestmentOperation operation = new InvestmentOperation();
+        InvestmentOperationEntryLink link = new InvestmentOperationEntryLink();
+        link.setEntry(existing);
+        link.setOperation(operation);
+
+        when(entryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(accountService.findById(6L)).thenReturn(account);
+        when(categoryService.findById(7L)).thenReturn(newCategory("Investimentos"));
+        when(entryRepository.save(existing)).thenReturn(existing);
+        when(investmentOperationEntryLinkRepository.findByEntryId(1L)).thenReturn(Optional.of(link));
+
+        Entry updated = entryService.update(1L, updatedData, 6L, selection(7L, null, null, null));
+
+        assertThat(updated.getAmount()).isEqualByComparingTo("-125.55");
+        assertThat(operation.getAccount()).isEqualTo(account);
+        assertThat(operation.getTradeDate()).isEqualTo(LocalDate.of(2026, 3, 10));
+        assertThat(operation.getSettlementDate()).isEqualTo(LocalDate.of(2026, 3, 12));
+        assertThat(operation.getNetAmount()).isEqualByComparingTo("125.55");
+        verify(investmentOperationRepository).save(operation);
     }
 
     private Entry newEntry(String description, BigDecimal amount) {
