@@ -133,6 +133,20 @@ class EntryControllerTest {
     }
 
     @Test
+    void shouldKeepCategoryControlsAvailableForEquityEntry() {
+        EntryForm form = baseForm();
+        form.setEquityEntry(true);
+        form.setCategoryId(-2L);
+        ConcurrentModel model = new ConcurrentModel();
+        when(categoryService.listHierarchyOptions()).thenReturn(List.of(new CategoryOption(1L, "Investimentos")));
+
+        String view = entryController.categorySuggestion(form, model);
+
+        assertThat(view).isEqualTo("entries/form :: categorySelectionSection");
+        assertThat(model.getAttribute("showNewCategoryField")).isEqualTo(true);
+    }
+
+    @Test
     void shouldRequireNewCategoryTitleWhenSpecialOptionIsSelected() {
         EntryForm form = baseForm();
         form.setCategoryId(-2L);

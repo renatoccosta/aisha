@@ -673,12 +673,6 @@ public class EntryController {
     }
 
     private void fillCategorySuggestionState(Model model, EntryForm form) {
-        if (form != null && form.isEquityEntry()) {
-            model.addAttribute("suggestedCategory", null);
-            model.addAttribute("pendingCategorySuggestion", false);
-            model.addAttribute("showNewCategoryField", false);
-            return;
-        }
         if (form == null || form.getSuggestedCategoryId() == null) {
             model.addAttribute("suggestedCategory", null);
             model.addAttribute("pendingCategorySuggestion", false);
@@ -696,7 +690,7 @@ public class EntryController {
     }
 
     private void validateCategoryChoice(EntryForm form, BindingResult bindingResult) {
-        if (form != null && form.isEquityEntry()) {
+        if (form != null && form.isTransferEntry()) {
             return;
         }
         boolean hasCategoryId = effectiveCategoryId(form) != null;
@@ -755,7 +749,7 @@ public class EntryController {
     }
 
     private boolean shouldSuggestCategory(EntryForm form) {
-        if (form != null && form.isEquityEntry()) {
+        if (form != null && form.isTransferEntry()) {
             return false;
         }
         return effectiveCategoryId(form) == null
@@ -783,7 +777,6 @@ public class EntryController {
     private boolean shouldShowNewCategoryField(EntryForm form) {
         return form != null
             && !form.isTransferEntry()
-            && !form.isEquityEntry()
             && (isNewCategoryOptionSelected(form) || StringUtils.hasText(form.getNewCategoryTitle()));
     }
 
@@ -792,9 +785,6 @@ public class EntryController {
     }
 
     private Long effectiveCategoryId(EntryForm form) {
-        if (form != null && form.isEquityEntry()) {
-            return null;
-        }
         if (isNewCategoryOptionSelected(form)) {
             return null;
         }
