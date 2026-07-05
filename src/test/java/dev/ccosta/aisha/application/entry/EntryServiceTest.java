@@ -448,7 +448,7 @@ class EntryServiceTest {
     }
 
     @Test
-    void shouldUpdateEquityEntryWithoutCategorySelection() {
+    void shouldUpdateEquityEntryCategoryAndPreserveEquityEffect() {
         Entry existing = newEntry("Nota de corretagem", new BigDecimal("-100.00"));
         existing.setEntryEffect(EntryEffect.EQUITY);
         existing.setSuggestedCategory(newCategory("Investimentos"));
@@ -456,19 +456,21 @@ class EntryServiceTest {
         existing.setCategorySuggestionStatus(EntryCategorySuggestionStatus.PENDING);
         Entry updatedData = newEntry("Nota de corretagem editada", new BigDecimal("-120.00"));
         Account account = newAccount("Conta investimentos");
+        Category category = newCategory("Investimentos");
 
         when(entryRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(accountService.findById(6L)).thenReturn(account);
+        when(categoryService.findById(7L)).thenReturn(category);
         when(entryRepository.save(existing)).thenReturn(existing);
 
-        Entry updated = entryService.update(1L, updatedData, 6L, null);
+        Entry updated = entryService.update(1L, updatedData, 6L, selection(7L, null, null, null));
 
         assertThat(updated.getEntryEffect()).isEqualTo(EntryEffect.EQUITY);
-        assertThat(updated.getCategory()).isNull();
+        assertThat(updated.getCategory()).isSameAs(category);
         assertThat(updated.getSuggestedCategory()).isNull();
         assertThat(updated.getCategorySuggestionConfidence()).isNull();
         assertThat(updated.getCategorySuggestionStatus()).isEqualTo(EntryCategorySuggestionStatus.NONE);
-        verify(categoryService, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        verify(categoryService).findById(7L);
     }
 
     @Test

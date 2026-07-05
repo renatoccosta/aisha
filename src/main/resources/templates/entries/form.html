@@ -63,7 +63,7 @@
                     class="field-group"
                     th:fragment="categorySelectionSection"
                     th:object="${form}"
-                    th:if="${!form.equityEntry}">
+                    th:if="${!form.transferEntry}">
                     <input type="hidden" th:field="*{suggestedCategoryId}">
                     <input type="hidden" th:field="*{suggestedCategoryConfidence}">
                     <div class="field">
@@ -106,7 +106,7 @@
                 </div>
             </div>
 
-            <div class="field" th:if="${form.equityEntry}">
+            <div class="field" th:if="${form.transferEntry}">
                 <label th:text="#{entries.form.field.category}"></label>
                 <p class="helper" th:text="#{entries.form.transfer.noCategory}"></p>
             </div>

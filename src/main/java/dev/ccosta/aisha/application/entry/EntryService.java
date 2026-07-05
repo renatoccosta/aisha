@@ -116,14 +116,9 @@ public class EntryService {
         existing.setMovementDate(updatedData.getMovementDate());
         existing.setSettlementDate(updatedData.getSettlementDate());
         existing.setDescription(updatedData.getDescription());
-        if (existing.isEquityEffect()) {
-            clearCategoryState(existing);
-        } else {
-            existing.setEntryEffect(EntryEffect.RESULT);
-            Category category = resolveCategory(categorySelection);
-            existing.setCategory(category);
-            applyCategorySuggestionFeedback(existing, category, categorySelection);
-        }
+        Category category = resolveCategory(categorySelection);
+        existing.setCategory(category);
+        applyCategorySuggestionFeedback(existing, category, categorySelection);
         existing.setNotes(updatedData.getNotes());
         existing.setAmount(updatedData.getAmount());
         applyManualMetadataForLegacyUpdate(existing);
@@ -272,13 +267,6 @@ public class EntryService {
                 ? EntryCategorySuggestionStatus.ACCEPTED
                 : EntryCategorySuggestionStatus.REJECTED
         );
-    }
-
-    private void clearCategoryState(Entry entry) {
-        entry.setCategory(null);
-        entry.setSuggestedCategory(null);
-        entry.setCategorySuggestionConfidence(null);
-        entry.setCategorySuggestionStatus(EntryCategorySuggestionStatus.NONE);
     }
 
     private void synchronizeLinkedInvestmentOperation(Entry entry) {
