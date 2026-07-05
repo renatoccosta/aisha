@@ -1,17 +1,15 @@
 package dev.ccosta.aisha.infrastructure.persistence.asset;
 
 import dev.ccosta.aisha.domain.asset.Asset;
-import dev.ccosta.aisha.domain.asset.AssetType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
+public interface JpaAssetRepository extends JpaRepository<Asset, Long>, JpaSpecificationExecutor<Asset> {
 
     @EntityGraph(attributePaths = {"openingPosition"})
     List<Asset> findAllByOrderByNameAscTickerAscIdAsc();
@@ -20,45 +18,7 @@ public interface JpaAssetRepository extends JpaRepository<Asset, Long> {
     Page<Asset> findAllByOrderByNameAscTickerAscIdAsc(Pageable pageable);
 
     @EntityGraph(attributePaths = {"openingPosition"})
-    @Query(
-        """
-        select a
-        from Asset a
-        where (:type is null or a.type = :type)
-        order by a.name asc, a.ticker asc, a.id asc
-        """
-    )
-    Page<Asset> searchByFiltersWithoutDescription(
-        @Param("type") AssetType type,
-        Pageable pageable
-    );
-
-    @EntityGraph(attributePaths = {"openingPosition"})
-    @Query(
-        """
-        select a
-        from Asset a
-        where (:type is null or a.type = :type)
-          and (
-                :descriptionFilter is null
-                or upper(
-                    function(
-                        'translate',
-                        concat(coalesce(a.name, ''), ' ', coalesce(a.ticker, ''), ' ', coalesce(a.issuer, '')),
-                        'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ',
-                        'AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn'
-                    )
-                )
-                    like concat('%', :descriptionFilter, '%') escape '\\'
-          )
-        order by a.name asc, a.ticker asc, a.id asc
-        """
-    )
-    Page<Asset> searchByFilters(
-        @Param("type") AssetType type,
-        @Param("descriptionFilter") String descriptionFilter,
-        Pageable pageable
-    );
+    Page<Asset> findAll(org.springframework.data.jpa.domain.Specification<Asset> specification, Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = {"openingPosition"})

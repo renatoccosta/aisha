@@ -64,6 +64,7 @@
                             type="search"
                             th:value="${selectedDescription}"
                             th:placeholder="#{investments.assets.list.filter.description.placeholder}">
+                        <div th:replace="~{fragments/text-search-help :: textSearchHelp}"></div>
                     </div>
                 </div>
                 <input type="hidden" name="page" value="0">

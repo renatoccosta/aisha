@@ -62,6 +62,7 @@
                             type="search"
                             th:value="${selectedNoteNumber}"
                             th:placeholder="#{investments.brokerageNotes.list.filter.noteNumber.placeholder}">
+                        <div th:replace="~{fragments/text-search-help :: textSearchHelp}"></div>
                     </div>
                     <div class="field">
                         <label for="filter-trade-start" th:text="#{investments.brokerageNotes.list.filter.tradeStartDate}"></label>

@@ -1,17 +1,17 @@
 package dev.ccosta.aisha.infrastructure.persistence.operation;
 
 import dev.ccosta.aisha.domain.operation.InvestmentOperation;
-import dev.ccosta.aisha.domain.operation.InvestmentOperationType;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface JpaInvestmentOperationRepository extends JpaRepository<InvestmentOperation, Long> {
+public interface JpaInvestmentOperationRepository extends JpaRepository<InvestmentOperation, Long>, JpaSpecificationExecutor<InvestmentOperation> {
 
     @EntityGraph(attributePaths = {"asset", "account"})
     java.util.List<InvestmentOperation> findAllByOrderByTradeDateAscIdAsc();
@@ -27,57 +27,8 @@ public interface JpaInvestmentOperationRepository extends JpaRepository<Investme
     java.util.List<InvestmentOperation> findAllByAssetIdOrderByTradeDateAscIdAsc(Long assetId);
 
     @EntityGraph(attributePaths = {"asset", "account", "brokerageNote"})
-    @Query(
-        """
-        select o
-        from InvestmentOperation o
-        where (:brokerageNoteId is not null or o.settlementDate between :startDate and :endDate)
-          and (:accountId is null or o.account.id = :accountId)
-          and (:operationType is null or o.operationType = :operationType)
-          and (:brokerageNoteId is null or o.brokerageNote.id = :brokerageNoteId)
-        order by o.tradeDate desc, o.id desc
-        """
-    )
-    Page<InvestmentOperation> searchByFiltersWithoutAsset(
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate,
-        @Param("accountId") Long accountId,
-        @Param("operationType") InvestmentOperationType operationType,
-        @Param("brokerageNoteId") Long brokerageNoteId,
-        Pageable pageable
-    );
-
-    @EntityGraph(attributePaths = {"asset", "account", "brokerageNote"})
-    @Query(
-        """
-        select o
-        from InvestmentOperation o
-        where (:brokerageNoteId is not null or o.settlementDate between :startDate and :endDate)
-          and (:accountId is null or o.account.id = :accountId)
-          and (:operationType is null or o.operationType = :operationType)
-          and (:brokerageNoteId is null or o.brokerageNote.id = :brokerageNoteId)
-          and (
-                :assetFilter is null
-                or upper(
-                    function(
-                        'translate',
-                        concat(coalesce(o.asset.name, ''), ' ', coalesce(o.asset.ticker, '')),
-                        'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ',
-                        'AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn'
-                    )
-                )
-                    like concat('%', :assetFilter, '%') escape '\\'
-          )
-        order by o.tradeDate desc, o.id desc
-        """
-    )
-    Page<InvestmentOperation> searchByFilters(
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate,
-        @Param("assetFilter") String assetFilter,
-        @Param("accountId") Long accountId,
-        @Param("operationType") InvestmentOperationType operationType,
-        @Param("brokerageNoteId") Long brokerageNoteId,
+    Page<InvestmentOperation> findAll(
+        org.springframework.data.jpa.domain.Specification<InvestmentOperation> specification,
         Pageable pageable
     );
 

@@ -80,6 +80,7 @@
                             type="search"
                             th:value="${selectedDescription}"
                             th:placeholder="#{entries.list.filter.description.placeholder}">
+                        <div th:replace="~{fragments/text-search-help :: textSearchHelp}"></div>
                     </div>
                     <div class="field">
                         <label for="filter-account" th:text="#{entries.list.filter.account}"></label>

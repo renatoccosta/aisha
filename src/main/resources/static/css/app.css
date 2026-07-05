@@ -584,6 +584,84 @@ p {
   margin-top: 0;
 }
 
+.text-search-help {
+  margin-top: 0.45rem;
+}
+
+.text-search-help summary {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+.text-search-help summary::-webkit-details-marker {
+  display: none;
+}
+
+.text-search-help summary:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 3px;
+}
+
+.text-search-help summary .lucide {
+  width: 1rem;
+  height: 1rem;
+}
+
+.text-search-help-content {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--color-action-tertiary-bg);
+}
+
+.text-search-help-content p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.text-search-help-content dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.text-search-help-content dl > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.text-search-help-content dt,
+.text-search-help-content dd {
+  margin: 0;
+}
+
+.text-search-help-content code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  padding: 0.1rem 0.3rem;
+  background: var(--color-bg-card);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.text-search-help-content dd {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .toast-stack {
   position: fixed;
   top: max(1rem, env(safe-area-inset-top));

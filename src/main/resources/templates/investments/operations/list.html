@@ -58,6 +58,7 @@
                             type="search"
                             th:value="${selectedAsset}"
                             th:placeholder="#{investments.operations.list.filter.asset.placeholder}">
+                        <div th:replace="~{fragments/text-search-help :: textSearchHelp}"></div>
                     </div>
                     <div class="field">
                         <label for="filter-account" th:text="#{investments.operations.list.filter.account}"></label>
