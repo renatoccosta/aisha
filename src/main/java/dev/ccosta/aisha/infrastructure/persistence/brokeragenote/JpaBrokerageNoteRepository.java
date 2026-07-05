@@ -9,13 +9,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.Param;
 
 /**
  * Spring Data repository for imported brokerage notes.
  */
-public interface JpaBrokerageNoteRepository extends JpaRepository<BrokerageNote, Long> {
+public interface JpaBrokerageNoteRepository extends JpaRepository<BrokerageNote, Long>, JpaSpecificationExecutor<BrokerageNote> {
 
     @Override
     @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
@@ -39,46 +39,8 @@ public interface JpaBrokerageNoteRepository extends JpaRepository<BrokerageNote,
      * @return matching brokerage notes
      */
     @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
-    @Query(
-        """
-        select n
-        from BrokerageNote n
-        where n.settlementDate between :settlementStartDate and :settlementEndDate
-          and (:accountId is null or n.netEntry.account.id = :accountId)
-          and (:tradeStartDate is null or n.tradeDate >= :tradeStartDate)
-          and (:tradeEndDate is null or n.tradeDate <= :tradeEndDate)
-        order by n.settlementDate desc, n.tradeDate desc, n.id desc
-        """
-    )
-    Page<BrokerageNote> searchByFiltersWithoutNoteNumber(
-        @Param("settlementStartDate") LocalDate settlementStartDate,
-        @Param("settlementEndDate") LocalDate settlementEndDate,
-        @Param("accountId") Long accountId,
-        @Param("tradeStartDate") LocalDate tradeStartDate,
-        @Param("tradeEndDate") LocalDate tradeEndDate,
-        Pageable pageable
-    );
-
-    @EntityGraph(attributePaths = {"netEntry", "netEntry.account"})
-    @Query(
-        """
-        select n
-        from BrokerageNote n
-        where n.settlementDate between :settlementStartDate and :settlementEndDate
-          and (:accountId is null or n.netEntry.account.id = :accountId)
-          and (:tradeStartDate is null or n.tradeDate >= :tradeStartDate)
-          and (:tradeEndDate is null or n.tradeDate <= :tradeEndDate)
-          and (:noteNumberPrefix is null or upper(n.noteNumber) like concat(:noteNumberPrefix, '%') escape '\\')
-        order by n.settlementDate desc, n.tradeDate desc, n.id desc
-        """
-    )
-    Page<BrokerageNote> searchByFilters(
-        @Param("settlementStartDate") LocalDate settlementStartDate,
-        @Param("settlementEndDate") LocalDate settlementEndDate,
-        @Param("accountId") Long accountId,
-        @Param("tradeStartDate") LocalDate tradeStartDate,
-        @Param("tradeEndDate") LocalDate tradeEndDate,
-        @Param("noteNumberPrefix") String noteNumberPrefix,
+    Page<BrokerageNote> findAll(
+        org.springframework.data.jpa.domain.Specification<BrokerageNote> specification,
         Pageable pageable
     );
 

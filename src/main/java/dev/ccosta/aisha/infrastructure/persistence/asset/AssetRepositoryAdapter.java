@@ -1,25 +1,29 @@
 package dev.ccosta.aisha.infrastructure.persistence.asset;
 
+import dev.ccosta.aisha.application.search.TextSearchQuery;
+import dev.ccosta.aisha.application.search.TextSearchQueryParser;
 import dev.ccosta.aisha.domain.asset.Asset;
 import dev.ccosta.aisha.domain.asset.AssetRepository;
 import dev.ccosta.aisha.domain.asset.AssetType;
 import dev.ccosta.aisha.domain.shared.PagedResult;
-import java.text.Normalizer;
+import dev.ccosta.aisha.infrastructure.persistence.search.TextSearchPredicateBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.StringUtils;
 
 @Repository
 public class AssetRepositoryAdapter implements AssetRepository {
 
-    private static final String DIACRITICS_PATTERN = "\\p{M}+";
-
     private final JpaAssetRepository jpaAssetRepository;
+    private final TextSearchQueryParser textSearchQueryParser = new TextSearchQueryParser();
 
     public AssetRepositoryAdapter(JpaAssetRepository jpaAssetRepository) {
         this.jpaAssetRepository = jpaAssetRepository;
@@ -38,11 +42,11 @@ public class AssetRepositoryAdapter implements AssetRepository {
 
     @Override
     public PagedResult<Asset> findPageOrdered(AssetType type, String descriptionFilter, int page, int pageSize) {
-        PageRequest pageRequest = PageRequest.of(page, pageSize);
-        String normalizedDescriptionFilter = normalizeTextFilter(descriptionFilter);
-        Page<Asset> result = normalizedDescriptionFilter == null
-            ? jpaAssetRepository.searchByFiltersWithoutDescription(type, pageRequest)
-            : jpaAssetRepository.searchByFilters(type, normalizedDescriptionFilter, pageRequest);
+        PageRequest pageRequest = PageRequest.of(page, pageSize, Sort.by(Sort.Order.asc("name"), Sort.Order.asc("ticker"), Sort.Order.asc("id")));
+        Page<Asset> result = jpaAssetRepository.findAll(
+            assetSpecification(type, textSearchQueryParser.parse(descriptionFilter)),
+            pageRequest
+        );
         return new PagedResult<>(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
@@ -81,19 +85,21 @@ public class AssetRepositoryAdapter implements AssetRepository {
         jpaAssetRepository.deleteAllByIdInBatch(ids);
     }
 
-    private String normalizeTextFilter(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        String normalized = Normalizer.normalize(value.trim(), Normalizer.Form.NFD)
-            .replaceAll(DIACRITICS_PATTERN, "");
-        return escapeLikePattern(normalized).toUpperCase(Locale.ROOT);
-    }
-
-    private String escapeLikePattern(String value) {
-        return value
-            .replace("\\", "\\\\")
-            .replace("%", "\\%")
-            .replace("_", "\\_");
+    private Specification<Asset> assetSpecification(AssetType type, TextSearchQuery descriptionQuery) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (type != null) {
+                predicates.add(cb.equal(root.get("type"), type));
+            }
+            Expression<String> searchableText = cb.concat(
+                cb.concat(cb.concat(cb.coalesce(root.get("name"), ""), " "), cb.coalesce(root.get("ticker"), "")),
+                cb.concat(" ", cb.coalesce(root.get("issuer"), ""))
+            );
+            Predicate textPredicate = TextSearchPredicateBuilder.build(cb, searchableText, descriptionQuery);
+            if (textPredicate != null) {
+                predicates.add(textPredicate);
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
     }
 }

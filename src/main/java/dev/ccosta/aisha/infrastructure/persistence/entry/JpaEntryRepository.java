@@ -1,7 +1,6 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import dev.ccosta.aisha.domain.entry.Entry;
-import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategoryTrainingExample;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,82 +10,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface JpaEntryRepository extends JpaRepository<Entry, Long> {
+public interface JpaEntryRepository extends JpaRepository<Entry, Long>, JpaSpecificationExecutor<Entry> {
 
     @EntityGraph(attributePaths = {"account", "category", "suggestedCategory"})
     Optional<Entry> findWithDetailsById(Long id);
 
     @EntityGraph(attributePaths = {"account", "category", "suggestedCategory"})
-    @Query(
-        """
-        select e
-        from Entry e
-        where e.settlementDate between :startDate and :endDate
-          and (:accountId is null or e.account.id = :accountId)
-          and (
-                (:onlyWithoutCategory = true and e.category is null)
-                or (:onlyWithoutCategory = false and (:categoryId is null or e.category.id = :categoryId))
-          )
-          and (:onlyPendingCategorySuggestions = false or e.categorySuggestionStatus = :pendingStatus)
-        order by e.settlementDate desc, e.id desc
-        """
-    )
-    Page<Entry> searchBySettlementDateBetweenAndFiltersWithoutDescription(
-        LocalDate startDate,
-        LocalDate endDate,
-        @Param("accountId") Long accountId,
-        @Param("categoryId") Long categoryId,
-        @Param("onlyWithoutCategory") boolean onlyWithoutCategory,
-        @Param("onlyPendingCategorySuggestions") boolean onlyPendingCategorySuggestions,
-        @Param("pendingStatus") EntryCategorySuggestionStatus pendingStatus,
-        Pageable pageable
-    );
-
-    @EntityGraph(attributePaths = {"account", "category", "suggestedCategory"})
-    @Query(
-        """
-        select e
-        from Entry e
-        where e.settlementDate between :startDate and :endDate
-          and (:accountId is null or e.account.id = :accountId)
-          and (
-                (:onlyWithoutCategory = true and e.category is null)
-                or (:onlyWithoutCategory = false and (:categoryId is null or e.category.id = :categoryId))
-          )
-          and (
-                :descriptionFilter is null
-                or upper(
-                    function(
-                        'translate',
-                        e.description,
-                        'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ',
-                        'AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn'
-                    )
-                )
-                    like concat(
-                        '%',
-                        :descriptionFilter,
-                        '%'
-                    ) escape '\\'
-          )
-          and (:onlyPendingCategorySuggestions = false or e.categorySuggestionStatus = :pendingStatus)
-        order by e.settlementDate desc, e.id desc
-        """
-    )
-    Page<Entry> searchBySettlementDateBetweenAndFilters(
-        LocalDate startDate,
-        LocalDate endDate,
-        @Param("accountId") Long accountId,
-        @Param("categoryId") Long categoryId,
-        @Param("descriptionFilter") String descriptionFilter,
-        @Param("onlyWithoutCategory") boolean onlyWithoutCategory,
-        @Param("onlyPendingCategorySuggestions") boolean onlyPendingCategorySuggestions,
-        @Param("pendingStatus") EntryCategorySuggestionStatus pendingStatus,
-        Pageable pageable
-    );
+    Page<Entry> findAll(org.springframework.data.jpa.domain.Specification<Entry> specification, Pageable pageable);
 
     @EntityGraph(attributePaths = {"account", "category", "suggestedCategory"})
     List<Entry> findBySettlementDateLessThanEqualOrderBySettlementDateAscIdAsc(LocalDate endDate);

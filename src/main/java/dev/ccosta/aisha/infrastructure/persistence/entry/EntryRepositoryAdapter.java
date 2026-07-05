@@ -1,25 +1,31 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
+import dev.ccosta.aisha.application.search.TextSearchQuery;
+import dev.ccosta.aisha.application.search.TextSearchQueryParser;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategoryTrainingExample;
 import dev.ccosta.aisha.domain.entry.EntryRepository;
 import dev.ccosta.aisha.domain.shared.PagedResult;
+import dev.ccosta.aisha.infrastructure.persistence.search.TextSearchPredicateBuilder;
+import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
-import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class EntryRepositoryAdapter implements EntryRepository {
 
     private final JpaEntryRepository jpaEntryRepository;
+    private final TextSearchQueryParser textSearchQueryParser = new TextSearchQueryParser();
 
     public EntryRepositoryAdapter(JpaEntryRepository jpaEntryRepository) {
         this.jpaEntryRepository = jpaEntryRepository;
@@ -37,30 +43,20 @@ public class EntryRepositoryAdapter implements EntryRepository {
         int page,
         int pageSize
     ) {
-        PageRequest pageRequest = PageRequest.of(page, pageSize);
-        String normalizedDescriptionFilter = normalizeDescriptionFilter(descriptionFilter);
-        Page<Entry> result = normalizedDescriptionFilter == null
-            ? jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
+        PageRequest pageRequest = PageRequest.of(page, pageSize, Sort.by(Sort.Order.desc("settlementDate"), Sort.Order.desc("id")));
+        TextSearchQuery descriptionQuery = textSearchQueryParser.parse(descriptionFilter);
+        Page<Entry> result = jpaEntryRepository.findAll(
+            entrySpecification(
                 startDate,
                 endDate,
                 accountId,
                 categoryId,
+                descriptionQuery,
                 onlyWithoutCategory,
-                onlyPendingCategorySuggestions,
-                EntryCategorySuggestionStatus.PENDING,
-                pageRequest
-            )
-            : jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
-                startDate,
-                endDate,
-                accountId,
-                categoryId,
-                normalizedDescriptionFilter,
-                onlyWithoutCategory,
-                onlyPendingCategorySuggestions,
-                EntryCategorySuggestionStatus.PENDING,
-                pageRequest
-            );
+                onlyPendingCategorySuggestions
+            ),
+            pageRequest
+        );
         return new PagedResult<>(
             result.getContent(),
             result.getNumber(),
@@ -160,29 +156,34 @@ public class EntryRepositoryAdapter implements EntryRepository {
         jpaEntryRepository.deleteAllByIdInBatch(ids);
     }
 
-    private String normalizeDescriptionFilter(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        if (value.isBlank()) {
-            return null;
-        }
-
-        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
-            .replaceAll("\\p{M}+", "");
-
-        return escapeLikePattern(normalized).toUpperCase(Locale.ROOT);
-    }
-
-    private String escapeLikePattern(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        return value
-            .replace("\\", "\\\\")
-            .replace("%", "\\%")
-            .replace("_", "\\_");
+    private Specification<Entry> entrySpecification(
+        LocalDate startDate,
+        LocalDate endDate,
+        Long accountId,
+        Long categoryId,
+        TextSearchQuery descriptionQuery,
+        boolean onlyWithoutCategory,
+        boolean onlyPendingCategorySuggestions
+    ) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.between(root.get("settlementDate"), startDate, endDate));
+            if (accountId != null) {
+                predicates.add(cb.equal(root.get("account").get("id"), accountId));
+            }
+            if (onlyWithoutCategory) {
+                predicates.add(cb.isNull(root.get("category")));
+            } else if (categoryId != null) {
+                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+            }
+            if (onlyPendingCategorySuggestions) {
+                predicates.add(cb.equal(root.get("categorySuggestionStatus"), EntryCategorySuggestionStatus.PENDING));
+            }
+            Predicate textPredicate = TextSearchPredicateBuilder.build(cb, root.get("description"), descriptionQuery);
+            if (textPredicate != null) {
+                predicates.add(textPredicate);
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
     }
 }

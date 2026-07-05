@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<details th:fragment="textSearchHelp" class="text-search-help">
+    <summary>
+        <i data-lucide="circle-help" aria-hidden="true"></i>
+        <span th:text="#{textSearch.help.summary}"></span>
+    </summary>
+    <div class="text-search-help-content">
+        <p th:text="#{textSearch.help.intro}"></p>
+        <dl>
+            <div>
+                <dt><code>mercado padaria</code></dt>
+                <dd th:text="#{textSearch.help.orTerms}"></dd>
+            </div>
+            <div>
+                <dt><code>"café da manhã"</code></dt>
+                <dd th:text="#{textSearch.help.quotedPhrase}"></dd>
+            </div>
+            <div>
+                <dt><code>-ifood</code></dt>
+                <dd th:text="#{textSearch.help.negativeTerm}"></dd>
+            </div>
+            <div>
+                <dt><code>merc*</code></dt>
+                <dd th:text="#{textSearch.help.anyWildcard}"></dd>
+            </div>
+            <div>
+                <dt><code>cart?o</code></dt>
+                <dd th:text="#{textSearch.help.singleWildcard}"></dd>
+            </div>
+            <div>
+                <dt><code>\*</code> <code>\?</code></dt>
+                <dd th:text="#{textSearch.help.escape}"></dd>
+            </div>
+        </dl>
+    </div>
+</details>
+</body>
+</html>

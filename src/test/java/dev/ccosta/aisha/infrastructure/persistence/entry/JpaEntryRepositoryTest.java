@@ -6,14 +6,13 @@ import dev.ccosta.aisha.domain.account.Account;
 import dev.ccosta.aisha.domain.category.Category;
 import dev.ccosta.aisha.domain.entry.Entry;
 import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
+import dev.ccosta.aisha.domain.shared.PagedResult;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 class JpaEntryRepositoryTest {
 
     @Autowired
-    private JpaEntryRepository jpaEntryRepository;
+    private EntryRepositoryAdapter entryRepositoryAdapter;
 
     @Autowired
     private EntityManager entityManager;
@@ -37,19 +36,73 @@ class JpaEntryRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        Page<Entry> result = jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
+        PagedResult<Entry> result = entryRepositoryAdapter.listMostRecentBySettlementDateBetweenAndFilters(
             LocalDate.of(2026, 1, 1),
             LocalDate.of(2026, 1, 31),
             null,
             null,
-            "CAFE",
+            "cafe",
             false,
             false,
-            EntryCategorySuggestionStatus.PENDING,
-            PageRequest.of(0, 25)
+            0,
+            25
         );
 
-        assertThat(result.getContent())
+        assertThat(result.items())
+            .extracting(Entry::getId)
+            .containsExactly(matchingEntry.getId());
+    }
+
+    @Test
+    void shouldApplyAdvancedDescriptionSearchSyntax() {
+        Account account = persistAccount("Conta teste");
+        Category category = persistCategory("Categoria teste");
+        Entry mercado = persistEntry(account, category, "Mercado bairro");
+        Entry farmacia = persistEntry(account, category, "Farmácia centro");
+        persistEntry(account, category, "Mercado ifood");
+        persistEntry(account, category, "Padaria");
+        entityManager.flush();
+        entityManager.clear();
+
+        PagedResult<Entry> result = entryRepositoryAdapter.listMostRecentBySettlementDateBetweenAndFilters(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            account.getId(),
+            null,
+            "merc* farm?cia -ifood",
+            false,
+            false,
+            0,
+            25
+        );
+
+        assertThat(result.items())
+            .extracting(Entry::getId)
+            .containsExactly(farmacia.getId(), mercado.getId());
+    }
+
+    @Test
+    void shouldApplyQuotedDescriptionSearchPhrase() {
+        Account account = persistAccount("Conta teste");
+        Category category = persistCategory("Categoria teste");
+        Entry matchingEntry = persistEntry(account, category, "Café da manhã");
+        persistEntry(account, category, "Café no mercado pela manhã");
+        entityManager.flush();
+        entityManager.clear();
+
+        PagedResult<Entry> result = entryRepositoryAdapter.listMostRecentBySettlementDateBetweenAndFilters(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 31),
+            account.getId(),
+            null,
+            "\"cafe da manha\"",
+            false,
+            false,
+            0,
+            25
+        );
+
+        assertThat(result.items())
             .extracting(Entry::getId)
             .containsExactly(matchingEntry.getId());
     }
@@ -64,18 +117,19 @@ class JpaEntryRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        Page<Entry> result = jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
+        PagedResult<Entry> result = entryRepositoryAdapter.listMostRecentBySettlementDateBetweenAndFilters(
             LocalDate.of(2026, 1, 1),
             LocalDate.of(2026, 1, 31),
             account.getId(),
             null,
+            "   ",
             false,
             false,
-            EntryCategorySuggestionStatus.PENDING,
-            PageRequest.of(0, 25)
+            0,
+            25
         );
 
-        assertThat(result.getContent())
+        assertThat(result.items())
             .extracting(Entry::getId)
             .containsExactly(newerEntry.getId(), olderEntry.getId());
     }

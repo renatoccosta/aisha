@@ -1,23 +1,18 @@
 package dev.ccosta.aisha.infrastructure.persistence.entry;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import dev.ccosta.aisha.domain.entry.categorization.EntryCategorySuggestionStatus;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class EntryRepositoryAdapterTest {
@@ -29,18 +24,9 @@ class EntryRepositoryAdapterTest {
     private EntryRepositoryAdapter entryRepositoryAdapter;
 
     @Test
-    void shouldNormalizeDescriptionFilterBeforeQuerying() {
-        when(jpaEntryRepository.searchBySettlementDateBetweenAndFilters(
-            any(),
-            any(),
-            anyLong(),
-            anyLong(),
-            anyString(),
-            anyBoolean(),
-            anyBoolean(),
-            any(EntryCategorySuggestionStatus.class),
-            any(Pageable.class)
-        )).thenReturn(Page.empty());
+    @SuppressWarnings("unchecked")
+    void shouldQueryUsingSpecification() {
+        when(jpaEntryRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
 
         entryRepositoryAdapter.listMostRecentBySettlementDateBetweenAndFilters(
             LocalDate.of(2026, 1, 1),
@@ -54,34 +40,13 @@ class EntryRepositoryAdapterTest {
             25
         );
 
-        ArgumentCaptor<String> descriptionCaptor = ArgumentCaptor.forClass(String.class);
-        verify(jpaEntryRepository).searchBySettlementDateBetweenAndFilters(
-            any(),
-            any(),
-            anyLong(),
-            anyLong(),
-            descriptionCaptor.capture(),
-            anyBoolean(),
-            anyBoolean(),
-            any(EntryCategorySuggestionStatus.class),
-            any(Pageable.class)
-        );
-
-        org.assertj.core.api.Assertions.assertThat(descriptionCaptor.getValue()).isEqualTo("CAFE\\_100\\%");
+        verify(jpaEntryRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
-    void shouldUseQueryWithoutDescriptionWhenFilterIsBlank() {
-        when(jpaEntryRepository.searchBySettlementDateBetweenAndFiltersWithoutDescription(
-            any(),
-            any(),
-            anyLong(),
-            anyLong(),
-            anyBoolean(),
-            anyBoolean(),
-            any(EntryCategorySuggestionStatus.class),
-            any(Pageable.class)
-        )).thenReturn(Page.empty());
+    @SuppressWarnings("unchecked")
+    void shouldQueryUsingSpecificationWhenFilterIsBlank() {
+        when(jpaEntryRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
 
         entryRepositoryAdapter.listMostRecentBySettlementDateBetweenAndFilters(
             LocalDate.of(2026, 1, 1),
@@ -95,26 +60,6 @@ class EntryRepositoryAdapterTest {
             25
         );
 
-        verify(jpaEntryRepository).searchBySettlementDateBetweenAndFiltersWithoutDescription(
-            any(),
-            any(),
-            anyLong(),
-            anyLong(),
-            anyBoolean(),
-            anyBoolean(),
-            any(EntryCategorySuggestionStatus.class),
-            any(Pageable.class)
-        );
-        verify(jpaEntryRepository, never()).searchBySettlementDateBetweenAndFilters(
-            any(),
-            any(),
-            anyLong(),
-            anyLong(),
-            anyString(),
-            anyBoolean(),
-            anyBoolean(),
-            any(EntryCategorySuggestionStatus.class),
-            any(Pageable.class)
-        );
+        verify(jpaEntryRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 }
